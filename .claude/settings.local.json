@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Repo/Personal/Games/Satori -maxdepth 2 -not -path */.git* -not -path */.godot*)",
+      "Bash(powershell -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
+      "Bash(ls:*)",
+      "Bash(powershell -File \".specify/scripts/powershell/update-agent-context.ps1\" -AgentType claude)",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Dev tooling and debug test harness for in-editor game testing\" -Json -ShortName \"dev-tooling-harness\" \"Dev Tooling and Test Harness\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Infinite coordinate-based tile grid with chunk-based world partitioning\" -Json -ShortName \"infinite-grid-engine\" \"Infinite Grid Engine\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Tile placement with organic adjacency rules and long-press interaction\" -Json -ShortName \"tile-placement-adjacency\" \"Tile Placement and Organic Adjacency\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Biome alchemy mixing and locking system for hybrid biome creation\" -Json -ShortName \"biome-alchemy-mixing\" \"Biome Alchemy Mixing and Locking\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Background pattern matching engine for spatial discovery detection\" -Json -ShortName \"pattern-matching-engine\" \"Pattern Matching Engine\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Tier 1 biome cluster discoveries with audio triggers\" -Json -ShortName \"tier1-biome-discoveries\" \"Tier 1 Biome Cluster Discoveries\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Tier 2 structural landmark discoveries triggered by geometric shape recipes\" -Json -ShortName \"tier2-structural-landmarks\" \"Tier 2 Structural Landmark Discoveries\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Tier 3 spirit animal autonomous entity system with multi-variable summon conditions\" -Json -ShortName \"spirit-animal-system\" \"Tier 3 Spirit Animal System\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Voxel tile rendering with bitmask autotiling and cluster mesh merging\" -Json -ShortName \"voxel-rendering-merging\" \"Voxel Rendering and Mesh Merging\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Touch-first camera with momentum panning and mobile thumb-zone navigation\" -Json -ShortName \"camera-mobile-nav\" \"Camera and Mobile Navigation\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Ambient soundscape system with per-biome audio and proximity blending\" -Json -ShortName \"ambient-soundscape\" \"Ambient Soundscape System\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Garden state persistence with auto-save and load on startup\" -Json -ShortName \"garden-persistence\" \"Garden Persistence Save and Load\")",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Accessibility options and settings screen for haptics, colorblind mode, and audio\" -Json -ShortName \"accessibility-settings\" \"Accessibility and Settings Screen\")"
+    ]
+  }
+}
