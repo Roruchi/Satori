@@ -4,3 +4,11 @@
 
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt
+
+# Universal ignores
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

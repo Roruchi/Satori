@@ -38,3 +38,10 @@ Branch names follow **sequential numbering** (configured in `.specify/init-optio
 - Line endings: **LF** (enforced via `.gitattributes`)
 - Encoding: **UTF-8**
 - `.godot/` directory is gitignored (editor cache)
+
+## Godot GDScript Guardrails (All Agents)
+
+- Do **not** give an autoload singleton key the same name as a script `class_name` (e.g. autoload `PatternScanService` for script `class_name PatternScanScheduler`). Godot treats this as a parse error.
+- In files where warnings are treated as errors, avoid `:=` when the right-hand side can be `Variant` (common examples: `Array.pop_front()`, `Dictionary.get()`, dynamic `Callable.call()`). Use explicit type annotations instead.
+- Prefer `preload("res://...")` for cross-script dependencies used in typed contexts to avoid script registration/load-order surprises.
+- After introducing new scripts or typed signals, run a parse/error check before finalizing changes.

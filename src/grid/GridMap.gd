@@ -27,6 +27,13 @@ func get_tile(coord: Vector2i) -> GardenTile:
 func has_tile(coord: Vector2i) -> bool:
 	return tiles.has(coord)
 
+## Replace an existing tile's biome in-place and mark it as permanently locked.
+## Asserts that a tile already exists at coord.
+func replace_tile(coord: Vector2i, new_biome: int) -> void:
+	assert(has_tile(coord), "replace_tile: no tile exists at %s" % str(coord))
+	tiles[coord].biome = new_biome
+	tiles[coord].locked = true
+
 ## Return true when placing at coord would be legal:
 ##   - The Origin (0,0) is always valid if unoccupied.
 ##   - Any other coord must be empty AND have at least one occupied cardinal neighbour.

@@ -21,6 +21,7 @@ As a player placing tiles, I want the game to silently check for completed disco
 2. **Given** a placement that does not complete any known pattern, **When** the scan completes, **Then** no discovery signal is emitted and no frame-time spike above 16ms is recorded.
 3. **Given** a 1,000-tile garden, **When** any tile is placed and a full scan runs, **Then** the scan completes within 16ms on the target mid-range mobile device.
 4. **Given** a placement that simultaneously satisfies two distinct patterns, **When** the scan completes, **Then** both discovery signals are emitted in the same scan pass, each with their own discovery ID and coordinate list.
+5. **Given** a discovery signal is emitted, **When** the UI receives that signal, **Then** the game displays an on-screen discovery notification containing the discovery ID within the same update cycle.
 
 ---
 
@@ -96,6 +97,7 @@ As a developer, I want the engine to correctly evaluate cluster, shape, ratio/pr
 - **FR-008**: System MUST prevent duplicate discovery signals — a pattern whose ID is already in the discovery log MUST NOT emit a signal regardless of how many times its conditions are re-evaluated.
 - **FR-009**: Pattern definitions MUST be stored as data resources (external files or inline resources), not hard-coded logic within the scanning engine. Adding a new pattern MUST require no changes to scanning code.
 - **FR-010**: System MUST complete a full scan of a 1,000-tile garden in under 16ms on the target mid-range mobile hardware.
+- **FR-011**: System MUST surface each emitted `discovery_triggered` event to the player via an on-screen notification that includes the matched discovery ID.
 
 ### Key Entities
 
@@ -110,3 +112,4 @@ As a developer, I want the engine to correctly evaluate cluster, shape, ratio/pr
 - **SC-002**: No pattern evaluation introduces a frame time spike above 16ms on a 1,000-tile garden on the target mid-range mobile device, verified by performance profiling during a scripted placement sequence.
 - **SC-003**: Placing a tile that simultaneously satisfies two discovery patterns causes both signals to fire within the same scan pass (same frame budget), verified by a test that constructs a dual-trigger configuration.
 - **SC-004**: Adding a new `PatternDefinition` resource to the patterns directory causes the engine to detect and fire the new pattern with zero changes to engine scanning code, verified by a content-addition integration test.
+- **SC-005**: For every emitted `discovery_triggered` signal, the UI renders a visible notification with the corresponding discovery ID, verified by an integration test that triggers a known pattern.
