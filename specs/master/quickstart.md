@@ -18,11 +18,11 @@ godot --editor "C:/Repo/Personal/Games/Satori/project.godot"
 # Or simply double-click project.godot in the Godot Project Manager
 ```
 
-## Installing GdUnit4 (First-Time Setup)
+## Installing GUT v9+ (First-Time Setup)
 
-1. In the Godot editor: **AssetLib → Search "GdUnit4" → Install**
-2. Or manually: download from https://github.com/MikeSchulze/gdUnit4 and place in `addons/gdunit4/`
-3. Enable in **Project → Project Settings → Plugins → GdUnit4 ✓**
+1. In the Godot editor: **AssetLib → Search "Gut" → Install**
+2. Or manually: download from https://github.com/bitwes/Gut/releases and place the `gut/` folder in `addons/gut/`
+3. Enable in **Project → Project Settings → Plugins → GUT ✓**
 
 ## Running the Game
 
@@ -32,14 +32,14 @@ godot --editor "C:/Repo/Personal/Games/Satori/project.godot"
 ## Running Tests
 
 ```bash
-# All tests via GdUnit4 CLI runner (after installing GdUnit4)
-godot --path . --headless -s addons/gdunit4/GdUnitCmdTool.gd --add tests/
+# All tests via GUT headless runner scene
+godot --path . --headless -s tests/gut_runner.tscn
 
-# Single test file
-godot --path . --headless -s addons/gdunit4/GdUnitCmdTool.gd --add tests/test_grid.gd
+# Single test file (pass the path as a GUT argument)
+godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_grid.gd
 ```
 
-Or use the **GdUnit4 panel** in the Godot editor bottom dock.
+Or use the **GUT panel** in the Godot editor bottom dock.
 
 ## Running the Debug Scene
 

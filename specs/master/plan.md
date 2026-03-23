@@ -16,7 +16,7 @@ Build *Satori: The Constant Garden* — a Godot 4.6 mobile-first zen tile-placem
 **Language/Version**: GDScript 2.0 (Godot 4.6)
 **Primary Dependencies**: Godot 4.6 engine (Jolt Physics, Forward Plus renderer); no external packages
 **Storage**: Binary or compressed-JSON file in `user://` (Godot's user data path)
-**Testing**: GdUnit4 (Godot unit testing framework); manual playtesting via F01 debug scene
+**Testing**: GUT v9+ (Godot Unit Testing framework); manual playtesting via F01 debug scene
 **Target Platform**: Mobile-first (iOS 16+ / Android 12+); desktop editor for development
 **Project Type**: Mobile game (single-player, no network)
 **Performance Goals**: Stable 60 fps on mid-range mobile; pattern scan ≤16 ms for ≤1,000 tiles; app launch ≤10 s
@@ -95,7 +95,7 @@ scenes/
 └── Entities/
     └── SpiritAnimal.tscn
 
-tests/                        # GdUnit4 test suites
+tests/                        # GUT v9+ test suites
 ├── test_grid.gd
 ├── test_alchemy.gd
 ├── test_pattern_engine.gd

@@ -20,14 +20,15 @@
 
 ## Testing Framework
 
-**Decision**: GdUnit4
+**Decision**: GUT v9+ (Godot Unit Testing)
 
 **Rationale**:
-- Purpose-built for Godot 4 GDScript; supports `assert_that`, mocking, signal assertion
-- Integrates with Godot editor and CI runners
-- Active maintenance as of 2026; largest community for Godot testing
+- GUT v9+ fully supports Godot 4 GDScript; test classes extend `GutTest` with `assert_eq`, `assert_true`, `watch_signals`, and signal assertion helpers
+- Ships a built-in editor panel (bottom dock) for running tests interactively, and a headless CLI runner (`addons/gut/gut_cmdln.gd`) for CI
+- Installed as a standard Godot addon (`addons/gut/`) — no external toolchain needed
+- Active maintenance as of 2026; large community and well-documented migration path from GUT 7/8
 
-**Alternatives considered**: WAT (less active), GUT (Godot 3-era, Godot 4 port incomplete)
+**Alternatives considered**: GdUnit4 (also Godot 4 compatible, but GUT preferred for its simpler setup and editor integration); WAT (less active)
 
 ---
 

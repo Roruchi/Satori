@@ -17,7 +17,14 @@
       "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Touch-first camera with momentum panning and mobile thumb-zone navigation\" -Json -ShortName \"camera-mobile-nav\" \"Camera and Mobile Navigation\")",
       "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Ambient soundscape system with per-biome audio and proximity blending\" -Json -ShortName \"ambient-soundscape\" \"Ambient Soundscape System\")",
       "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Garden state persistence with auto-save and load on startup\" -Json -ShortName \"garden-persistence\" \"Garden Persistence Save and Load\")",
-      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Accessibility options and settings screen for haptics, colorblind mode, and audio\" -Json -ShortName \"accessibility-settings\" \"Accessibility and Settings Screen\")"
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" \"Accessibility options and settings screen for haptics, colorblind mode, and audio\" -Json -ShortName \"accessibility-settings\" \"Accessibility and Settings Screen\")",
+      "Bash(pwsh .specify/scripts/powershell/check-prerequisites.ps1 -Json)",
+      "Bash(pwsh .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(find C:RepoPersonalGamesSatorisrc C:RepoPersonalGamesSatoriscenes -name *.gd -o -name *.tscn)",
+      "Bash(where godot:*)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Tools/**)",
+      "Bash(pwsh check-errors.ps1)"
     ]
   }
 }
