@@ -34,7 +34,7 @@ A debug scene and tooling layer that allows rapid testing of all subsequent feat
 A coordinate-based tile grid that expands without bounds, partitioned into 16×16 chunks for memory efficiency.
 
 **Requirements:**
-- Hexagonal or square axial coordinate system (TBD in research — see F02 research item)
+- Square axial coordinate system using `Vector2i` coordinates
 - `TileData` value type: `{ coord: Vector2i, biome: BiomeType, locked: bool, metadata: Dictionary }`
 - Chunk manager: loads/unloads chunks as the camera viewport moves; only active chunks held in memory
 - O(1) tile lookup by coordinate
@@ -269,6 +269,185 @@ F05 (Pattern Matching)
   └─ F07 (Tier 2 Landmarks)
       └─ F08 (Spirit Animals)
 ```
+
+## User Stories and Implementation State
+
+### User Story 1 - Developer Harness for Fast Validation (Priority: P1)
+
+As a developer, I can run a debug harness with placement and discovery instrumentation so that downstream gameplay features can be validated quickly.
+
+**Why this priority**: Every later feature depends on fast repeatable setup and visibility.
+
+**Independent Test**: Launch debug scene, toggle overlay and instant placement, seed tiles, and verify discovery events in the debug log.
+
+**Acceptance Scenarios**:
+
+1. **Given** the debug scene is running, **When** I press the debug toggle key, **Then** overlay visibility toggles without changing gameplay state.
+2. **Given** debug flood-fill is enabled, **When** I seed an area, **Then** placed tiles appear and discovery checks execute.
+
+### User Story 2 - Infinite Sparse Grid Foundation (Priority: P1)
+
+As a player, I can expand the garden in any direction without hard bounds so that the world feels truly unbounded.
+
+**Why this priority**: All gameplay systems depend on stable coordinate storage and retrieval.
+
+**Independent Test**: Place and retrieve tiles across negative and large coordinates while maintaining O(1) lookups and valid chunk lifecycle.
+
+**Acceptance Scenarios**:
+
+1. **Given** a new garden, **When** tiles are placed across multiple chunk boundaries, **Then** data retrieval remains correct.
+2. **Given** camera movement across distant regions, **When** chunks leave the active radius, **Then** inactive chunks unload.
+
+### User Story 3 - Intentional Placement and Adjacency (Priority: P1)
+
+As a player, I place tiles with intentional input and adjacency rules so that growth remains structured and permanent.
+
+**Why this priority**: This defines the core interaction loop and permanence model.
+
+**Independent Test**: Long-press valid adjacent cells places tiles; invalid/non-adjacent attempts are rejected with feedback.
+
+**Acceptance Scenarios**:
+
+1. **Given** an adjacent empty coordinate, **When** long-press input completes, **Then** a tile is placed.
+2. **Given** a non-adjacent coordinate, **When** I attempt placement, **Then** placement is rejected.
+
+### User Story 4 - Biome Alchemy and Locking (Priority: P1)
+
+As a player, I can merge base biomes once to create hybrids so that choices are meaningful and irreversible.
+
+**Why this priority**: Alchemy is a central differentiator and prerequisite for discovery content.
+
+**Independent Test**: All six valid base pair combinations produce the expected hybrid and lock state.
+
+**Acceptance Scenarios**:
+
+1. **Given** an unlocked base tile and a valid second base tile, **When** I perform a mix action, **Then** the expected hybrid biome is created and marked locked.
+
+### User Story 5 - Deterministic Pattern Engine (Priority: P1)
+
+As the game system, I scan for pattern matches asynchronously and idempotently so that discoveries are correct and performance-safe.
+
+**Why this priority**: Discovery tiers and several NFR targets depend on this engine.
+
+**Independent Test**: Cluster, shape, ratio/proximity, and distance patterns trigger expected events once and complete within frame budget.
+
+**Acceptance Scenarios**:
+
+1. **Given** a garden state that satisfies a known pattern, **When** the scan runs, **Then** one discovery event is emitted exactly once with deterministic triggering tiles.
+
+### User Story 6 - Tier 1 Discovery Content (Priority: P1)
+
+As a player, I receive Tier 1 discovery feedback and persistence so that exploration feels rewarding and trackable.
+
+**Independent Test**: Seed each Tier 1 pattern and verify one-time trigger, notification, and log persistence.
+
+**Acceptance Scenarios**:
+
+1. **Given** an undiscovered Tier 1 pattern, **When** the player completes it, **Then** a notification appears once and the discovery is persisted.
+
+### User Story 7 - Tier 2 Landmark Content (Priority: P1)
+
+As a player, I can create geometric landmarks that trigger once and annotate the world visually.
+
+**Independent Test**: Build each landmark shape once and verify trigger, log entry, and overlay marker.
+
+**Acceptance Scenarios**:
+
+1. **Given** a valid landmark geometry, **When** the shape is completed, **Then** the landmark discovery triggers once and overlays are rendered on relevant tiles.
+
+### User Story 8 - Spirit Animal System (Priority: P1)
+
+As a player, I unlock spirits from compound conditions and see them persist in the garden.
+
+**Independent Test**: Trigger representative spirits (including Sky-Whale) and confirm one-time spawn plus restart persistence.
+
+**Acceptance Scenarios**:
+
+1. **Given** a satisfied spirit condition set, **When** discovery resolves, **Then** the corresponding spirit spawns once and remains present after reload.
+
+### User Story 9 - Voxel Rendering and Merge Behavior (Priority: P1)
+
+As a player, I see biome-aware tile visuals, autotiling transitions, and mountain merges at cluster thresholds.
+
+**Independent Test**: Neighbor updates refresh visuals and 10+ Stone cluster merges into mountain representation.
+
+**Acceptance Scenarios**:
+
+1. **Given** connected Stone tiles reach the merge threshold, **When** the render update runs, **Then** the cluster is represented as mountain output without visual seams.
+
+### User Story 10 - Mobile Camera Navigation (Priority: P1)
+
+As a mobile player, I can pan, zoom, and recenter smoothly without accidental placement.
+
+**Independent Test**: Drag, pinch, and double-tap interactions coexist with placement suppression.
+
+**Acceptance Scenarios**:
+
+1. **Given** touch navigation input, **When** the player pans and pinches, **Then** camera movement is smooth and tile placement is not triggered accidentally.
+
+### User Story 11 - Ambient Soundscape Blending (Priority: P1)
+
+As a player, I hear smooth biome-driven ambient transitions and one-time discovery stingers.
+
+**Independent Test**: Move camera between biome regions and verify smooth crossfade and stinger queue behavior.
+
+**Acceptance Scenarios**:
+
+1. **Given** the camera crosses biome-dominant regions, **When** ambient mixing updates, **Then** track levels crossfade smoothly and discovery stingers play once.
+
+### User Story 12 - Reliable Garden Persistence (Priority: P1)
+
+As a returning player, I can restart and recover complete garden state quickly and safely.
+
+**Independent Test**: Save/load round trip restores tiles, discoveries, and spirits with version-safe schema handling.
+
+**Acceptance Scenarios**:
+
+1. **Given** a non-trivial garden state, **When** the game is saved and restarted, **Then** all persisted gameplay entities reload consistently and schema version checks pass.
+
+### User Story 13 - Accessibility and Settings (Priority: P1)
+
+As a player, I can configure haptics, palette, and audio settings and keep them across restarts.
+
+**Independent Test**: Settings apply immediately and persist in dedicated config storage.
+
+**Acceptance Scenarios**:
+
+1. **Given** updated accessibility and audio settings, **When** the player resumes later, **Then** settings are restored and applied without affecting garden save data.
+
+### Story State Checklist
+
+| Story | Feature | State | Evidence | Related Tasks | Last Checked |
+|-------|---------|-------|----------|---------------|--------------|
+| US1 | F01 Dev Tooling Harness | Not started | - | T010-T013 | 2026-03-23 |
+| US2 | F02 Infinite Grid Engine | Not started | - | T014-T017 | 2026-03-23 |
+| US3 | F03 Placement and Adjacency | Not started | - | T018-T021 | 2026-03-23 |
+| US4 | F04 Biome Alchemy Mixing | Partially implemented | Existing 004 task set and runtime scripts | T022-T024 | 2026-03-23 |
+| US5 | F05 Pattern Matching Engine | Mostly implemented | Existing 005 task set and pattern tests | T025-T029 | 2026-03-23 |
+| US6 | F06 Tier 1 Discoveries | Not started | - | T030-T033 | 2026-03-23 |
+| US7 | F07 Tier 2 Landmarks | Not started | - | T034-T037 | 2026-03-23 |
+| US8 | F08 Spirit Animals | Not started | - | T038-T041 | 2026-03-23 |
+| US9 | F09 Voxel Rendering | Not started | - | T042-T045 | 2026-03-23 |
+| US10 | F10 Camera Mobile Nav | Partially implemented | Existing 010 US1 work and camera controller | T046-T049 | 2026-03-23 |
+| US11 | F11 Ambient Soundscape | Not started | - | T050-T053 | 2026-03-23 |
+| US12 | F12 Persistence | Not started | - | T054-T057 | 2026-03-23 |
+| US13 | F13 Accessibility Settings | Not started | - | T058-T061 | 2026-03-23 |
+
+### NFR Validation Checklist
+
+- [ ] Launch time under 10 seconds validated on representative target profile
+- [ ] Pattern scan under 16 ms validated for ~1,000 tiles
+- [ ] Memory under 200 MB validated at stress target
+- [ ] No-reset invariant validated in production build
+- [ ] Debug tooling excluded from release build validation completed
+
+## Edge Cases
+
+- Corrupted or partially written save file: game starts safely, reports recoverable error, and preserves previous valid snapshot when available.
+- Startup budget breach risk on large gardens: app still reaches a playable state with staged loading and visible status feedback.
+- Memory pressure during large placement bursts: chunk eviction/deferred work prevents runaway memory growth.
+- Missing or invalid audio assets: gameplay continues with silent fallback instead of runtime failure.
+- Release export includes debug assets by mistake: build validation fails until debug scene/scripts/keybinds are excluded.
 
 ## Non-Functional Requirements (Cross-Cutting)
 

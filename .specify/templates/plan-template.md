@@ -31,7 +31,20 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Spec Traceability**: Confirm this work is rooted in the current numbered
+  feature spec and that planned work stays traceable to user stories or shared
+  foundational tasks.
+- **Godot-Native Fit**: Confirm the solution stays within the Godot project model:
+  GDScript in `src/`, scenes in `scenes/`, project wiring in `project.godot`, and
+  autoloads only for cross-cutting services or state.
+- **Validation Strategy**: Identify required GUT coverage in `tests/` and any
+  manual debug-harness or in-editor validation needed for scene-heavy behavior.
+- **World Rule Safety**: State whether the feature changes permanence rules,
+  deterministic discovery or persistence behavior, or save compatibility.
+- **Mobile Budgets**: State expected impact on performance, input ergonomics,
+  accessibility toggles, startup time, and save/load time when applicable.
+- **Guardrails**: Check autoload/class_name naming, `Variant` typing risks in
+  warnings-as-errors contexts, and typed dependency loading strategy.
 
 ## Project Structure
 
@@ -56,39 +69,25 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+project.godot
+
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── autoloads/
+├── biomes/
+├── camera/
+├── grid/
+└── ui/
+
+scenes/
+├── Garden.tscn
+└── UI/
 
 tests/
-├── contract/
-├── integration/
+├── gut_runner.tscn
 └── unit/
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+specs/[###-feature]/
+└── ...feature artifacts...
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real

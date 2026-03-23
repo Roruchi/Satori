@@ -7,7 +7,7 @@
 ## Prerequisites
 
 - **Godot 4.6** (Download from godotengine.org — use the .NET-free Standard build)
-- **GdUnit4** addon installed in the project (see below)
+- **GUT v9+** addon installed in the project (already present in `addons/gut/`)
 - **Git** (branch management via Speckit sequential numbering)
 
 ## Opening the Project

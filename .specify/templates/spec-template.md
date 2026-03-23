@@ -18,6 +18,10 @@
   - Tested independently
   - Deployed independently
   - Demonstrated to users independently
+
+  For this project, every story's Independent Test should name the validation
+  path: GUT coverage, manual in-editor verification, debug-harness flow, or the
+  combination required to prove the story is complete.
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
@@ -95,9 +99,19 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Experience & Runtime Constraints *(mandatory when applicable)*
+
+- **EX-001**: Feature MUST preserve the permanent-emergence rule set, or justify
+  any debug-only exception explicitly.
+- **EX-002**: Feature MUST state any impact on mobile input, thumb-zone UI, or
+  accessibility settings when player interaction changes.
+- **EX-003**: Feature MUST state performance, scan-time, startup, or save/load
+  expectations when the feature touches runtime-critical systems.
+
 ### Key Entities *(include if feature involves data)*
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
+- **[Entity 1]**: [What it represents, key attributes without implementation;
+  can be a gameplay data type, resource, scene, or singleton-managed record]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
 ## Success Criteria *(mandatory)*

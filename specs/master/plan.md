@@ -27,9 +27,20 @@ Build *Satori: The Constant Garden* — a Godot 4.6 mobile-first zen tile-placem
 
 ## Constitution Check
 
-*Constitution file is currently a blank template — no project-specific principles have been ratified. No gates apply. This section should be revisited once `/speckit.constitution` is run to establish project principles.*
+- **Spec Traceability**: PASS — this plan is rooted in `specs/master/spec.md` and
+    keeps work grouped by incremental, independently testable features.
+- **Godot-Native Fit**: PASS — the architecture stays within a single Godot 4.6
+    project using GDScript, scenes, and autoloads for cross-cutting systems.
+- **Validation Strategy**: PASS — GUT is the automated framework and F01 debug
+    tooling covers scene-heavy and discovery-heavy validation.
+- **World Rule Safety**: PASS — no undo/reset, deterministic discovery behavior,
+    and save-state compatibility remain explicit project constraints.
+- **Mobile Budgets**: PASS — the plan retains the mobile-first 60 fps,
+    accessibility, and load-time targets already defined for the game.
+- **Guardrails**: PASS — engine-specific script-loading, typing, and autoload
+    constraints are documented in repository guidance and now ratified.
 
-**Status**: PASS (no active constraints to violate)
+**Status**: PASS
 
 ---
 
@@ -55,7 +66,6 @@ project.godot
 src/
 ├── autoloads/
 │   ├── GameState.gd          # Singleton: garden data, save/load, discovery log
-│   ├── PatternEngine.gd      # Singleton: background pattern scan, signals
 │   └── AudioManager.gd       # Singleton: ambient soundscape blending
 ├── grid/
 │   ├── TileData.gd           # Value type: coord, biome, locked, metadata
@@ -63,7 +73,9 @@ src/
 │   └── GridMap.gd            # O(1) coord→TileData lookup (Dictionary wrapper)
 ├── biomes/
 │   ├── BiomeType.gd          # Enum + static mixing table
-│   └── BiomeRegistry.gd      # Mesh, audio, palette lookups per biome
+│   ├── BiomeRegistry.gd      # Mesh, audio, palette lookups per biome
+│   ├── pattern_scan_scheduler.gd # Pattern scan runtime (autoload key: PatternScanService)
+│   └── pattern_matcher.gd    # Pattern evaluation and duplicate suppression
 ├── patterns/
 │   ├── PatternDefinition.gd  # Resource: declarative pattern spec
 │   ├── ClusterMatcher.gd     # Flood-fill cluster detection
@@ -85,8 +97,7 @@ src/
     └── PatternVisualizer.gd  # Highlight discovery-qualifying tiles
 
 scenes/
-├── Main.tscn                 # Root scene
-├── Garden.tscn               # TileMap + camera + input handler
+├── Garden.tscn               # Canonical runtime root scene
 ├── Debug.tscn                # Debug harness (strips from export)
 ├── UI/
 │   ├── HUD.tscn
@@ -105,7 +116,7 @@ tests/                        # GUT v9+ test suites
 └── test_persistence.gd
 ```
 
-**Structure Decision**: Single Godot project. `src/` holds GDScript logic; `scenes/` holds `.tscn` compositions. Autoloads for cross-cutting singletons. Tests in `tests/` via GdUnit4. Debug scenes excluded from export via export presets.
+**Structure Decision**: Single Godot project. `src/` holds GDScript logic; `scenes/` holds `.tscn` compositions, with `scenes/Garden.tscn` as the canonical runtime entry scene. Autoloads for cross-cutting singletons. Tests in `tests/` via GUT. Debug scenes excluded from export via export presets.
 
 ---
 
@@ -122,7 +133,7 @@ tests/                        # GUT v9+ test suites
 | Decision | Rationale |
 |----------|-----------|
 | Square axial grid (Vector2i) | Godot's built-in TileMap uses square; simpler coordinate math; the game's visual style (voxel diorama) suits orthographic squares more than hex |
-| GdUnit4 for testing | Most mature Godot 4 unit testing framework; integrates with CI; supports GDScript |
+| GUT v9+ for testing | Installed in this repository, supports Godot 4 GDScript well, and aligns with the existing test runner and quickstart flow |
 | Dictionary-based grid storage | O(1) lookup; sparse (only placed tiles stored); serialises trivially to JSON |
 | Chunking via Dictionary of Dictionaries | `chunks[chunk_coord][local_coord]` — natural fit for Godot's node tree; no external spatial index needed at projected scale |
 | Deferred thread via `Thread` + `Mutex` | Godot 4 supports threads; pattern scan dispatched to worker thread, results sent back via `call_deferred` to avoid race conditions |
