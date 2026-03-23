@@ -5,6 +5,7 @@ const DEFAULT_PATTERN_DIR := "res://src/biomes/patterns"
 
 func load_patterns(pattern_dir: String = DEFAULT_PATTERN_DIR) -> Array[PatternDefinition]:
 	var loaded_patterns: Array[PatternDefinition] = []
+	# Recursively load from dir and all subdirectories first, then sort once.
 	_load_from_dir(pattern_dir, loaded_patterns)
 	loaded_patterns.sort_custom(func(a: PatternDefinition, b: PatternDefinition) -> bool:
 		return a.discovery_id < b.discovery_id

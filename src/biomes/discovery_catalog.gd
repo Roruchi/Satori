@@ -8,7 +8,9 @@ func load_from_data(data: DiscoveryCatalogData) -> void:
 		_entries[entry["discovery_id"]] = entry
 
 func lookup(discovery_id: String) -> Dictionary:
-	return _entries.get(discovery_id, {})
+	if not _entries.has(discovery_id):
+		return {}
+	return _entries[discovery_id] as Dictionary
 
 func has_entry(discovery_id: String) -> bool:
 	return _entries.has(discovery_id)

@@ -29,7 +29,7 @@ func play_stinger(audio_key: String) -> void:
 	if not AUDIO_MAP.has(audio_key):
 		RuntimeLogger.warn("DiscoveryAudioPlayer", "No audio mapping for key: %s" % audio_key)
 		return
-	var path: String = AUDIO_MAP[audio_key]
+	var path: String = str(AUDIO_MAP[audio_key])
 	if not ResourceLoader.exists(path):
 		RuntimeLogger.warn("DiscoveryAudioPlayer", "Audio asset not found (placeholder): %s" % path)
 		return

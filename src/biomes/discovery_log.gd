@@ -38,8 +38,8 @@ func deserialize(data: Dictionary) -> void:
 			entries.append(entry)
 			_discovered_ids[str(entry.get("discovery_id", ""))] = true
 
-func _serialize_coords(coords: Array[Vector2i]) -> Array[String]:
-	var result: Array[String] = []
+func _serialize_coords(coords: Array[Vector2i]) -> Array:
+	var result: Array = []
 	for coord in coords:
-		result.append("%d,%d" % [coord.x, coord.y])
+		result.append([coord.x, coord.y])
 	return result
