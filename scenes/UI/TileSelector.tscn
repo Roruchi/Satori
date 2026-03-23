@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/ui/TileSelector.gd" id="1"]
+[ext_resource type="Script" path="res://src/ui/discovery_notification_queue.gd" id="2"]
+[ext_resource type="Script" path="res://src/ui/discovery_audio_player.gd" id="3"]
+[ext_resource type="Script" path="res://src/biomes/discovery_event_router.gd" id="4"]
 
 [node name="TileSelector" type="CanvasLayer"]
 layer = 1
@@ -11,31 +14,59 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -100.0
+offset_left = -200.0
 offset_top = -64.0
-offset_right = 100.0
+offset_right = 200.0
 offset_bottom = -16.0
 
 [node name="GrassButton" type="Button" parent="HBoxContainer"]
-custom_minimum_size = Vector2(96, 48)
-text = "Grass"
+custom_minimum_size = Vector2(88, 48)
+text = "Forest"
 
 [node name="WaterButton" type="Button" parent="HBoxContainer"]
-custom_minimum_size = Vector2(96, 48)
+custom_minimum_size = Vector2(88, 48)
 text = "Water"
+
+[node name="StoneButton" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(88, 48)
+text = "Stone"
+
+[node name="EarthButton" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(88, 48)
+text = "Earth"
 
 [node name="DiscoveryPanel" type="PanelContainer" parent="."]
 visible = false
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -220.0
+offset_left = -260.0
 offset_top = 24.0
-offset_right = 220.0
-offset_bottom = 88.0
+offset_right = 260.0
+offset_bottom = 108.0
 
-[node name="DiscoveryLabel" type="Label" parent="DiscoveryPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="DiscoveryPanel"]
+layout_mode = 2
+
+[node name="DiscoveryLabel" type="Label" parent="DiscoveryPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="DiscoveryFlavorLabel" type="Label" parent="DiscoveryPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="DiscoveryQueue" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="DiscoveryAudioPlayer" type="Node" parent="."]
+script = ExtResource("3")
+
+[node name="DiscoveryRouter" type="Node" parent="."]
+script = ExtResource("4")

@@ -32,6 +32,9 @@ func set_matcher_for_testing(matcher: RefCounted) -> void:
 func set_grid_provider(provider: Callable) -> void:
 	_grid_provider = provider
 
+func hydrate_registry(ids: Array[String]) -> void:
+	_matcher.get_discovery_registry().mark_discoveries(ids)
+
 func get_queue_size() -> int:
 	return _queue.size()
 
@@ -54,6 +57,13 @@ func _ready() -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state != null and game_state.has_signal("tile_placed"):
 		game_state.tile_placed.connect(_on_tile_placed)
+
+	# Hydrate registry from persisted discoveries on startup
+	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
+	if persistence != null and persistence.has_method("get_discovered_ids"):
+		var ids: Array[String] = persistence.get_discovered_ids()
+		if not ids.is_empty():
+			_matcher.get_discovery_registry().mark_discoveries(ids)
 
 func _default_grid_provider() -> RefCounted:
 	var game_state: Node = get_node_or_null("/root/GameState")
