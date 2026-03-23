@@ -13,11 +13,11 @@
 
 **Purpose**: Prepare the `src/rendering/` subsystem directory, test scaffolding, and mesh asset stubs before any user story implementation begins.
 
-- [ ] T001 Create `src/rendering/` directory marker and confirm it is tracked by git
-- [ ] T002 [P] Create GUT test suite scaffold in `tests/unit/test_bitmask_autotiler.gd` with `class_name TestBitmaskAutotiler` and empty `describe_*` blocks
-- [ ] T003 [P] Create GUT test suite scaffold in `tests/unit/test_mountain_cluster.gd` with `class_name TestMountainCluster` and empty `describe_*` blocks
-- [ ] T004 [P] Create GUT test suite scaffold in `tests/unit/test_biome_transition.gd` with `class_name TestBiomeTransition` and empty `describe_*` blocks
-- [ ] T005 Create mesh asset stub directory `assets/meshes/tiles/` with a `README.md` documenting the expected asset naming convention `{biome}_{canonical_idx}.tres`
+- [x] T001 Create `src/rendering/` directory marker and confirm it is tracked by git
+- [x] T002 [P] Create GUT test suite scaffold in `tests/unit/test_bitmask_autotiler.gd` with `class_name TestBitmaskAutotiler` and empty `describe_*` blocks
+- [x] T003 [P] Create GUT test suite scaffold in `tests/unit/test_mountain_cluster.gd` with `class_name TestMountainCluster` and empty `describe_*` blocks
+- [x] T004 [P] Create GUT test suite scaffold in `tests/unit/test_biome_transition.gd` with `class_name TestBiomeTransition` and empty `describe_*` blocks
+- [x] T005 Create mesh asset stub directory `assets/meshes/tiles/` with a `README.md` documenting the expected asset naming convention `{biome}_{canonical_idx}.tres`
 
 ---
 
@@ -27,12 +27,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Implement `src/rendering/bitmask_autotiler.gd` — static class that computes the raw 8-bit neighbour bitmask for a tile coord given a `GardenGrid`; document bit layout (NW=0, N=1, NE=2, W=3, E=4, SW=5, S=6, SE=7); neighbour counts as "present" when it shares the same biome
-- [ ] T007 Implement `src/rendering/tile_mesh_library.gd` — loads `TileMeshVariant` data at startup; exposes `get_mesh(biome: int, bitmask8: int, lod: bool) -> Mesh` using the 256→47 Wang canonical reduction table; exposes `get_transition_mesh(biome_a: int, biome_b: int)` returning `null` when no transition is registered; never returns null for `get_mesh` (fallback to isolated mesh)
-- [ ] T008 [P] Implement `src/rendering/tile_chunk_renderer.gd` — owns one `MultiMeshInstance3D` per (canonical variant, LOD level) pair within an 8×8 chunk; exposes `mark_dirty()` and rebuilds `MultiMesh` data in `_process` when dirty; chunk coordinate derived from tile coord via integer division by 8
-- [ ] T009 Implement `src/rendering/voxel_renderer.gd` — autoload-safe orchestrator (NOT registered as autoload); connects to `GameState.tile_placed` and `GameState.tile_mixed` in `_ready`; delegates placement events to `BitmaskAutotiler`, `TileChunkRenderer`, `MountainClusterTracker`, and `BiomeTransitionLayer`; maintains the `TileRenderState` dictionary keyed by `Vector2i`
-- [ ] T010 Create `scenes/VoxelGarden.tscn` — root `Node3D` scene; child nodes: `TileChunkParent` (Node3D), `MountainMeshParent` (Node3D), `DecorationParent` (Node3D); no script on root node; attach `VoxelRenderer` script to `TileChunkParent`
-- [ ] T011 Wire `VoxelGarden.tscn` into `scenes/Garden.tscn` as a child node of the scene root; keep `GardenView` (2D overlay for hover/animation) active alongside the new 3D rendering layer
+- [x] T006 Implement `src/rendering/bitmask_autotiler.gd` — static class that computes the raw 8-bit neighbour bitmask for a tile coord given a `GardenGrid`; document bit layout (NW=0, N=1, NE=2, W=3, E=4, SW=5, S=6, SE=7); neighbour counts as "present" when it shares the same biome
+- [x] T007 Implement `src/rendering/tile_mesh_library.gd` — loads `TileMeshVariant` data at startup; exposes `get_mesh(biome: int, bitmask8: int, lod: bool) -> Mesh` using the 256→47 Wang canonical reduction table; exposes `get_transition_mesh(biome_a: int, biome_b: int)` returning `null` when no transition is registered; never returns null for `get_mesh` (fallback to isolated mesh)
+- [x] T008 [P] Implement `src/rendering/tile_chunk_renderer.gd` — owns one `MultiMeshInstance3D` per (canonical variant, LOD level) pair within an 8×8 chunk; exposes `mark_dirty()` and rebuilds `MultiMesh` data in `_process` when dirty; chunk coordinate derived from tile coord via integer division by 8
+- [x] T009 Implement `src/rendering/voxel_renderer.gd` — autoload-safe orchestrator (NOT registered as autoload); connects to `GameState.tile_placed` and `GameState.tile_mixed` in `_ready`; delegates placement events to `BitmaskAutotiler`, `TileChunkRenderer`, `MountainClusterTracker`, and `BiomeTransitionLayer`; maintains the `TileRenderState` dictionary keyed by `Vector2i`
+- [x] T010 Create `scenes/VoxelGarden.tscn` — root `Node3D` scene; child nodes: `TileChunkParent` (Node3D), `MountainMeshParent` (Node3D), `DecorationParent` (Node3D); no script on root node; attach `VoxelRenderer` script to `TileChunkParent`
+- [x] T011 Wire `VoxelGarden.tscn` into `scenes/Garden.tscn` as a child node of the scene root; keep `GardenView` (2D overlay for hover/animation) active alongside the new 3D rendering layer
 
 **Checkpoint**: Foundation ready. `VoxelRenderer` is instantiated in the scene, subscribes to `GameState` signals, and the chunk/LOD structure exists — user stories can proceed.
 
@@ -46,18 +46,18 @@
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Add GUT coverage in `tests/unit/test_bitmask_autotiler.gd`: single isolated tile bitmask = 0x00; east neighbour present = bit 4 set; all 8 neighbours present = 0xFF; mixed-biome neighbours do NOT set bits
-- [ ] T013 [P] [US1] Add GUT coverage in `tests/unit/test_biome_transition.gd`: Forest↔Water pair returns non-null decoration; FOREST↔FOREST pair returns null; biome order is commutative (Water,Forest) == (Forest,Water)
+- [x] T012 [P] [US1] Add GUT coverage in `tests/unit/test_bitmask_autotiler.gd`: single isolated tile bitmask = 0x00; east neighbour present = bit 4 set; all 8 neighbours present = 0xFF; mixed-biome neighbours do NOT set bits
+- [x] T013 [P] [US1] Add GUT coverage in `tests/unit/test_biome_transition.gd`: Forest↔Water pair returns non-null decoration; FOREST↔FOREST pair returns null; biome order is commutative (Water,Forest) == (Forest,Water)
 - [ ] T014 [US1] Document manual validation steps for autotiling and biome transition edge cases in `specs/009-voxel-rendering-merging/quickstart.md` Steps 3 and 4
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Implement `src/rendering/bitmask_autotiler.gd` `refresh_tile(coord: Vector2i, grid: GardenGrid) -> int` — computes and returns 8-bit bitmask; also refreshes all 8 neighbour bitmasks by calling into `VoxelRenderer._on_tile_bitmask_changed` for each affected coord
-- [ ] T016 [US1] Add `_on_tile_placed(coord: Vector2i, tile: GardenTile)` handler in `src/rendering/voxel_renderer.gd` — calls `BitmaskAutotiler.refresh_tile`, updates `TileRenderState.bitmask8` and `.canonical`, marks owning `TileChunkRenderer` dirty, propagates neighbour refreshes
-- [ ] T017 [US1] Implement `src/rendering/biome_transition_layer.gd` — `BiomeTransitionLibrary` dictionary keyed by sorted `[biome_a, biome_b]` pair; `on_tile_placed(coord: Vector2i, grid: GardenGrid)` iterates the 4 cardinal neighbours, checks each pair against the library, spawns `MeshInstance3D` decoration nodes at the shared edge midpoint, stores `TransitionDecoration` records keyed by edge key
-- [ ] T018 [US1] Add the 5 MVP biome-pair entries to `BiomeTransitionLayer`'s `_init_library()`: FOREST↔WATER (reed + muddy bank), STONE↔WATER (rocky shore), EARTH↔WATER (sandy bank), FOREST↔EARTH (fallen log/root)
-- [ ] T019 [US1] Wire `BiomeTransitionLayer` into `VoxelRenderer._on_tile_placed` — call `BiomeTransitionLayer.on_tile_placed(coord, GameState.grid)` after bitmask refresh; parent spawned nodes under `DecorationParent` in `VoxelGarden.tscn`
-- [ ] T020 [US1] Cross-biome bitmask extension: update `BitmaskAutotiler.refresh_tile` so that a neighbour with a registered transition pair also sets the relevant bitmask bit (seamless visual blending between biomes)
+- [x] T015 [US1] Implement `src/rendering/bitmask_autotiler.gd` `refresh_tile(coord: Vector2i, grid: GardenGrid) -> int` — computes and returns 8-bit bitmask; also refreshes all 8 neighbour bitmasks by calling into `VoxelRenderer._on_tile_bitmask_changed` for each affected coord
+- [x] T016 [US1] Add `_on_tile_placed(coord: Vector2i, tile: GardenTile)` handler in `src/rendering/voxel_renderer.gd` — calls `BitmaskAutotiler.refresh_tile`, updates `TileRenderState.bitmask8` and `.canonical`, marks owning `TileChunkRenderer` dirty, propagates neighbour refreshes
+- [x] T017 [US1] Implement `src/rendering/biome_transition_layer.gd` — `BiomeTransitionLibrary` dictionary keyed by sorted `[biome_a, biome_b]` pair; `on_tile_placed(coord: Vector2i, grid: GardenGrid)` iterates the 4 cardinal neighbours, checks each pair against the library, spawns `MeshInstance3D` decoration nodes at the shared edge midpoint, stores `TransitionDecoration` records keyed by edge key
+- [x] T018 [US1] Add the 5 MVP biome-pair entries to `BiomeTransitionLayer`'s `_init_library()`: FOREST↔WATER (reed + muddy bank), STONE↔WATER (rocky shore), EARTH↔WATER (sandy bank), FOREST↔EARTH (fallen log/root)
+- [x] T019 [US1] Wire `BiomeTransitionLayer` into `VoxelRenderer._on_tile_placed` — call `BiomeTransitionLayer.on_tile_placed(coord, GameState.grid)` after bitmask refresh; parent spawned nodes under `DecorationParent` in `VoxelGarden.tscn`
+- [x] T020 [US1] Cross-biome bitmask extension: update `BitmaskAutotiler.refresh_tile` so that a neighbour with a registered transition pair also sets the relevant bitmask bit (seamless visual blending between biomes)
 
 **Checkpoint**: US1 autotiling and decoration are independently functional and demoable.
 
@@ -71,15 +71,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T021 [P] [US2] Add GUT coverage in `tests/unit/test_mountain_cluster.gd`: single Stone tile creates a singleton cluster; two adjacent Stone tiles merge into one cluster; placing a 10th Stone tile in a connected cluster emits `cluster_merged`; two bridging clusters (8+8+1=17) emit one `cluster_merged`
+- [x] T021 [P] [US2] Add GUT coverage in `tests/unit/test_mountain_cluster.gd`: single Stone tile creates a singleton cluster; two adjacent Stone tiles merge into one cluster; placing a 10th Stone tile in a connected cluster emits `cluster_merged`; two bridging clusters (8+8+1=17) emit one `cluster_merged`
 - [ ] T022 [US2] Document manual validation steps in `specs/009-voxel-rendering-merging/quickstart.md` Step 5 (9→10→11 tile sequences and two-cluster bridge scenario)
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Implement `src/rendering/mountain_cluster_tracker.gd` — union-find data structure over Stone tile coordinates; `register_tile(coord: Vector2i)` adds coord to existing cluster or creates singleton; merges adjacent clusters; emits `cluster_merged(cluster_id: int)` when threshold is crossed; `get_cluster(id)`, `get_cluster_for_coord(coord)`, and `is_merged(coord)` API
-- [ ] T024 [US2] Implement `src/rendering/mountain_mesh_builder.gd` — `build_mesh(members: Array[Vector2i]) -> Mesh` constructs a single `ArrayMesh` covering all member tile positions (simple extruded box per tile merged into one surface); used only for clusters ≥10
-- [ ] T025 [US2] Connect `MountainClusterTracker.cluster_merged` signal in `VoxelRenderer._ready`; handler hides all individual `TileRenderState` mesh instances for cluster members and instantiates a `MeshInstance3D` using `MountainMeshBuilder.build_mesh`, parented under `MountainMeshParent`; sets `TileRenderState.in_mountain = true` for all members
-- [ ] T026 [US2] Implement re-merge path in `VoxelRenderer` — when a new Stone tile is placed into an already-merged cluster (`is_merged` returns true), destroy the existing Mountain `MeshInstance3D` and call `MountainMeshBuilder.build_mesh` with the updated member list, replacing the node in the same `_process` frame
+- [x] T023 [US2] Implement `src/rendering/mountain_cluster_tracker.gd` — union-find data structure over Stone tile coordinates; `register_tile(coord: Vector2i)` adds coord to existing cluster or creates singleton; merges adjacent clusters; emits `cluster_merged(cluster_id: int)` when threshold is crossed; `get_cluster(id)`, `get_cluster_for_coord(coord)`, and `is_merged(coord)` API
+- [x] T024 [US2] Implement `src/rendering/mountain_mesh_builder.gd` — `build_mesh(members: Array[Vector2i]) -> Mesh` constructs a single `ArrayMesh` covering all member tile positions (simple extruded box per tile merged into one surface); used only for clusters ≥10
+- [x] T025 [US2] Connect `MountainClusterTracker.cluster_merged` signal in `VoxelRenderer._ready`; handler hides all individual `TileRenderState` mesh instances for cluster members and instantiates a `MeshInstance3D` using `MountainMeshBuilder.build_mesh`, parented under `MountainMeshParent`; sets `TileRenderState.in_mountain = true` for all members
+- [x] T026 [US2] Implement re-merge path in `VoxelRenderer` — when a new Stone tile is placed into an already-merged cluster (`is_merged` returns true), destroy the existing Mountain `MeshInstance3D` and call `MountainMeshBuilder.build_mesh` with the updated member list, replacing the node in the same `_process` frame
 
 **Checkpoint**: US2 Mountain merge is independently functional alongside US1.
 
@@ -93,15 +93,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Add GUT coverage in `tests/unit/test_mountain_cluster.gd` (extend existing suite): chunk coordinate calculation for edge tiles (coord (7,7) → chunk (0,0); coord (8,0) → chunk (1,0)); `TileChunkRenderer.mark_dirty()` sets `dirty = true`; rebuild clears `dirty` flag
+- [x] T027 [P] [US3] Add GUT coverage in `tests/unit/test_mountain_cluster.gd` (extend existing suite): chunk coordinate calculation for edge tiles (coord (7,7) → chunk (0,0); coord (8,0) → chunk (1,0)); `TileChunkRenderer.mark_dirty()` sets `dirty = true`; rebuild clears `dirty` flag
 - [ ] T028 [US3] Document manual performance validation in `specs/009-voxel-rendering-merging/quickstart.md` Step 6 (Godot Profiler, 60s pan, LOD switch confirmation)
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Ensure `TileChunkRenderer` uses `MultiMeshInstance3D` correctly: one `MultiMesh` per canonical variant; `MultiMesh.instance_count` set to current tile count for that variant in the chunk; `MultiMesh.set_instance_transform(i, transform)` called for each tile during rebuild; rebuild deferred to `_process` (one rebuild per dirty chunk per frame)
-- [ ] T030 [US3] Implement `src/rendering/lod_controller.gd` — export `lod_distance: float = 640.0` (20 tile-units × 32px); `update(camera_position: Vector3)` iterates all active `TileChunkRenderer` nodes and sets `MultiMeshInstance3D.visibility_range_end` / `visibility_range_begin` on the full-detail and LOD `MultiMesh` nodes to implement the chunk-level LOD switch
-- [ ] T031 [US3] Add `LodController` node to `VoxelGarden.tscn` and call `lod_controller.update(camera.global_position)` each frame from a `_process` hook in `VoxelRenderer`
-- [ ] T032 [US3] Wire chunk-dirty batching: when multiple tiles in the same chunk are placed in one frame (burst placement), `mark_dirty()` is idempotent — the chunk rebuilds exactly once per frame regardless of how many tiles were placed
+- [x] T029 [US3] Ensure `TileChunkRenderer` uses `MultiMeshInstance3D` correctly: one `MultiMesh` per canonical variant; `MultiMesh.instance_count` set to current tile count for that variant in the chunk; `MultiMesh.set_instance_transform(i, transform)` called for each tile during rebuild; rebuild deferred to `_process` (one rebuild per dirty chunk per frame)
+- [x] T030 [US3] Implement `src/rendering/lod_controller.gd` — export `lod_distance: float = 640.0` (20 tile-units × 32px); `update(camera_position: Vector3)` iterates all active `TileChunkRenderer` nodes and sets `MultiMeshInstance3D.visibility_range_end` / `visibility_range_begin` on the full-detail and LOD `MultiMesh` nodes to implement the chunk-level LOD switch
+- [x] T031 [US3] Add `LodController` node to `VoxelGarden.tscn` and call `lod_controller.update(camera.global_position)` each frame from a `_process` hook in `VoxelRenderer`
+- [x] T032 [US3] Wire chunk-dirty batching: when multiple tiles in the same chunk are placed in one frame (burst placement), `mark_dirty()` is idempotent — the chunk rebuilds exactly once per frame regardless of how many tiles were placed
 
 **Checkpoint**: US3 performance optimisations are in place; US1 and US2 visual behaviour is unchanged.
 

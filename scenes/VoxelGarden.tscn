@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/rendering/voxel_renderer.gd" id="1"]
+[ext_resource type="Script" path="res://src/rendering/mountain_cluster_tracker.gd" id="2"]
+[ext_resource type="Script" path="res://src/rendering/biome_transition_layer.gd" id="3"]
+[ext_resource type="Script" path="res://src/rendering/lod_controller.gd" id="4"]
+
+[node name="VoxelGarden" type="Node3D"]
+script = ExtResource("1")
+
+[node name="TileChunkParent" type="Node3D" parent="."]
+
+[node name="MountainMeshParent" type="Node3D" parent="."]
+
+[node name="DecorationParent" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="MountainClusterTracker" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="LodController" type="Node" parent="."]
+script = ExtResource("4")
