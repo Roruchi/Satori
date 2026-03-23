@@ -7,11 +7,28 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Momentum Panning (Priority: P1)
+### User Story 1 - Basic Drag Panning (Priority: P1)
 
-The player drags a single finger to move the camera around the garden. When they lift their finger the view continues to drift in the drag direction, decelerating organically to a full stop. The feel is fluid and tactile — like sliding a physical object across a smooth surface.
+The player drags a single finger (or mouse button on desktop) to move the camera around the garden. The camera position follows the drag delta directly — no inertia, no momentum. This lets the player explore beyond the visible grid immediately.
 
-**Why this priority**: Panning is the primary navigation interaction. The entire game is experienced through camera movement. If panning feels unresponsive or sticky the game is unpleasant to use regardless of content quality.
+**Why this priority**: The game currently only supports keyboard panning. Drag-to-pan is the foundational navigation primitive for all other camera interactions. Without it, players on touch devices or players who have placed tiles beyond the initial viewport cannot navigate at all.
+
+**Independent Test**: Open the game. Drag with the mouse (or a single finger on device) across the screen. Verify the camera follows the drag in real time and tiles previously off-screen come into view. Release the drag and verify the camera stops moving immediately.
+
+**Acceptance Scenarios**:
+
+1. **Given** the camera is at rest, **When** the player presses/touches and drags left, **Then** the camera pans left (world scrolls right) by exactly the drag delta in world-space units.
+2. **Given** the camera is at rest, **When** the player drags in any direction and releases, **Then** the camera stops moving immediately with no drift.
+3. **Given** drag panning is active, **When** the player releases the pointer/finger, **Then** a subsequent drag starts fresh from the new press position.
+4. **Given** keyboard panning is also in use, **When** the player drags while holding an arrow key, **Then** both inputs contribute to camera movement without conflict.
+
+---
+
+### User Story 2 - Momentum Panning (Priority: P2)
+
+Building on basic drag panning, when the player lifts their finger the view continues to drift in the drag direction, decelerating organically to a full stop. The feel is fluid and tactile — like sliding a physical object across a smooth surface.
+
+**Why this priority**: Momentum makes panning feel natural and is expected on mobile. It is lower priority than basic panning because the game is already fully navigable with direct drag.
 
 **Independent Test**: On a device, perform a fast swipe across the screen and lift the finger. Verify the camera continues to move after finger lift and gradually decelerates to a stop over approximately 0.5–1.5 seconds. Verify a slow drag with an abrupt stop produces little or no momentum drift.
 
@@ -24,7 +41,7 @@ The player drags a single finger to move the camera around the garden. When they
 
 ---
 
-### User Story 2 - Pinch-to-Zoom (Priority: P1)
+### User Story 3 - Pinch-to-Zoom (Priority: P2)
 
 The player places two fingers on screen and pinches them together or spreads them apart to zoom the garden in or out. Zoom respects a minimum and maximum limit and does not overshoot those limits regardless of pinch speed.
 
@@ -41,7 +58,7 @@ The player places two fingers on screen and pinches them together or spreads the
 
 ---
 
-### User Story 3 - Double-Tap Re-Centre (Priority: P2)
+### User Story 4 - Double-Tap Re-Centre (Priority: P2)
 
 A quick double-tap anywhere on the screen re-centres the camera on the Origin tile at grid coordinate (0,0). This gives the player a reliable "home base" navigation shortcut when they have panned far into the garden.
 
@@ -57,7 +74,7 @@ A quick double-tap anywhere on the screen re-centres the camera on the Origin ti
 
 ---
 
-### User Story 4 - Thumb-Zone UI Layout (Priority: P3)
+### User Story 5 - Thumb-Zone UI Layout (Priority: P3)
 
 All interactive UI elements — the tile type selector and the settings button — are positioned at the bottom of the screen in portrait orientation, reachable with either thumb without the player shifting their hand grip on a standard phone.
 
@@ -80,19 +97,21 @@ All interactive UI elements — the tile type selector and the settings button �
 - **Simultaneous pan and pinch gestures**: When a second finger touches down during an active pan, the system transitions to pinch-zoom mode; the pan velocity is discarded. When the second finger lifts, the system re-enters single-finger pan mode with zero initial momentum.
 - **Very fast pinch past zoom limits**: A fast pinch gesture that mathematically overshoots the zoom clamp must be hard-clamped at the limit in the same frame; the zoom must not briefly exceed the limit before snapping back.
 - **Double-tap misidentified as two single taps**: The gesture recogniser must distinguish a double-tap from two slow successive taps (threshold: two taps within 300ms on approximately the same screen position). Slow taps that might also be tile placements must not accidentally re-centre the camera.
+- **Drag panning conflicts with tile placement**: A drag gesture must not trigger tile placement. The PlacementController must only respond to taps (press+release with minimal movement), not drags.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST respond to single-finger drag gestures to pan the camera across the garden
-- **FR-002**: System MUST apply momentum to panning so the camera continues to drift after the finger is lifted, decelerating smoothly to rest; drift duration and deceleration curve MUST be tunable via exported parameters
-- **FR-003**: System MUST respond to two-finger pinch gestures to zoom the camera in and out proportionally to the pinch scale delta
-- **FR-004**: System MUST enforce configurable minimum and maximum zoom limits, clamping zoom hard at those values with no overshoot
-- **FR-005**: System MUST re-centre the camera on the Origin tile (0,0) when a double-tap gesture is detected (two taps within 300ms at approximately the same position)
-- **FR-006**: System MUST apply soft exponential resistance to camera movement when the camera approaches or exceeds the garden's bounding edge, without ever hard-locking movement
-- **FR-007**: System MUST trigger haptic feedback on tile placement and discovery events when haptics are enabled (setting sourced from spec 013)
-- **FR-008**: All interactive UI elements (tile selector, settings button) MUST be positioned within the bottom 30% of the screen height in portrait orientation to remain within natural thumb reach
+- **FR-001**: System MUST respond to single-finger drag gestures (and mouse-drag on desktop) to pan the camera across the garden by exactly the drag delta
+- **FR-002**: System MUST stop panning immediately when the drag ends (US1 baseline); momentum (US2) is a subsequent enhancement
+- **FR-003**: System MUST apply momentum to panning so the camera continues to drift after the finger is lifted, decelerating smoothly to rest; drift duration and deceleration curve MUST be tunable via exported parameters (US2)
+- **FR-004**: System MUST respond to two-finger pinch gestures to zoom the camera in and out proportionally to the pinch scale delta
+- **FR-005**: System MUST enforce configurable minimum and maximum zoom limits, clamping zoom hard at those values with no overshoot
+- **FR-006**: System MUST re-centre the camera on the Origin tile (0,0) when a double-tap gesture is detected (two taps within 300ms at approximately the same position)
+- **FR-007**: System MUST apply soft exponential resistance to camera movement when the camera approaches or exceeds the garden's bounding edge, without ever hard-locking movement
+- **FR-008**: System MUST NOT trigger tile placement during a drag gesture — only taps (press+release with movement below a configurable pixel threshold) should be treated as placement intent
+- **FR-009**: All interactive UI elements (tile selector, settings button) MUST be positioned within the bottom 30% of the screen height in portrait orientation to remain within natural thumb reach
 
 ### Key Entities
 
@@ -103,7 +122,8 @@ All interactive UI elements — the tile type selector and the settings button �
 
 ### Measurable Outcomes
 
-- **SC-001**: Camera panning feels natural — after a fast swipe the momentum drift decelerates smoothly with no sudden stop, and a frame-by-frame velocity graph shows monotonically decreasing speed from finger-lift to rest
-- **SC-002**: Pinch-to-zoom works reliably with no overshoot — zoom level measured at every frame never exceeds the defined maximum or falls below the defined minimum regardless of pinch speed
-- **SC-003**: Double-tap re-centring moves the camera so that tile (0,0) is centred in the viewport within one frame of the gesture being recognised, verified by automated gesture injection test
-- **SC-004**: The tile selector and settings button are reachable with a single thumb without grip adjustment on a standard 6.1-inch portrait-mode phone, verified by a reachability heatmap overlay showing all controls inside the standard thumb arc
+- **SC-001**: Drag panning moves the camera in real time with no perceptible lag — the world position under the pointer/finger matches the pointer/finger position at all times during the drag
+- **SC-002**: Camera panning with momentum feels natural — after a fast swipe the momentum drift decelerates smoothly with no sudden stop, and a frame-by-frame velocity graph shows monotonically decreasing speed from finger-lift to rest (US2)
+- **SC-003**: Pinch-to-zoom works reliably with no overshoot — zoom level measured at every frame never exceeds the defined maximum or falls below the defined minimum regardless of pinch speed
+- **SC-004**: Double-tap re-centring moves the camera so that tile (0,0) is centred in the viewport within one frame of the gesture being recognised
+- **SC-005**: The tile selector and settings button are reachable with a single thumb without grip adjustment on a standard 6.1-inch portrait-mode phone, verified by a reachability heatmap overlay showing all controls inside the standard thumb arc

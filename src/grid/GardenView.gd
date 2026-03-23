@@ -1,11 +1,7 @@
 ## GardenView — renders the garden grid using immediate-mode 2D drawing.
-## Handles camera panning with arrow / WASD keys (ui_left/right/up/down actions).
 extends Node2D
 
 const TILE_SIZE: int = 32
-const PAN_SPEED: float = 300.0
-
-@onready var _camera: Camera2D = $"../Camera2D"
 
 var _hover_coord: Vector2i = Vector2i(-9999, -9999)
 var _hover_valid: bool = false
@@ -13,11 +9,6 @@ var _hover_valid: bool = false
 func _ready() -> void:
 	GameState.tile_placed.connect(_on_tile_placed)
 	queue_redraw()
-
-func _process(delta: float) -> void:
-	var direction := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	if direction != Vector2.ZERO:
-		_camera.position += direction * PAN_SPEED * delta
 
 func _on_tile_placed(_coord: Vector2i, _tile: GardenTile) -> void:
 	queue_redraw()
