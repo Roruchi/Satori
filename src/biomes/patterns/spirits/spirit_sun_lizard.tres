@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_sp014"]
+
+[resource]
+script = ExtResource("1_sp014")
+discovery_id = "spirit_sun_lizard"
+pattern_type = 2
+required_biomes = Array[int]([2])
+forbidden_biomes = Array[int]([])
+size_threshold = 0
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {"radius": 1, "biomes": {3: 4}}
+prerequisite_ids = Array[String]([])

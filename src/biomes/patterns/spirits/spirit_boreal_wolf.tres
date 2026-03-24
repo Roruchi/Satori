@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_sp027"]
+
+[resource]
+script = ExtResource("1_sp027")
+discovery_id = "spirit_boreal_wolf"
+pattern_type = 3
+required_biomes = Array[int]([5])
+forbidden_biomes = Array[int]([])
+size_threshold = 10
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String](["disc_boreal_forest"])

@@ -1,0 +1,276 @@
+class_name SpiritCatalogData
+extends RefCounted
+
+func get_entries() -> Array[Dictionary]:
+	return [
+		{
+			"spirit_id": "spirit_red_fox",
+			"display_name": "Red Fox",
+			"riddle_text": "Three forest corners, a triangle of green\u2026",
+			"pattern_id": "spirit_red_fox",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 0.5, 0.0)
+		},
+		{
+			"spirit_id": "spirit_mist_stag",
+			"display_name": "Mist Stag",
+			"riddle_text": "The ancient stand holds a secret hoofprint\u2026",
+			"pattern_id": "spirit_mist_stag",
+			"wander_radius": 6,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 1.0, 1.0)
+		},
+		{
+			"spirit_id": "spirit_emerald_snake",
+			"display_name": "Emerald Snake",
+			"riddle_text": "Seven emerald links stretch without bending\u2026",
+			"pattern_id": "spirit_emerald_snake",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.0, 0.7, 0.2)
+		},
+		{
+			"spirit_id": "spirit_owl_of_silence",
+			"display_name": "Owl of Silence",
+			"riddle_text": "Where stone meets leaf in sacred silence\u2026",
+			"pattern_id": "spirit_owl_of_silence",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.5, 0.5, 0.5)
+		},
+		{
+			"spirit_id": "spirit_tree_frog",
+			"display_name": "Tree Frog",
+			"riddle_text": "Green toes dip where two worlds meet\u2026",
+			"pattern_id": "spirit_tree_frog",
+			"wander_radius": 2,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.2, 0.8, 0.3)
+		},
+		{
+			"spirit_id": "spirit_white_heron",
+			"display_name": "White Heron",
+			"riddle_text": "Five still mirrors in a line await the dancer\u2026",
+			"pattern_id": "spirit_white_heron",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 1.0, 1.0)
+		},
+		{
+			"spirit_id": "spirit_koi_fish",
+			"display_name": "Koi Fish",
+			"riddle_text": "Four pure waters form a perfect jewel\u2026",
+			"pattern_id": "spirit_koi_fish",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 0.5, 0.0)
+		},
+		{
+			"spirit_id": "spirit_river_otter",
+			"display_name": "River Otter",
+			"riddle_text": "The long winding river remembers every curve\u2026",
+			"pattern_id": "spirit_river_otter",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.5, 0.3, 0.1)
+		},
+		{
+			"spirit_id": "spirit_blue_kingfisher",
+			"display_name": "Blue Kingfisher",
+			"riddle_text": "Blue flash born where forest drinks of water\u2026",
+			"pattern_id": "spirit_blue_kingfisher",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.0, 0.0, 1.0)
+		},
+		{
+			"spirit_id": "spirit_dragonfly",
+			"display_name": "Dragonfly",
+			"riddle_text": "Jewelled wings rest where earth embraces water\u2026",
+			"pattern_id": "spirit_dragonfly",
+			"wander_radius": 2,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.2, 0.6, 0.9)
+		},
+		{
+			"spirit_id": "spirit_mountain_goat",
+			"display_name": "Mountain Goat",
+			"riddle_text": "Hooves ring against the ancient mountain\u2019s face\u2026",
+			"pattern_id": "spirit_mountain_goat",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.7, 0.7, 0.7)
+		},
+		{
+			"spirit_id": "spirit_stone_golem",
+			"display_name": "Stone Golem",
+			"riddle_text": "Nine stones locked together, a fortress of will\u2026",
+			"pattern_id": "spirit_stone_golem",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.5, 0.5, 0.5)
+		},
+		{
+			"spirit_id": "spirit_granite_ram",
+			"display_name": "Granite Ram",
+			"riddle_text": "Twenty stones rise in unbroken granite majesty\u2026",
+			"pattern_id": "spirit_granite_ram",
+			"wander_radius": 6,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.4, 0.4, 0.4)
+		},
+		{
+			"spirit_id": "spirit_sun_lizard",
+			"display_name": "Sun Lizard",
+			"riddle_text": "The basking warmth of four earthen companions\u2026",
+			"pattern_id": "spirit_sun_lizard",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 1.0, 0.0)
+		},
+		{
+			"spirit_id": "spirit_rock_badger",
+			"display_name": "Rock Badger",
+			"riddle_text": "A stubborn presence at the garden\u2019s outermost edge\u2026",
+			"pattern_id": "spirit_rock_badger",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.6, 0.5, 0.4)
+		},
+		{
+			"spirit_id": "spirit_golden_bee",
+			"display_name": "Golden Bee",
+			"riddle_text": "Ten golden fields hum with ancient sweetness\u2026",
+			"pattern_id": "spirit_golden_bee",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 0.85, 0.0)
+		},
+		{
+			"spirit_id": "spirit_jade_beetle",
+			"display_name": "Jade Beetle",
+			"riddle_text": "Fifteen woven greens call forth the jewelled back\u2026",
+			"pattern_id": "spirit_jade_beetle",
+			"wander_radius": 6,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.0, 0.6, 0.3)
+		},
+		{
+			"spirit_id": "spirit_meadow_lark",
+			"display_name": "Meadow Lark",
+			"riddle_text": "The verdant valley blooms to welcome the singer\u2026",
+			"pattern_id": "spirit_meadow_lark",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(1.0, 0.9, 0.3)
+		},
+		{
+			"spirit_id": "spirit_field_mouse",
+			"display_name": "Field Mouse",
+			"riddle_text": "One small heart touching three great kingdoms\u2026",
+			"pattern_id": "spirit_field_mouse",
+			"wander_radius": 2,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.7, 0.6, 0.5)
+		},
+		{
+			"spirit_id": "spirit_hare",
+			"display_name": "Hare",
+			"riddle_text": "Four savannah steps taken in a single breath\u2026",
+			"pattern_id": "spirit_hare",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.9, 0.85, 0.8)
+		},
+		{
+			"spirit_id": "spirit_marsh_frog",
+			"display_name": "Marsh Frog",
+			"riddle_text": "Seven murky strides mark the low country path\u2026",
+			"pattern_id": "spirit_marsh_frog",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.1, 0.5, 0.2)
+		},
+		{
+			"spirit_id": "spirit_peat_salamander",
+			"display_name": "Peat Salamander",
+			"riddle_text": "The dark heart of the bog holds a secret\u2026",
+			"pattern_id": "spirit_peat_salamander",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.3, 0.5, 0.3)
+		},
+		{
+			"spirit_id": "spirit_swamp_crane",
+			"display_name": "Swamp Crane",
+			"riddle_text": "Reed, river, and forest weave a crane\u2019s sanctuary\u2026",
+			"pattern_id": "spirit_swamp_crane",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.8, 0.9, 0.9)
+		},
+		{
+			"spirit_id": "spirit_murk_crocodile",
+			"display_name": "Murk Crocodile",
+			"riddle_text": "The murk surrounds the still eye of water\u2026",
+			"pattern_id": "spirit_murk_crocodile",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.2, 0.4, 0.2)
+		},
+		{
+			"spirit_id": "spirit_mud_crab",
+			"display_name": "Mud Crab",
+			"riddle_text": "Ancient reef draws the shore-walker home\u2026",
+			"pattern_id": "spirit_mud_crab",
+			"wander_radius": 2,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.6, 0.5, 0.3)
+		},
+		{
+			"spirit_id": "spirit_frost_owl",
+			"display_name": "Frost Owl",
+			"riddle_text": "The boreal night hosts a pale watcher\u2026",
+			"pattern_id": "spirit_frost_owl",
+			"wander_radius": 4,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.9, 0.95, 1.0)
+		},
+		{
+			"spirit_id": "spirit_boreal_wolf",
+			"display_name": "Boreal Wolf",
+			"riddle_text": "Ten frost-bitten borders mark the wolf\u2019s range\u2026",
+			"pattern_id": "spirit_boreal_wolf",
+			"wander_radius": 6,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.7, 0.8, 0.9)
+		},
+		{
+			"spirit_id": "spirit_tundra_lynx",
+			"display_name": "Tundra Lynx",
+			"riddle_text": "River and tundra cross\u2014the lynx pauses\u2026",
+			"pattern_id": "spirit_tundra_lynx",
+			"wander_radius": 5,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.8, 0.75, 0.7)
+		},
+		{
+			"spirit_id": "spirit_ice_cavern_bat",
+			"display_name": "Ice Cavern Bat",
+			"riddle_text": "Sealed within the stone-water dark, wings wait\u2026",
+			"pattern_id": "spirit_ice_cavern_bat",
+			"wander_radius": 3,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.6, 0.7, 0.9)
+		},
+		{
+			"spirit_id": "spirit_sky_whale",
+			"display_name": "Sky Whale",
+			"riddle_text": "A thousand tiles, perfectly balanced, call to the sky\u2026",
+			"pattern_id": "spirit_sky_whale",
+			"wander_radius": 50,
+			"wander_speed": 2.0,
+			"color_hint": Color(0.4, 0.6, 1.0)
+		},
+	]

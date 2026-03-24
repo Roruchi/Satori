@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_sp017"]
+
+[resource]
+script = ExtResource("1_sp017")
+discovery_id = "spirit_jade_beetle"
+pattern_type = 0
+required_biomes = Array[int]([0])
+forbidden_biomes = Array[int]([])
+size_threshold = 15
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String]([])
