@@ -9,6 +9,11 @@ const TILE_RADIUS: float = 20.0
 ## Depth of the 2.5D voxel side-face in pixels (at zoom=2 this is ~7px on screen).
 const VOXEL_DEPTH: float = 3.5
 
+## Number of background stars.
+const _STAR_COUNT: int = 150
+## Number of floating mist wisps (6 ambient + 4 edge-biased).
+const _MIST_COUNT: int = 10
+
 # ---------------------------------------------------------------------------
 # Hover state
 # ---------------------------------------------------------------------------
@@ -26,6 +31,13 @@ var _mix_timer: float = 0.0
 var _reject_coord: Vector2i = Vector2i(-9999, -9999)
 var _reject_reason: String = ""
 var _reject_timer: float = 0.0
+
+## Continuous time accumulator for background animations.
+var _anim_time: float = 0.0
+## Pre-computed star data: [norm_x, norm_y, px_size, phase, speed, hue_tint]
+var _bg_stars: Array = []
+## Pre-computed mist wisp data: [nx, ny, w_frac, h_frac, alpha, pulse_spd, drift_spd, phase, amp_x, amp_y]
+var _bg_mists: Array = []
 
 # ---------------------------------------------------------------------------
 # Cluster cache  (unified, keyed by biome)
@@ -67,19 +79,17 @@ func _ready() -> void:
 	if scan_service != null and scan_service.has_signal("discovery_triggered"):
 		scan_service.discovery_triggered.connect(_on_discovery_triggered)
 
+	_init_background_data()
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
-	var needs_redraw := false
+	_anim_time += delta
 	if _mix_timer > 0.0:
 		_mix_timer -= delta
-		needs_redraw = true
 	if _reject_timer > 0.0:
 		_reject_timer -= delta
-		needs_redraw = true
-	if needs_redraw:
-		queue_redraw()
+	queue_redraw()  # always redraw for background animation
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +197,9 @@ func _draw() -> void:
 		var border: PackedVector2Array = _hex_polygon(hc, TILE_RADIUS)
 		border.append(border[0])
 		draw_polyline(border, Color(1.0, 0.6, 0.1, 0.9), 2.5)
+
+	# 6. Screen-edge mist vignette (drawn last so it overlays everything)
+	_draw_edge_mist()
 
 
 # ---------------------------------------------------------------------------
@@ -837,30 +850,241 @@ func _draw_obsidian_expanse_overlay(coords: Array[Vector2i]) -> void:
 
 
 # ---------------------------------------------------------------------------
-# Background
+# Background — stars, floating mist, animated void
 # ---------------------------------------------------------------------------
 
-## Draw a dark pixelated earth background behind all tiles.
+## Pre-compute all star and mist wisp data once in _ready().
+## Each star: [norm_x, norm_y, px_size, phase, speed, hue_tint]
+## Each wisp: [nx, ny, w_frac, h_frac, alpha_base, pulse_spd, drift_spd, phase, amp_x, amp_y]
+func _init_background_data() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0xC0FFEE
+
+	_bg_stars.clear()
+	for _i: int in range(_STAR_COUNT):
+		_bg_stars.append([
+			rng.randf(),                     # norm_x  [0, 1] screen fraction
+			rng.randf(),                     # norm_y  [0, 1] screen fraction
+			rng.randf_range(0.7, 2.2),       # pixel size
+			rng.randf() * TAU,               # twinkle phase
+			rng.randf_range(0.4, 2.5),       # twinkle speed
+			rng.randf_range(-1.0, 1.0),      # hue tint  (−1 warm, +1 cool-blue)
+		])
+
+	_bg_mists.clear()
+	var mrng := RandomNumberGenerator.new()
+	mrng.seed = 0xD1F0A7
+
+	# 6 ambient wisps scattered randomly across the screen
+	for _i: int in range(6):
+		_bg_mists.append([
+			mrng.randf_range(-0.05, 1.05),   # nx
+			mrng.randf_range(-0.05, 1.05),   # ny
+			mrng.randf_range(0.20, 0.50),    # width fraction of screen
+			mrng.randf_range(0.12, 0.28),    # height fraction of screen
+			mrng.randf_range(0.025, 0.060),  # alpha_base
+			mrng.randf_range(0.12, 0.30),    # pulse speed
+			mrng.randf_range(0.025, 0.070),  # drift speed
+			mrng.randf() * TAU,              # phase offset
+			mrng.randf_range(0.025, 0.075),  # drift amplitude X (fraction of screen width)
+			mrng.randf_range(0.010, 0.040),  # drift amplitude Y (fraction of screen height)
+		])
+
+	# 4 edge-biased wisps (one per screen edge) — slightly larger and denser
+	var edge_anchors: Array = [
+		[0.08, 0.50],  # left
+		[0.92, 0.50],  # right
+		[0.50, 0.07],  # top
+		[0.50, 0.93],  # bottom
+	]
+	for ea: Array in edge_anchors:
+		_bg_mists.append([
+			float(ea[0]) + mrng.randf_range(-0.08, 0.08),
+			float(ea[1]) + mrng.randf_range(-0.08, 0.08),
+			mrng.randf_range(0.30, 0.60),    # wider
+			mrng.randf_range(0.18, 0.38),
+			mrng.randf_range(0.030, 0.080),  # slightly more visible
+			mrng.randf_range(0.08, 0.22),
+			mrng.randf_range(0.010, 0.040),  # slower drift
+			mrng.randf() * TAU,
+			mrng.randf_range(0.010, 0.040),
+			mrng.randf_range(0.005, 0.020),
+		])
+
+
+## Return the world-space Rect2 currently visible on screen, derived from the
+## active Camera2D position and zoom.  Falls back to a viewport-centred rect
+## when no camera is found.
+func _get_world_screen_rect() -> Rect2:
+	var vp_size: Vector2 = get_viewport_rect().size
+	var cam: Camera2D = get_viewport().get_camera_2d()
+	if cam == null:
+		return Rect2(Vector2(-vp_size.x * 0.5, -vp_size.y * 0.5), vp_size)
+	var center: Vector2 = cam.get_screen_center_position()
+	var half: Vector2 = vp_size / (cam.zoom * 2.0)
+	return Rect2(center - half, half * 2.0)
+
+
+## Draw the animated background: dark cosmic void, drifting mist wisps, and
+## twinkling stars.  All coordinates are in world space based on the visible
+## screen rect so the elements remain screen-relative during camera panning.
 func _draw_background() -> void:
-	# Determine approximate extent of the placed tiles to size the background
-	var extent: float = 300.0
-	if not GameState.grid.tiles.is_empty():
-		for coord: Vector2i in GameState.grid.tiles:
-			var px: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-			extent = maxf(extent, maxf(absf(px.x), absf(px.y)) + TILE_RADIUS * 4.0)
-	# Dark earth base
-	draw_rect(Rect2(Vector2(-extent, -extent), Vector2(extent * 2.0, extent * 2.0)), Color(0.07, 0.05, 0.03))
-	# Subtle grain pattern using a deterministic seed
+	var sr: Rect2 = _get_world_screen_rect()
+	var sw: float = sr.size.x
+	var sh: float = sr.size.y
+	var sx: float = sr.position.x
+	var sy: float = sr.position.y
+
+	# --- Void base (padded so no gap appears when camera pans) ---
+	var pad: float = 60.0
+	draw_rect(Rect2(Vector2(sx - pad, sy - pad), Vector2(sw + pad * 2.0, sh + pad * 2.0)),
+		Color(0.04, 0.03, 0.07))
+
+	# --- Floating mist wisps (drawn before stars so they appear behind) ---
+	for wisp: Array in _bg_mists:
+		var drift_t: float = _anim_time * float(wisp[6]) + float(wisp[7])
+		var offset_x: float = sin(drift_t) * float(wisp[8]) * sw
+		var offset_y: float = cos(drift_t * 0.72 + 1.4) * float(wisp[9]) * sh
+		var wx: float = sx + float(wisp[0]) * sw + offset_x
+		var wy: float = sy + float(wisp[1]) * sh + offset_y
+		var wisp_w: float = float(wisp[2]) * sw
+		var wisp_h: float = float(wisp[3]) * sh
+		var alpha: float = float(wisp[4]) * (0.58 + 0.42 * sin(_anim_time * float(wisp[5]) + float(wisp[7])))
+		# Approximate ellipse with a 16-gon polygon
+		var pts := PackedVector2Array()
+		pts.resize(16)
+		for j: int in range(16):
+			var ang: float = TAU * float(j) / 16.0
+			pts[j] = Vector2(wx + cos(ang) * wisp_w * 0.5, wy + sin(ang) * wisp_h * 0.5)
+		draw_colored_polygon(pts, Color(0.48, 0.58, 0.82, alpha))
+
+	# --- Twinkling stars ---
+	for star: Array in _bg_stars:
+		var world_x: float = sx + float(star[0]) * sw
+		var world_y: float = sy + float(star[1]) * sh
+		var px_size: float = float(star[2])
+		var phase: float = float(star[3])
+		var spd: float = float(star[4])
+		var hue: float = float(star[5])
+
+		var twinkle: float = 0.45 + 0.55 * sin(_anim_time * spd + phase)
+		var alpha: float = maxf(0.0, twinkle * (0.40 + 0.50 * (px_size - 0.7) / 1.5))
+
+		# Warm tint: hue > 0 → slightly warm yellow, hue < 0 → cool blue-white
+		var star_r: float = clampf(0.88 - hue * 0.07, 0.0, 1.0)
+		var star_g: float = clampf(0.93 - hue * 0.03, 0.0, 1.0)
+		var star_b: float = 1.0
+		draw_circle(Vector2(world_x, world_y), px_size, Color(star_r, star_g, star_b, alpha))
+
+		# Cross-hair glint for large bright stars
+		if px_size > 1.5 and twinkle > 0.75:
+			var gl: float = px_size * 3.2 * twinkle
+			var gc: Color = Color(star_r, star_g, star_b, alpha * 0.42)
+			draw_line(Vector2(world_x - gl, world_y), Vector2(world_x + gl, world_y), gc, 0.7)
+			draw_line(Vector2(world_x, world_y - gl), Vector2(world_x, world_y + gl), gc, 0.7)
+
+	# --- Subtle earthen grain (world-space, seeded, capped) ---
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 0x5A7201
-	# Cap grain count to avoid O(n²) draw calls on large grids
-	var grain_count: int = mini(int(extent * extent * 0.0015), 280)
+	var grain_count: int = mini(int(sw * sh * 0.0013), 240)
 	for _i: int in range(grain_count):
-		var gx: float = rng.randf_range(-extent, extent)
-		var gy: float = rng.randf_range(-extent, extent)
-		var gr: float = rng.randf_range(0.6, 2.2)
-		var bright: float = rng.randf_range(0.10, 0.20)
-		draw_circle(Vector2(gx, gy), gr, Color(bright * 0.9, bright * 0.65, bright * 0.30, 0.55))
+		var gx: float = sx + rng.randf() * sw
+		var gy: float = sy + rng.randf() * sh
+		var gr: float = rng.randf_range(0.5, 1.8)
+		var bright: float = rng.randf_range(0.08, 0.16)
+		draw_circle(Vector2(gx, gy), gr, Color(bright * 0.88, bright * 0.62, bright * 0.28, 0.48))
+
+
+## Draw an animated screen-edge mist vignette.
+## Uses per-vertex alpha on draw_polygon() to create smooth gradient bands.
+## Also places animated wisp puffs near each corner.
+func _draw_edge_mist() -> void:
+	var sr: Rect2 = _get_world_screen_rect()
+	var sw: float = sr.size.x
+	var sh: float = sr.size.y
+	var sx: float = sr.position.x
+	var sy: float = sr.position.y
+
+	var fade_x: float = sw * 0.18
+	var fade_y: float = sh * 0.18
+
+	# Breathing animation: alpha gently pulses ±8 %
+	var pulse: float = 0.40 + 0.08 * sin(_anim_time * 0.28)
+	var mc_r: float = 0.08
+	var mc_g: float = 0.10
+	var mc_b: float = 0.22
+
+	var edge_col: Color = Color(mc_r, mc_g, mc_b, pulse)
+	var clear_col: Color = Color(mc_r, mc_g, mc_b, 0.0)
+
+	# Left edge
+	draw_polygon(PackedVector2Array([
+		Vector2(sx, sy),
+		Vector2(sx + fade_x, sy),
+		Vector2(sx + fade_x, sy + sh),
+		Vector2(sx, sy + sh),
+	]), PackedColorArray([edge_col, clear_col, clear_col, edge_col]))
+
+	# Right edge
+	draw_polygon(PackedVector2Array([
+		Vector2(sx + sw, sy),
+		Vector2(sx + sw - fade_x, sy),
+		Vector2(sx + sw - fade_x, sy + sh),
+		Vector2(sx + sw, sy + sh),
+	]), PackedColorArray([edge_col, clear_col, clear_col, edge_col]))
+
+	# Top edge
+	draw_polygon(PackedVector2Array([
+		Vector2(sx, sy),
+		Vector2(sx + sw, sy),
+		Vector2(sx + sw, sy + fade_y),
+		Vector2(sx, sy + fade_y),
+	]), PackedColorArray([edge_col, edge_col, clear_col, clear_col]))
+
+	# Bottom edge
+	draw_polygon(PackedVector2Array([
+		Vector2(sx, sy + sh),
+		Vector2(sx + sw, sy + sh),
+		Vector2(sx + sw, sy + sh - fade_y),
+		Vector2(sx, sy + sh - fade_y),
+	]), PackedColorArray([edge_col, edge_col, clear_col, clear_col]))
+
+	# --- Animated wisps drifting in from the screen edges ---
+	# 6 wisps evenly distributed around the perimeter, drifting inward slowly
+	for wi: int in range(6):
+		var wp: float = float(wi) * TAU / 6.0
+		var wisp_alpha: float = 0.055 + 0.025 * sin(_anim_time * 0.18 + wp)
+		var drift_x: float = sin(_anim_time * 0.10 + wp * 1.3) * sw * 0.025
+		var drift_y: float = cos(_anim_time * 0.08 + wp * 0.9) * sh * 0.020
+
+		var wx: float = sx
+		var wy: float = sy
+		var ww: float = sw * 0.30
+		var wh: float = sh * 0.30
+		# Cycle: 0,3 → left/right; 1,4 → top/bottom; 2,5 → corner puffs
+		match wi % 3:
+			0:
+				wx = sx + sw * (0.02 if wi < 3 else 0.98) + drift_x
+				wy = sy + sh * (0.35 + float(wi / 3) * 0.30) + drift_y
+				ww = sw * 0.30
+				wh = sh * 0.40
+			1:
+				wx = sx + sw * (0.35 + float(wi / 3) * 0.30) + drift_x
+				wy = sy + sh * (0.03 if wi < 3 else 0.97) + drift_y
+				ww = sw * 0.40
+				wh = sh * 0.28
+			_:
+				wx = sx + sw * (0.10 if wi < 3 else 0.90) + drift_x
+				wy = sy + sh * (0.10 if wi < 3 else 0.90) + drift_y
+				ww = sw * 0.25
+				wh = sh * 0.22
+
+		var w_pts := PackedVector2Array()
+		w_pts.resize(14)
+		for j: int in range(14):
+			var ang: float = TAU * float(j) / 14.0
+			w_pts[j] = Vector2(wx + cos(ang) * ww * 0.5, wy + sin(ang) * wh * 0.5)
+		draw_colored_polygon(w_pts, Color(0.42, 0.52, 0.78, wisp_alpha))
 
 
 # ---------------------------------------------------------------------------
