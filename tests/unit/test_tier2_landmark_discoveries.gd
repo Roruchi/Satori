@@ -355,8 +355,8 @@ func test_monks_rest_fires_only_once() -> void:
 	var matcher := _make_matcher([pattern])
 	var grid := GridMapScript.new()
 	grid.place_tile(Vector2i(0, 0),   BiomeType.Value.EARTH)
-	for nb: Vector2i in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1), Vector2i(1,-1), Vector2i(-1,1)]:
-		grid.place_tile(nb, BiomeType.Value.FOREST)
+	for neighbor_coord: Vector2i in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1), Vector2i(1,-1), Vector2i(-1,1)]:
+		grid.place_tile(neighbor_coord, BiomeType.Value.FOREST)
 	var count: int = 0
 	matcher.discovery_triggered.connect(func(_id: String, _c: Array[Vector2i]) -> void:
 		count += 1

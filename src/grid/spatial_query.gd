@@ -47,8 +47,8 @@ func recipe_matches_at(anchor: Vector2i, shape_recipe: Array[Dictionary], tile_l
 		var offset: Vector2i = entry["offset"]
 		var must_be_empty: bool = entry.get("must_be_empty", false)
 		var is_absolute: bool = entry.get("absolute_anchor", false)
-		var effective_coord: Vector2i = offset if is_absolute else anchor + offset
-		var tile: GardenTile = tile_lookup.call(effective_coord)
+		var target_coord: Vector2i = offset if is_absolute else anchor + offset
+		var tile: GardenTile = tile_lookup.call(target_coord)
 		if must_be_empty:
 			if tile != null:
 				return false

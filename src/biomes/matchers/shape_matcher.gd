@@ -21,8 +21,8 @@ func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: Spati
 			# Enforce forbidden_biomes: no neighbour of the anchor may have these biomes.
 			if not pattern.forbidden_biomes.is_empty():
 				var forbidden_match := false
-				for nb: Vector2i in spatial_query.get_hex_neighbors(anchor):
-					var nb_tile: GardenTile = grid.get_tile(nb)
+				for neighbor_coord: Vector2i in spatial_query.get_hex_neighbors(anchor):
+					var nb_tile: GardenTile = grid.get_tile(neighbor_coord)
 					if nb_tile != null and pattern.forbidden_biomes.has(nb_tile.biome):
 						forbidden_match = true
 						break
