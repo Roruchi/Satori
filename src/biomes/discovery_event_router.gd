@@ -15,6 +15,8 @@ func set_queue(queue: DiscoveryNotificationQueue) -> void:
 	_queue = queue
 
 func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i]) -> void:
+	if discovery_id.begins_with("spirit_"):
+		return  # Spirit discoveries are handled by SpiritService
 	var meta: Dictionary = _catalog.lookup(discovery_id)
 	if meta.is_empty():
 		RuntimeLogger.warn("DiscoveryEventRouter", "No catalog entry for: %s" % discovery_id)

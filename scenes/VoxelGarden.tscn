@@ -20,3 +20,5 @@ script = ExtResource("2")
 
 [node name="LodController" type="Node" parent="."]
 script = ExtResource("4")
+
+[node name="SpiritLayer" type="Node3D" parent="."]

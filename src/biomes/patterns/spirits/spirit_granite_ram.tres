@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_sp013"]
+
+[resource]
+script = ExtResource("1_sp013")
+discovery_id = "spirit_granite_ram"
+pattern_type = 0
+required_biomes = Array[int]([2])
+forbidden_biomes = Array[int]([])
+size_threshold = 20
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String]([])
