@@ -48,3 +48,29 @@ func test_shape_pattern_triggers_for_hex_offsets() -> void:
 	)
 	matcher.scan_and_emit(grid)
 	assert_eq(emitted, ["disc_shape"])
+
+
+func test_shape_pattern_triggers_for_rotated_hex_offsets() -> void:
+	var matcher := PatternMatcher.new()
+	var shape := PatternDefinition.new()
+	shape.discovery_id = "disc_shape_rotated"
+	shape.pattern_type = PatternDefinition.PatternType.SHAPE
+	shape.shape_recipe = [
+		{"offset": Vector2i(0, 0), "biome": BiomeType.Value.FOREST},
+		{"offset": Vector2i(1, 0), "biome": BiomeType.Value.WATER},
+		{"offset": Vector2i(0, 1), "biome": BiomeType.Value.STONE},
+	]
+	matcher.set_patterns([shape])
+
+	var grid := GridMapScript.new()
+	# 60-degree clockwise rotation of the recipe around the anchor.
+	grid.place_tile(Vector2i(5, 3), BiomeType.Value.FOREST)
+	grid.place_tile(Vector2i(5, 4), BiomeType.Value.WATER)
+	grid.place_tile(Vector2i(4, 4), BiomeType.Value.STONE)
+
+	var emitted: Array[String] = []
+	matcher.discovery_triggered.connect(func(discovery_id: String, _coords: Array[Vector2i]) -> void:
+		emitted.append(discovery_id)
+	)
+	matcher.scan_and_emit(grid)
+	assert_eq(emitted, ["disc_shape_rotated"])

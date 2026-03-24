@@ -29,18 +29,21 @@ func _evaluate_cluster_partial(pattern: PatternDefinition, grid: RefCounted) -> 
 func _evaluate_shape_partial(pattern: PatternDefinition, grid: RefCounted) -> bool:
 	if pattern.shape_recipe.is_empty():
 		return false
+	var variants: Array = _HexUtils.shape_recipe_variants(pattern.shape_recipe)
 	for coord_variant in grid.tiles.keys():
 		var anchor: Vector2i = coord_variant
-		var matched: int = 0
-		var total: int = pattern.shape_recipe.size()
-		for entry: Dictionary in pattern.shape_recipe:
-			var offset: Vector2i = entry.get("offset", Vector2i.ZERO)
-			var target_biome: int = int(entry.get("biome", -1))
-			var tile: GardenTile = grid.get_tile(anchor + offset)
-			if tile != null and tile.biome == target_biome:
-				matched += 1
-		if matched > 0 and matched < total:
-			return true
+		for variant_variant in variants:
+			var variant: Array[Dictionary] = variant_variant
+			var matched: int = 0
+			var total: int = variant.size()
+			for entry: Dictionary in variant:
+				var offset: Vector2i = entry.get("offset", Vector2i.ZERO)
+				var target_biome: int = int(entry.get("biome", -1))
+				var tile: GardenTile = grid.get_tile(anchor + offset)
+				if tile != null and tile.biome == target_biome:
+					matched += 1
+			if matched > 0 and matched < total:
+				return true
 	return false
 
 func _evaluate_ratio_partial(pattern: PatternDefinition, grid: RefCounted) -> bool:

@@ -32,15 +32,18 @@ func _ready() -> void:
 	call_deferred("_setup_spawner")
 	call_deferred("restore_from_persistence")
 
-func set_spawner_parent(parent: Node3D) -> void:
+func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
 
 func _setup_spawner() -> void:
-	var spirit_layer: Node3D = get_node_or_null("../VoxelGarden/SpiritLayer")
+	var garden_view: Node = get_node_or_null("../GardenView")
+	if garden_view == null:
+		return
+	var spirit_layer: Node2D = garden_view.get_node_or_null("SpiritLayer2D")
 	if spirit_layer == null:
-		spirit_layer = Node3D.new()
-		spirit_layer.name = "SpiritLayer"
-		get_parent().add_child(spirit_layer)
+		spirit_layer = Node2D.new()
+		spirit_layer.name = "SpiritLayer2D"
+		garden_view.add_child(spirit_layer)
 	_spawner.set_parent(spirit_layer)
 
 func restore_from_persistence() -> void:

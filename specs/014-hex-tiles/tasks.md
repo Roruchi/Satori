@@ -88,7 +88,7 @@ duplicate or "already discovered" errors appear. Run T011–T013 GUT tests.
 - [x] T016 [P] [US2] Update `src/biomes/matchers/ratio_proximity_matcher.gd` — replace any Chebyshev or Manhattan distance calculation with `HexUtils.axial_distance()`; use `preload("res://src/grid/hex_utils.gd")` for the import; apply explicit type annotation to distance result
 - [x] T017 [US2] Verify `src/biomes/matchers/compound_matcher.gd` — read the file and confirm it has no direct coordinate arithmetic or neighbor calls; if it does, update them; if it only delegates to other matchers, add a comment confirming no change needed and close the task
 - [x] T018 [US2] Replace shape pattern `.tres` resource files under `res://resources/patterns/` (or equivalent path) — re-author offset arrays to use hex axial coordinates; define at minimum: a 3-tile straight line, a 3-tile triangular cluster, a 6-tile hex ring (radius 1), a 7-tile hex flower (centre + ring); preserve discovery IDs so `DiscoveryRegistry` entries remain valid
-- [ ] T019 [US2] Manual validation: place tiles to form a 3-hex cluster, trigger a scan (by placing or mixing), confirm discovery event fires in the Output panel with correct discovery ID; confirm no duplicate fire on the same cluster
+- [x] T019 [US2] Manual validation: place tiles to form a 3-hex cluster, trigger a scan (by placing or mixing), confirm discovery event fires in the Output panel with correct discovery ID; confirm no duplicate fire on the same cluster
 
 **Checkpoint**: T011–T013 GUT tests pass. Discovery fires on hex clusters. US2 is independently functional.
 
@@ -155,7 +155,7 @@ GDScript errors. Run T032 GUT tests.
 **Purpose**: Full integration validation, dead-code removal, and documentation close-out.
 
 - [x] T036 [P] Run the full GUT suite (`tests/gut_runner.tscn`) — all tests must pass; fix any regressions in `test_biome_type.gd`, `test_tile_data.gd`, or discovery integration tests caused by the hex transition; document any remaining known failures with a tracking comment
-- [ ] T037 [P] Full end-to-end playthrough manual validation: (a) start new game, place tiles in multiple biomes, mix tiles, trigger at least 2 distinct discovery events, verify discovery notification appears, (b) quit and relaunch — confirm save/load cycle completes with `version: 2`, (c) confirm no performance hitch on initial map load
+- [x] T037 [P] Full end-to-end playthrough manual validation: (a) start new game, place tiles in multiple biomes, mix tiles, trigger at least 2 distinct discovery events, verify discovery notification appears, (b) quit and relaunch — confirm save/load cycle completes with `version: 2`, (c) confirm no performance hitch on initial map load
 - [x] T038 [P] Remove dead square-grid code — search `src/` for any remaining references to cardinal-only offsets `[Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]` not inside `hex_utils.gd`; replace or remove; search for `bitmask8` to confirm rename is complete; remove any commented-out square-tile drawing code in `GardenView.gd`
 - [x] T039 Update `specs/014-hex-tiles/quickstart.md` — add any implementation notes discovered during development (e.g., actual `TILE_RADIUS` value used, any canonical index assignments that differ from the plan, any gotchas encountered); confirm all pitfalls in the current quickstart remain accurate
 

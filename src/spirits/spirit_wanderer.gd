@@ -1,49 +1,51 @@
 class_name SpiritWanderer
-extends Node3D
+extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
-const TILE_RADIUS: float = 1.0
-const SPIRIT_HEIGHT: float = 0.8
+const TILE_RADIUS: float = 20.0
+const SPIRIT_RADIUS: float = 8.0
 
 var spirit_id: String = ""
 var wander_bounds: Rect2i = Rect2i()
 var _speed: float = 2.0
-var _target_world: Vector3 = Vector3.ZERO
+var _target_world: Vector2 = Vector2.ZERO
 var _wait_time: float = 0.0
-var _mesh_instance: MeshInstance3D
-var _label: Label3D
+var _display_color: Color = Color.WHITE
+var _label: Label
+var _preferred_biomes: Array[int] = []
 
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
 	wander_bounds = instance.wander_bounds
-	_speed = float(catalog_entry.get("wander_speed", 2.0))
+	_speed = float(catalog_entry.get("wander_speed", 2.0)) * TILE_RADIUS * 0.25
 	var color: Color = catalog_entry.get("color_hint", Color.WHITE)
+	_display_color = color
+	_preferred_biomes.clear()
+	if catalog_entry.has("preferred_biomes"):
+		var preferred_variant: Variant = catalog_entry["preferred_biomes"]
+		if preferred_variant is Array:
+			for biome_variant in preferred_variant:
+				_preferred_biomes.append(int(biome_variant))
 	var display_name: String = str(catalog_entry.get("display_name", spirit_id))
-	if _mesh_instance != null:
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = color
-		mat.emission_enabled = true
-		mat.emission = color
-		mat.emission_energy_multiplier = 0.5
-		_mesh_instance.material_override = mat
 	if _label != null:
 		_label.text = display_name
-	var start_world: Vector3 = _coord_to_world(instance.spawn_coord)
-	global_position = start_world
+	var start_world: Vector2 = _coord_to_world(instance.spawn_coord)
+	position = start_world
+	queue_redraw()
 	_pick_new_target()
 
 func _ready() -> void:
-	_mesh_instance = MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.3
-	sphere.height = 0.6
-	_mesh_instance.mesh = sphere
-	add_child(_mesh_instance)
-	_label = Label3D.new()
-	_label.font_size = 24
-	_label.no_depth_test = true
-	_label.position = Vector3(0.0, 0.6, 0.0)
+	_label = Label.new()
+	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_label.position = Vector2(-48.0, -26.0)
+	_label.size = Vector2(96.0, 20.0)
 	add_child(_label)
+	queue_redraw()
+
+func _draw() -> void:
+	draw_circle(Vector2.ZERO, SPIRIT_RADIUS, _display_color)
+	draw_arc(Vector2.ZERO, SPIRIT_RADIUS, 0.0, TAU, 24, _display_color.lightened(0.25), 1.5)
 
 func _process(delta: float) -> void:
 	if _wait_time > 0.0:
@@ -51,22 +53,66 @@ func _process(delta: float) -> void:
 		if _wait_time <= 0.0:
 			_pick_new_target()
 		return
-	var diff: Vector3 = _target_world - global_position
+	var diff: Vector2 = _target_world - position
 	if diff.length() < 0.1:
 		_wait_time = randf_range(1.5, 4.0)
 		return
-	global_position += diff.normalized() * _speed * delta
+	position += diff.normalized() * _speed * delta
 
 func _pick_new_target() -> void:
-	if wander_bounds.size == Vector2i.ZERO:
+	var effective_bounds: Rect2i = _get_effective_bounds()
+	if effective_bounds.size == Vector2i.ZERO:
 		return
-	var rx: int = wander_bounds.position.x + randi() % max(wander_bounds.size.x, 1)
-	var ry: int = wander_bounds.position.y + randi() % max(wander_bounds.size.y, 1)
-	_target_world = _coord_to_world(Vector2i(rx, ry))
+	var candidates: Array[Vector2i] = _get_candidate_coords(effective_bounds)
+	if candidates.is_empty():
+		return
+	var target_coord: Vector2i = candidates[randi() % candidates.size()]
+	_target_world = _coord_to_world(target_coord)
 
-func _coord_to_world(coord: Vector2i) -> Vector3:
+func _get_candidate_coords(effective_bounds: Rect2i) -> Array[Vector2i]:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return []
+	var grid: RefCounted = game_state.get("grid")
+	if grid == null or not grid.has_method("has_tile") or not grid.has_method("get_tile"):
+		return []
+	var preferred_candidates: Array[Vector2i] = []
+	var occupied_candidates: Array[Vector2i] = []
+	for x: int in range(effective_bounds.position.x, effective_bounds.position.x + effective_bounds.size.x):
+		for y: int in range(effective_bounds.position.y, effective_bounds.position.y + effective_bounds.size.y):
+			var coord: Vector2i = Vector2i(x, y)
+			if not grid.has_tile(coord):
+				continue
+			occupied_candidates.append(coord)
+			if _preferred_biomes.is_empty():
+				continue
+			var tile: GardenTile = grid.get_tile(coord)
+			if tile != null and _preferred_biomes.has(tile.biome):
+				preferred_candidates.append(coord)
+	if not preferred_candidates.is_empty():
+		return preferred_candidates
+	return occupied_candidates
+
+func _get_effective_bounds() -> Rect2i:
+	if wander_bounds.size == Vector2i.ZERO:
+		return Rect2i()
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return wander_bounds
+	var grid: RefCounted = game_state.get("grid")
+	if grid == null or not grid.has_method("get"):
+		return wander_bounds
+	var garden_bounds: Rect2i = grid.get("garden_bounds")
+	if garden_bounds.size == Vector2i.ZERO:
+		return wander_bounds
+	var clipped: Rect2i = wander_bounds.intersection(garden_bounds)
+	if clipped.size == Vector2i.ZERO:
+		return wander_bounds
+	return clipped
+
+func _coord_to_world(coord: Vector2i) -> Vector2:
 	var px: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-	return Vector3(px.x, SPIRIT_HEIGHT, px.y)
+	return px
 
 func update_bounds(new_bounds: Rect2i) -> void:
 	wander_bounds = new_bounds

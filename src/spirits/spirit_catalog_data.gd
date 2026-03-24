@@ -10,6 +10,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_red_fox",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0],
 			"color_hint": Color(1.0, 0.5, 0.0)
 		},
 		{
@@ -19,6 +20,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mist_stag",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0],
 			"color_hint": Color(1.0, 1.0, 1.0)
 		},
 		{
@@ -28,6 +30,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_emerald_snake",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0],
 			"color_hint": Color(0.0, 0.7, 0.2)
 		},
 		{
@@ -37,6 +40,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_owl_of_silence",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 2, 7],
 			"color_hint": Color(0.5, 0.5, 0.5)
 		},
 		{
@@ -46,6 +50,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_tree_frog",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 1, 4],
 			"color_hint": Color(0.2, 0.8, 0.3)
 		},
 		{
@@ -55,6 +60,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_white_heron",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [1, 4, 6],
 			"color_hint": Color(1.0, 1.0, 1.0)
 		},
 		{
@@ -64,6 +70,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_koi_fish",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [1],
 			"color_hint": Color(1.0, 0.5, 0.0)
 		},
 		{
@@ -73,6 +80,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_river_otter",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [1, 4],
 			"color_hint": Color(0.5, 0.3, 0.1)
 		},
 		{
@@ -82,6 +90,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_blue_kingfisher",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 1, 4],
 			"color_hint": Color(0.0, 0.0, 1.0)
 		},
 		{
@@ -91,6 +100,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_dragonfly",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
+			"preferred_biomes": [1, 3, 6],
 			"color_hint": Color(0.2, 0.6, 0.9)
 		},
 		{
@@ -100,6 +110,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mountain_goat",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [2, 7, 9],
 			"color_hint": Color(0.7, 0.7, 0.7)
 		},
 		{
@@ -109,6 +120,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_stone_golem",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [2],
 			"color_hint": Color(0.5, 0.5, 0.5)
 		},
 		{
@@ -118,6 +130,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_granite_ram",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
+			"preferred_biomes": [2],
 			"color_hint": Color(0.4, 0.4, 0.4)
 		},
 		{
@@ -127,6 +140,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_sun_lizard",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [2, 3, 9],
 			"color_hint": Color(1.0, 1.0, 0.0)
 		},
 		{
@@ -136,6 +150,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_rock_badger",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [2, 7, 9],
 			"color_hint": Color(0.6, 0.5, 0.4)
 		},
 		{
@@ -145,6 +160,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_golden_bee",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [8, 0, 3],
 			"color_hint": Color(1.0, 0.85, 0.0)
 		},
 		{
@@ -154,6 +170,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_jade_beetle",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 8, 7],
 			"color_hint": Color(0.0, 0.6, 0.3)
 		},
 		{
@@ -163,6 +180,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_meadow_lark",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [8, 0, 3],
 			"color_hint": Color(1.0, 0.9, 0.3)
 		},
 		{
@@ -172,6 +190,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_field_mouse",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 8, 3, 4],
 			"color_hint": Color(0.7, 0.6, 0.5)
 		},
 		{
@@ -181,6 +200,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_hare",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [8, 3, 0],
 			"color_hint": Color(0.9, 0.85, 0.8)
 		},
 		{
@@ -190,6 +210,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_marsh_frog",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [4, 1],
 			"color_hint": Color(0.1, 0.5, 0.2)
 		},
 		{
@@ -199,6 +220,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_peat_salamander",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [4, 6],
 			"color_hint": Color(0.3, 0.5, 0.3)
 		},
 		{
@@ -208,6 +230,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_swamp_crane",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [4, 1, 0, 6],
 			"color_hint": Color(0.8, 0.9, 0.9)
 		},
 		{
@@ -217,6 +240,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_murk_crocodile",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [4, 1],
 			"color_hint": Color(0.2, 0.4, 0.2)
 		},
 		{
@@ -226,6 +250,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mud_crab",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
+			"preferred_biomes": [6, 1],
 			"color_hint": Color(0.6, 0.5, 0.3)
 		},
 		{
@@ -235,6 +260,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_frost_owl",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
+			"preferred_biomes": [5, 0, 1, 2],
 			"color_hint": Color(0.9, 0.95, 1.0)
 		},
 		{
@@ -244,6 +270,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_boreal_wolf",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
+			"preferred_biomes": [5, 0],
 			"color_hint": Color(0.7, 0.8, 0.9)
 		},
 		{
@@ -253,6 +280,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_tundra_lynx",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
+			"preferred_biomes": [5, 1],
 			"color_hint": Color(0.8, 0.75, 0.7)
 		},
 		{
@@ -262,6 +290,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_ice_cavern_bat",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
+			"preferred_biomes": [5, 2, 1],
 			"color_hint": Color(0.6, 0.7, 0.9)
 		},
 		{
@@ -271,6 +300,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_sky_whale",
 			"wander_radius": 50,
 			"wander_speed": 2.0,
+			"preferred_biomes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 			"color_hint": Color(0.4, 0.6, 1.0)
 		},
 	]

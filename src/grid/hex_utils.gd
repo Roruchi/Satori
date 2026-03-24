@@ -79,6 +79,59 @@ static func axial_ring(center: Vector2i, radius: int) -> Array[Vector2i]:
 	return results
 
 
+## Rotate an axial coordinate around the origin in 60-degree clockwise steps.
+static func axial_rotate(coord: Vector2i, steps: int) -> Vector2i:
+	var normalized_steps: int = posmod(steps, 6)
+	var rotated: Vector2i = coord
+	for _i: int in range(normalized_steps):
+		rotated = Vector2i(-rotated.y, rotated.x + rotated.y)
+	return rotated
+
+
+## Reflect an axial coordinate across the q axis.
+static func axial_reflect(coord: Vector2i) -> Vector2i:
+	return Vector2i(coord.x, -coord.x - coord.y)
+
+
+## Return unique rotated and reflected variants of a shape recipe.
+static func shape_recipe_variants(shape_recipe: Array[Dictionary]) -> Array:
+	var variants: Array = []
+	var seen: Dictionary = {}
+	for reflect_index: int in range(2):
+		var should_reflect: bool = reflect_index == 1
+		for rotation_steps: int in range(6):
+			var variant: Array[Dictionary] = []
+			for entry: Dictionary in shape_recipe:
+				var offset: Vector2i = entry.get("offset", Vector2i.ZERO)
+				var transformed_offset: Vector2i = offset
+				if should_reflect:
+					transformed_offset = axial_reflect(transformed_offset)
+				transformed_offset = axial_rotate(transformed_offset, rotation_steps)
+				variant.append({
+					"offset": transformed_offset,
+					"biome": int(entry.get("biome", -1))
+				})
+			variant.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+				var offset_a: Vector2i = a.get("offset", Vector2i.ZERO)
+				var offset_b: Vector2i = b.get("offset", Vector2i.ZERO)
+				if offset_a.x == offset_b.x:
+					if offset_a.y == offset_b.y:
+						return int(a.get("biome", -1)) < int(b.get("biome", -1))
+					return offset_a.y < offset_b.y
+				return offset_a.x < offset_b.x
+			)
+			var key_parts: Array[String] = []
+			for variant_entry: Dictionary in variant:
+				var variant_offset: Vector2i = variant_entry.get("offset", Vector2i.ZERO)
+				key_parts.append("%d,%d:%d" % [variant_offset.x, variant_offset.y, int(variant_entry.get("biome", -1))])
+			var key: String = "|".join(key_parts)
+			if seen.has(key):
+				continue
+			seen[key] = true
+			variants.append(variant)
+	return variants
+
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
