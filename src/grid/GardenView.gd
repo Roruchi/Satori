@@ -203,12 +203,12 @@ func _draw_tile(coord: Vector2i, color: Color) -> void:
 	# With top-down view and light from upper-right, the visible "side walls"
 	# are on the left and lower-left edges (edges 4→5 and 5→0).
 	# We extrude these edges straight downward to simulate voxel height.
-	for wall_edge: int in [3, 4, 5]:
-		var a: Vector2 = pts[wall_edge]
-		var b: Vector2 = pts[(wall_edge + 1) % 6]
+	for edge_index: int in [3, 4, 5]:
+		var a: Vector2 = pts[edge_index]
+		var b: Vector2 = pts[(edge_index + 1) % 6]
 		var a_low: Vector2 = Vector2(a.x, a.y + VOXEL_DEPTH)
 		var b_low: Vector2 = Vector2(b.x, b.y + VOXEL_DEPTH)
-		var shade: float = 0.52 if wall_edge == 4 else 0.44
+		var shade: float = 0.52 if edge_index == 4 else 0.44
 		draw_colored_polygon(PackedVector2Array([a, b, b_low, a_low]), color.darkened(shade))
 
 	# --- Main top face ---
@@ -311,11 +311,11 @@ func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool)
 			# Soil texture: pebbles + thin cross-hatch marks
 			var count: int = rng.randi_range(5, 8)
 			for _i: int in range(count):
-				var px_: float = cx + rng.randf_range(-half * 0.68, half * 0.68)
-				var py_: float = cy + rng.randf_range(-half * 0.68, half * 0.68)
-				var pr: float = rng.randf_range(1.2, 2.8)
-				draw_circle(Vector2(px_, py_), pr, Color(0.52, 0.32, 0.12, 0.65))
-				draw_circle(Vector2(px_ - pr * 0.4, py_ - pr * 0.4), pr * 0.4, Color(0.68, 0.48, 0.22, 0.50))
+				var pebble_x: float = cx + rng.randf_range(-half * 0.68, half * 0.68)
+				var pebble_y: float = cy + rng.randf_range(-half * 0.68, half * 0.68)
+				var pebble_r: float = rng.randf_range(1.2, 2.8)
+				draw_circle(Vector2(pebble_x, pebble_y), pebble_r, Color(0.52, 0.32, 0.12, 0.65))
+				draw_circle(Vector2(pebble_x - pebble_r * 0.4, pebble_y - pebble_r * 0.4), pebble_r * 0.4, Color(0.68, 0.48, 0.22, 0.50))
 			# 2 faint texture lines
 			for _t: int in range(2):
 				var lx: float = cx + rng.randf_range(-half * 0.5, half * 0.5)
@@ -341,29 +341,29 @@ func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool)
 			# Snow patches + ice crystal sparkles
 			var count: int = rng.randi_range(4, 7)
 			for _i: int in range(count):
-				var px_: float = cx + rng.randf_range(-half * 0.68, half * 0.68)
-				var py_: float = cy + rng.randf_range(-half * 0.68, half * 0.68)
-				var pr: float = rng.randf_range(2.0, 4.0)
-				draw_circle(Vector2(px_, py_), pr, Color(0.92, 0.96, 1.0, 0.80))
+				var patch_x: float = cx + rng.randf_range(-half * 0.68, half * 0.68)
+				var patch_y: float = cy + rng.randf_range(-half * 0.68, half * 0.68)
+				var patch_r: float = rng.randf_range(2.0, 4.0)
+				draw_circle(Vector2(patch_x, patch_y), patch_r, Color(0.92, 0.96, 1.0, 0.80))
 				# Glint
-				draw_circle(Vector2(px_ - pr * 0.35, py_ - pr * 0.35), pr * 0.30, Color(1.0, 1.0, 1.0, 0.95))
+				draw_circle(Vector2(patch_x - patch_r * 0.35, patch_y - patch_r * 0.35), patch_r * 0.30, Color(1.0, 1.0, 1.0, 0.95))
 			# Ice crystal lines (6-pointed)
 			var crystal_x: float = cx + rng.randf_range(-half * 0.3, half * 0.3)
 			var crystal_y: float = cy + rng.randf_range(-half * 0.3, half * 0.3)
-			for a_: int in range(3):
-				var angle: float = deg_to_rad(float(a_) * 60.0)
-				var arm: float = rng.randf_range(4.5, 7.5)
-				draw_line(Vector2(crystal_x - cos(angle) * arm, crystal_y - sin(angle) * arm), Vector2(crystal_x + cos(angle) * arm, crystal_y + sin(angle) * arm), Color(0.80, 0.92, 1.0, 0.75), 1.2)
+			for arm_index: int in range(3):
+				var angle: float = deg_to_rad(float(arm_index) * 60.0)
+				var arm_len: float = rng.randf_range(4.5, 7.5)
+				draw_line(Vector2(crystal_x - cos(angle) * arm_len, crystal_y - sin(angle) * arm_len), Vector2(crystal_x + cos(angle) * arm_len, crystal_y + sin(angle) * arm_len), Color(0.80, 0.92, 1.0, 0.75), 1.2)
 
 		BiomeType.Value.MUDFLAT:
 			# Mud puddles (ovals) + cracked earth marks
 			var count: int = rng.randi_range(2, 4)
 			for _i: int in range(count):
-				var px_: float = cx + rng.randf_range(-half * 0.55, half * 0.55)
-				var py_: float = cy + rng.randf_range(-half * 0.55, half * 0.55)
-				var pr: float = rng.randf_range(4.0, 7.0)
-				draw_arc(Vector2(px_, py_), pr, 0.0, TAU, 14, Color(0.22, 0.14, 0.05, 0.72), 2.5)
-				draw_arc(Vector2(px_, py_), pr * 0.5, 0.0, TAU, 8, Color(0.32, 0.20, 0.08, 0.50), 1.2)
+				var puddle_x: float = cx + rng.randf_range(-half * 0.55, half * 0.55)
+				var puddle_y: float = cy + rng.randf_range(-half * 0.55, half * 0.55)
+				var puddle_r: float = rng.randf_range(4.0, 7.0)
+				draw_arc(Vector2(puddle_x, puddle_y), puddle_r, 0.0, TAU, 14, Color(0.22, 0.14, 0.05, 0.72), 2.5)
+				draw_arc(Vector2(puddle_x, puddle_y), puddle_r * 0.5, 0.0, TAU, 8, Color(0.32, 0.20, 0.08, 0.50), 1.2)
 			# Crack marks
 			for _c: int in range(2):
 				var lx: float = cx + rng.randf_range(-half * 0.4, half * 0.4)
@@ -570,8 +570,8 @@ func _draw_river_overlay(members: Array) -> void:
 			for i: int in range(8):
 				var tt: float = float(i) / 7.0
 				pts.append(Vector2(cx - TILE_RADIUS * 0.88 + tt * TILE_RADIUS * 1.76, cy + y_off + sin(tt * PI * 2.5 + rng.randf_range(0.0, TAU)) * 3.5))
-			var a_: float = 0.80 if w == 1 else 0.50
-			draw_polyline(pts, Color(flow.r, flow.g, flow.b, a_), 1.5 if w == 1 else 1.0)
+			var flow_alpha: float = 0.80 if w == 1 else 0.50
+			draw_polyline(pts, Color(flow.r, flow.g, flow.b, flow_alpha), 1.5 if w == 1 else 1.0)
 		# Sparkle dots
 		for _s: int in range(rng.randi_range(2, 4)):
 			var sx: float = cx + rng.randf_range(-TILE_RADIUS * 0.70, TILE_RADIUS * 0.70)
@@ -853,7 +853,8 @@ func _draw_background() -> void:
 	# Subtle grain pattern using a deterministic seed
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 0x5A7201
-	var grain_count: int = int(extent * extent * 0.0015)
+	# Cap grain count to avoid O(n²) draw calls on large grids
+	var grain_count: int = mini(int(extent * extent * 0.0015), 280)
 	for _i: int in range(grain_count):
 		var gx: float = rng.randf_range(-extent, extent)
 		var gy: float = rng.randf_range(-extent, extent)
