@@ -22,3 +22,15 @@ script = ExtResource("2")
 script = ExtResource("4")
 
 [node name="SpiritLayer" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707, 0.0, -0.707, -0.186, 0.965, -0.186, 0.493, 0.345, 0.493, 0, 8, 0)
+light_color = Color(1, 0.97, 0.9, 1)
+light_energy = 2.2
+shadow_enabled = true
+
+[node name="AmbientLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
+light_color = Color(0.55, 0.62, 0.75, 1)
+light_energy = 0.6
+omni_range = 200.0
