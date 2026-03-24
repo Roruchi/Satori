@@ -1,18 +1,10 @@
 class_name SpatialQuery
 extends RefCounted
 
-const CARDINAL_OFFSETS := [
-	Vector2i(1, 0),
-	Vector2i(-1, 0),
-	Vector2i(0, 1),
-	Vector2i(0, -1),
-]
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
 
-func get_cardinal_neighbors(origin: Vector2i) -> Array[Vector2i]:
-	var neighbors: Array[Vector2i] = []
-	for offset in CARDINAL_OFFSETS:
-		neighbors.append(origin + offset)
-	return neighbors
+func get_hex_neighbors(origin: Vector2i) -> Array[Vector2i]:
+	return _HexUtils.get_neighbors(origin)
 
 func get_connected_region(start: Vector2i, biome: int, tile_lookup: Callable) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
@@ -26,7 +18,7 @@ func get_connected_region(start: Vector2i, biome: int, tile_lookup: Callable) ->
 			continue
 		result.append(current)
 
-		for neighbor in get_cardinal_neighbors(current):
+		for neighbor: Vector2i in get_hex_neighbors(current):
 			if visited.has(neighbor):
 				continue
 			visited[neighbor] = true
@@ -35,11 +27,13 @@ func get_connected_region(start: Vector2i, biome: int, tile_lookup: Callable) ->
 
 func count_biomes_in_radius(center: Vector2i, radius: int, tile_lookup: Callable) -> Dictionary:
 	var counts: Dictionary = {}
-	for x in range(center.x - radius, center.x + radius + 1):
-		for y in range(center.y - radius, center.y + radius + 1):
-			var coord: Vector2i = Vector2i(x, y)
-			if coord.distance_to(center) > float(radius):
-				continue
+	# Count center tile
+	var center_tile: GardenTile = tile_lookup.call(center)
+	if center_tile != null:
+		counts[center_tile.biome] = int(counts.get(center_tile.biome, 0)) + 1
+	# Count all hex rings from 1 to radius
+	for r: int in range(1, radius + 1):
+		for coord: Vector2i in _HexUtils.axial_ring(center, r):
 			var tile: GardenTile = tile_lookup.call(coord)
 			if tile == null:
 				continue

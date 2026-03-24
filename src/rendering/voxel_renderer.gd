@@ -1,8 +1,8 @@
 ## VoxelRenderer — orchestrator for the voxel tile rendering pipeline.
 ##
 ## Subscribes to GameState tile signals and delegates to:
-##   BitmaskAutotiler      — computes 8-bit bitmask for each tile
-##   TileMeshLibrary       — resolves (biome, bitmask) → Mesh
+##   BitmaskAutotiler      — computes 6-bit hex bitmask for each tile
+##   TileMeshLibrary       — resolves (biome, canonical 0–12) → Mesh
 ##   TileChunkRenderer     — batches tiles into MultiMesh draw calls per chunk
 ##   MountainClusterTracker — detects Stone clusters ≥10 tiles
 ##   MountainMeshBuilder   — builds unified Mountain mesh for merged clusters
@@ -116,15 +116,15 @@ func _register_tile(coord: Vector2i, tile: GardenTile) -> void:
 	_mark_chunk_dirty(state.chunk_id)
 
 
-## Refresh the bitmask for `coord` and all 8 of its neighbours.
+## Refresh the bitmask for `coord` and all 6 hex neighbours.
 func _refresh_bitmask(coord: Vector2i) -> void:
 	var affected: Array[Vector2i] = [coord]
 
-	# Collect all 8 neighbours that have a render state
+	# Collect all 6 hex neighbours that have a render state
 	const OFFSETS: Array[Vector2i] = [
-		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
-		Vector2i(-1, 0),                   Vector2i(1, 0),
-		Vector2i(-1, 1),  Vector2i(0, 1),  Vector2i(1, 1),
+		Vector2i( 1,  0), Vector2i(-1,  0),
+		Vector2i( 0,  1), Vector2i( 0, -1),
+		Vector2i( 1, -1), Vector2i(-1,  1),
 	]
 	for off: Vector2i in OFFSETS:
 		var n: Vector2i = coord + off
@@ -136,8 +136,8 @@ func _refresh_bitmask(coord: Vector2i) -> void:
 		if not _render_states.has(affected_coord):
 			continue
 		var state: TileRenderState = _render_states[affected_coord]
-		state.bitmask8 = _BitmaskAutotiler.compute_bitmask(affected_coord, GameState.grid)
-		state.canonical = _BitmaskAutotiler.to_canonical(state.bitmask8)
+		state.bitmask6 = _BitmaskAutotiler.compute_bitmask(affected_coord, GameState.grid)
+		state.canonical = _BitmaskAutotiler.to_canonical(state.bitmask6)
 		_mark_chunk_dirty(state.chunk_id)
 
 
@@ -162,12 +162,9 @@ func _get_or_create_chunk(chunk_coord: Vector2i) -> Node3D:
 	chunk.chunk_coord = chunk_coord
 	chunk.mesh_library = _mesh_library
 	chunk.shared_material = _shared_material
-	# Position the chunk node at its world-space origin
-	chunk.position = Vector3(
-		chunk_coord.x * 8.0,
-		0.0,
-		chunk_coord.y * 8.0
-	)
+	# Chunk node stays at world origin — individual tile instances carry their
+	# absolute hex world positions computed via HexUtils.axial_to_pixel().
+	chunk.position = Vector3.ZERO
 	_chunk_parent.add_child(chunk)
 	_chunks[chunk_coord] = chunk
 	return chunk

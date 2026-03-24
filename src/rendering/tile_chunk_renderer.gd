@@ -7,8 +7,10 @@
 
 extends Node3D
 
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+
 const CHUNK_SIZE: int = 8
-const TILE_SIZE: float = 1.0     ## World-space size of one tile (1 unit = 32px at standard zoom)
+const TILE_RADIUS: float = 1.0   ## Hex tile radius in world units (centre to vertex)
 const TILE_HEIGHT: float = 0.0   ## Y offset for tile meshes (ground plane)
 
 ## Chunk grid coordinate — set by VoxelRenderer when this node is created.
@@ -85,11 +87,8 @@ func _rebuild() -> void:
 		mm.instance_count = tiles.size()
 		for i: int in range(tiles.size()):
 			var state: TileRenderState = tiles[i] as TileRenderState
-			var world_pos := Vector3(
-				state.coord.x * TILE_SIZE,
-				TILE_HEIGHT,
-				state.coord.y * TILE_SIZE
-			)
+			var px: Vector2 = _HexUtils.axial_to_pixel(state.coord, TILE_RADIUS)
+			var world_pos := Vector3(px.x, TILE_HEIGHT, px.y)
 			mm.set_instance_transform(i, Transform3D(Basis(), world_pos))
 			# Encode biome index as custom data (channel 0) for shader palette
 			if mm.use_custom_data:

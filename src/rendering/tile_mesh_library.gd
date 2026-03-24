@@ -1,7 +1,7 @@
 ## TileMeshLibrary — manages mesh resources for voxel tile rendering.
 ##
-## Maps (biome, raw 8-bit bitmask) → Mesh using the Wang/blob canonical
-## reduction table from BitmaskAutotiler.
+## Maps (biome, canonical 0–12) → Mesh using the 6-bit hex bitmask D6
+## canonical reduction from BitmaskAutotiler.
 ##
 ## During development, falls back to a generated coloured BoxMesh when no
 ## .tres asset is found, so the rendering pipeline is always functional.
@@ -9,9 +9,7 @@
 class_name TileMeshLibrary
 extends RefCounted
 
-const _BitmaskAutotiler = preload("res://src/rendering/bitmask_autotiler.gd")
-
-## Runtime mesh cache:  {biome: int} → Array[Mesh]  (indexed by canonical 0–46)
+## Runtime mesh cache:  {biome: int} → Array[Mesh]  (indexed by canonical 0–12)
 var _cache: Dictionary = {}
 ## LOD mesh cache:  {biome: int} → Array[Mesh]
 var _cache_lod: Dictionary = {}
@@ -56,15 +54,14 @@ func initialise() -> void:
 		_cache_lod[biome] = _load_variants(biome, true)
 
 
-## Return the mesh for (biome, raw bitmask).
+## Return the mesh for (biome, pre-computed canonical 0–12).
 ## Never returns null — falls back to the isolated fallback mesh if needed.
-func get_mesh(biome: int, bitmask8: int, lod: bool) -> Mesh:
+func get_mesh(biome: int, canonical: int, lod: bool) -> Mesh:
 	if not _cache.has(biome):
 		push_error("TileMeshLibrary: unknown biome %d" % biome)
 		return _make_fallback_box(biome)
-	var canonical: int = _BitmaskAutotiler.to_canonical(bitmask8)
 	var arr: Array = _cache_lod[biome] if lod else _cache[biome]
-	var mesh: Mesh = arr[canonical]
+	var mesh: Mesh = arr[canonical & 0xF]  # clamp to 0–12 range (0xF = 15)
 	if mesh == null:
 		mesh = arr[0]  # fallback to isolated
 	return mesh
@@ -81,15 +78,15 @@ func register_transition(biome_a: int, biome_b: int, data: Resource) -> void:
 	_transitions[_pair_key(biome_a, biome_b)] = data
 
 
-## Load the 47 canonical mesh variants for a biome from res://assets/meshes/tiles/.
+## Load the 13 canonical mesh variants for a biome from res://assets/meshes/tiles/.
 ## Missing assets are filled with a generated BoxMesh fallback.
 func _load_variants(biome: int, lod: bool) -> Array:
 	var variants: Array = []
-	variants.resize(47)
+	variants.resize(13)
 	var biome_name: String = _BIOME_NAMES.get(biome, "unknown")
 	var suffix: String = "_lod" if lod else ""
 
-	for canonical in range(47):
+	for canonical in range(13):
 		var path: String = ASSET_BASE_PATH + "%s_%02d%s.tres" % [biome_name, canonical, suffix]
 		if ResourceLoader.exists(path):
 			variants[canonical] = load(path)

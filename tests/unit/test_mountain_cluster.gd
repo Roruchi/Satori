@@ -1,6 +1,7 @@
 ## Test Suite: MountainClusterTracker
 ##
 ## GUT unit tests for src/rendering/mountain_cluster_tracker.gd
+## Updated for hex adjacency (E-direction tile sequences remain valid hex neighbors).
 ## Run via tests/gut_runner.tscn
 
 extends GutTest

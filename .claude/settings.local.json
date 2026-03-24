@@ -24,7 +24,18 @@
       "Bash(where godot:*)",
       "Read(//c/Program Files/**)",
       "Read(//c/Tools/**)",
-      "Bash(pwsh check-errors.ps1)"
+      "Bash(pwsh check-errors.ps1)",
+      "Bash(pwsh .specify/scripts/powershell/create-new-feature.ps1 \"satori is a tile based game. It currently works using square tiles however since this would make discoveries more complex we should move to hexagonal tiles that would support more options and make it visually more pleasing\" -Json -ShortName \"hex-tiles\" \"Hexagonal Tile System\")",
+      "Bash(pwsh .specify/scripts/powershell/setup-plan.ps1 -Json)",
+      "Bash(find /c/Repo/Personal/Games/Satori/tests -type f -name *.gd)",
+      "Bash(wc -l /c/Repo/Personal/Games/Satori/src/grid/*.gd /c/Repo/Personal/Games/Satori/src/rendering/*.gd)",
+      "Bash(pwsh .specify/scripts/powershell/update-agent-context.ps1 -AgentType claude)",
+      "Bash(find C:/Repo/Personal/Games/Satori -name *.tres -path */patterns/*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Repo/Personal/Games/Satori/**)",
+      "Bash(done)",
+      "Bash(xargs cat:*)"
     ]
   }
 }

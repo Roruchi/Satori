@@ -53,10 +53,13 @@ func _ready() -> void:
 	if _grid_provider.is_null():
 		_grid_provider = Callable(self, "_default_grid_provider")
 
-	# GameState emits tile_placed whenever a successful placement occurs.
+	# GameState emits tile_placed and tile_mixed on grid changes.
 	var game_state: Node = get_node_or_null("/root/GameState")
-	if game_state != null and game_state.has_signal("tile_placed"):
-		game_state.tile_placed.connect(_on_tile_placed)
+	if game_state != null:
+		if game_state.has_signal("tile_placed"):
+			game_state.tile_placed.connect(_on_tile_placed)
+		if game_state.has_signal("tile_mixed"):
+			game_state.tile_mixed.connect(_on_tile_mixed)
 
 	# Hydrate registry from persisted discoveries on startup
 	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
@@ -75,6 +78,10 @@ func _on_matcher_discovery_triggered(discovery_id: String, triggering_coords: Ar
 	discovery_triggered.emit(discovery_id, triggering_coords)
 
 func _on_tile_placed(coord: Vector2i, _tile: GardenTile) -> void:
+	enqueue_scan(coord)
+
+
+func _on_tile_mixed(coord: Vector2i, _tile: GardenTile) -> void:
 	enqueue_scan(coord)
 
 func enqueue_scan(placement_coord: Vector2i) -> void:

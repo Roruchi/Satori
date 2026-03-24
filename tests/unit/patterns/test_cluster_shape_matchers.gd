@@ -23,11 +23,12 @@ func test_cluster_pattern_triggers_when_threshold_is_met() -> void:
 	matcher.scan_and_emit(grid)
 	assert_eq(emitted, ["disc_cluster"])
 
-func test_shape_pattern_triggers_for_matching_offsets() -> void:
+func test_shape_pattern_triggers_for_hex_offsets() -> void:
 	var matcher := PatternMatcher.new()
 	var shape := PatternDefinition.new()
 	shape.discovery_id = "disc_shape"
 	shape.pattern_type = PatternDefinition.PatternType.SHAPE
+	# Hex-valid offsets: (0,0) anchor, (1,0) E neighbor, (0,1) SE neighbor
 	shape.shape_recipe = [
 		{"offset": Vector2i(0, 0), "biome": BiomeType.Value.FOREST},
 		{"offset": Vector2i(1, 0), "biome": BiomeType.Value.WATER},
@@ -36,9 +37,10 @@ func test_shape_pattern_triggers_for_matching_offsets() -> void:
 	matcher.set_patterns([shape])
 
 	var grid := GridMapScript.new()
-	grid.place_tile(Vector2i(10, 10), BiomeType.Value.FOREST)
-	grid.place_tile(Vector2i(11, 10), BiomeType.Value.WATER)
-	grid.place_tile(Vector2i(10, 11), BiomeType.Value.STONE)
+	# Place tiles at anchor (5, 3) and its hex neighbors (6,3) and (5,4)
+	grid.place_tile(Vector2i(5, 3), BiomeType.Value.FOREST)
+	grid.place_tile(Vector2i(6, 3), BiomeType.Value.WATER)
+	grid.place_tile(Vector2i(5, 4), BiomeType.Value.STONE)
 
 	var emitted: Array[String] = []
 	matcher.discovery_triggered.connect(func(discovery_id: String, _coords: Array[Vector2i]) -> void:

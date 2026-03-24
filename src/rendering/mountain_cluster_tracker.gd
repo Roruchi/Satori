@@ -9,6 +9,8 @@
 
 extends Node
 
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+
 signal cluster_merged(cluster_id: int)
 signal cluster_grew(cluster_id: int)
 
@@ -29,11 +31,6 @@ var _rank: Dictionary[int, int] = {}
 ## Auto-incrementing cluster id counter.
 var _next_id: int = 0
 
-## Cardinal neighbour offsets.
-const _CARDINALS: Array[Vector2i] = [
-	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
-]
-
 
 ## Register a newly placed Stone tile at `coord`.
 ## Must be called only once per coord.
@@ -42,7 +39,7 @@ func register_tile(coord: Vector2i) -> void:
 	var new_id: int = _new_cluster(coord)
 
 	# Union with all adjacent Stone clusters
-	for offset in _CARDINALS:
+	for offset in _HexUtils.HEX_NEIGHBORS:
 		var neighbour: Vector2i = coord + offset
 		if _coord_to_root.has(neighbour):
 			_union(new_id, _find(_coord_to_root[neighbour]))

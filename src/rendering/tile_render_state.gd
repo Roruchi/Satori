@@ -9,10 +9,10 @@ var coord: Vector2i = Vector2i.ZERO
 ## Biome type (BiomeType.Value).
 var biome: int = BiomeType.Value.NONE
 
-## Raw 8-bit neighbour bitmask (0–255).
-var bitmask8: int = 0
+## Raw 6-bit hex neighbour bitmask (0–63).
+var bitmask6: int = 0
 
-## Wang/blob canonical index (0–46) derived from bitmask8.
+## Hex canonical index (0–12) derived from bitmask6 via D6 symmetry reduction.
 var canonical: int = 0
 
 ## Owning 8×8 chunk coordinate.

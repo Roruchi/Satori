@@ -1,6 +1,7 @@
 ## Test Suite: BiomeTransitionLayer
 ##
 ## GUT unit tests for src/rendering/biome_transition_layer.gd
+## Updated for 6-directional hex adjacency.
 ## Run via tests/gut_runner.tscn
 
 extends GutTest
@@ -68,16 +69,27 @@ func test_unregistered_pair_returns_null() -> void:
 
 
 # ---------------------------------------------------------------------------
-# BiomeTransitionLayer.on_tile_placed — decoration spawning
+# BiomeTransitionLayer.on_tile_placed — hex edge decoration spawning
 # ---------------------------------------------------------------------------
 
-func test_decorations_spawned_for_forest_water_adjacency() -> void:
+func test_decorations_spawned_for_forest_water_hex_adjacency() -> void:
 	var grid: RefCounted = _make_grid()
 	grid.place_tile(Vector2i.ZERO, BiomeType.Value.FOREST)
+	# E hex neighbor
 	grid.place_tile(Vector2i(1, 0), BiomeType.Value.WATER)
 	_layer.on_tile_placed(Vector2i(1, 0), grid)
 	assert_true(_layer.get_child_count() > 0,
-		"Decoration nodes must be spawned when FOREST and WATER are adjacent")
+		"Decoration nodes must be spawned when FOREST and WATER are hex-adjacent")
+
+
+func test_decorations_spawned_for_se_hex_neighbor() -> void:
+	var grid: RefCounted = _make_grid()
+	grid.place_tile(Vector2i.ZERO, BiomeType.Value.FOREST)
+	# SE hex neighbor (0,1)
+	grid.place_tile(Vector2i(0, 1), BiomeType.Value.WATER)
+	_layer.on_tile_placed(Vector2i(0, 1), grid)
+	assert_true(_layer.get_child_count() > 0,
+		"Decoration must spawn for FOREST↔WATER across the SE hex edge")
 
 
 func test_no_decorations_for_same_biome_adjacency() -> void:
@@ -86,7 +98,7 @@ func test_no_decorations_for_same_biome_adjacency() -> void:
 	grid.place_tile(Vector2i(1, 0), BiomeType.Value.FOREST)
 	_layer.on_tile_placed(Vector2i(1, 0), grid)
 	assert_eq(_layer.get_child_count(), 0,
-		"No decoration nodes should be spawned for same-biome adjacency")
+		"No decoration nodes should be spawned for same-biome hex adjacency")
 
 
 func test_same_edge_not_decorated_twice() -> void:
@@ -95,7 +107,16 @@ func test_same_edge_not_decorated_twice() -> void:
 	grid.place_tile(Vector2i(1, 0), BiomeType.Value.WATER)
 	_layer.on_tile_placed(Vector2i(1, 0), grid)
 	var count_after_first: int = _layer.get_child_count()
-	# Call again (simulates duplicate placement event)
 	_layer.on_tile_placed(Vector2i(1, 0), grid)
 	assert_eq(_layer.get_child_count(), count_after_first,
-		"Calling on_tile_placed twice must not double-spawn decorations for the same edge")
+		"Calling on_tile_placed twice must not double-spawn decorations for the same hex edge")
+
+
+func test_no_decoration_for_square_diagonal_non_hex_neighbor() -> void:
+	# (1,1) is a square diagonal — NOT a hex neighbor; should not trigger transitions
+	var grid: RefCounted = _make_grid()
+	grid.place_tile(Vector2i.ZERO, BiomeType.Value.FOREST)
+	grid.place_tile(Vector2i(1, 1), BiomeType.Value.WATER)
+	_layer.on_tile_placed(Vector2i(1, 1), grid)
+	assert_eq(_layer.get_child_count(), 0,
+		"Square-diagonal (1,1) is not a hex neighbor; no decoration must spawn")

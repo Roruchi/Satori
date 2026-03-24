@@ -1,6 +1,6 @@
 ## BiomeTransitionLayer — spawns procedural decoration voxels on biome-pair edges.
 ##
-## When two tiles with a registered biome-pair transition become cardinal
+## When two tiles with a registered biome-pair transition become hex
 ## neighbours, this layer spawns lightweight MeshInstance3D decoration nodes
 ## at the shared edge midpoint.
 ##
@@ -13,18 +13,15 @@
 class_name BiomeTransitionLayer
 extends Node3D
 
-const TILE_SIZE: float = 1.0
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+
+const TILE_RADIUS: float = 1.0
 
 ## Registered biome-pair → TransitionDecorationData.
 var _library: Dictionary = {}
 
 ## Active edge records to prevent double-spawning: edge_key → true.
 var _active_edges: Dictionary = {}
-
-## Cardinal neighbour offsets.
-const _CARDINALS: Array[Vector2i] = [
-	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
-]
 
 
 func _ready() -> void:
@@ -40,14 +37,14 @@ func get_transition(biome_a: int, biome_b: int) -> Resource:
 
 
 ## Called by VoxelRenderer when a tile is placed at `coord`.
-## Checks all 4 cardinal neighbours for registered biome-pair transitions
+## Checks all 6 hex neighbours for registered biome-pair transitions
 ## and spawns decorations for any new edges found.
 func on_tile_placed(coord: Vector2i, grid: RefCounted) -> void:
 	var tile: GardenTile = grid.get_tile(coord)
 	if tile == null:
 		return
 
-	for offset in _CARDINALS:
+	for offset in _HexUtils.HEX_NEIGHBORS:
 		var neighbour_coord: Vector2i = coord + offset
 		var neighbour: GardenTile = grid.get_tile(neighbour_coord)
 		if neighbour == null:
@@ -76,8 +73,10 @@ func _spawn_decoration(
 	data: Resource
 ) -> void:
 	# Place decoration at the world-space midpoint of the shared edge
-	var world_a := Vector3(primary_coord.x * TILE_SIZE, 0.0, primary_coord.y * TILE_SIZE)
-	var world_b := Vector3(secondary_coord.x * TILE_SIZE, 0.0, secondary_coord.y * TILE_SIZE)
+	var px_a: Vector2 = _HexUtils.axial_to_pixel(primary_coord, TILE_RADIUS)
+	var px_b: Vector2 = _HexUtils.axial_to_pixel(secondary_coord, TILE_RADIUS)
+	var world_a := Vector3(px_a.x, 0.0, px_a.y)
+	var world_b := Vector3(px_b.x, 0.0, px_b.y)
 	var midpoint: Vector3 = (world_a + world_b) * 0.5
 
 	# Use the mesh from the data resource, or a generated fallback

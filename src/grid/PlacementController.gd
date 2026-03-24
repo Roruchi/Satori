@@ -3,7 +3,8 @@
 ## Long-press on an occupied tile triggers a mix attempt instead of placement.
 extends Node2D
 
-const TILE_SIZE: int = 32
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const TILE_RADIUS: float = 20.0
 const LONG_PRESS_THRESHOLD_MS: float = 500.0
 
 @onready var _garden_view: Node2D = $"../GardenView"
@@ -17,12 +18,13 @@ var _press_on_occupied: bool = false
 var _long_press_fired: bool = false
 
 func _world_to_tile(world_pos: Vector2) -> Vector2i:
-	return Vector2i(roundi(world_pos.x / TILE_SIZE), roundi(world_pos.y / TILE_SIZE))
+	return _HexUtils.pixel_to_axial(world_pos, TILE_RADIUS)
 
 func _process(_delta: float) -> void:
 	var coord := _world_to_tile(get_global_mouse_position())
 	var valid: bool = GameState.grid.is_placement_valid(coord)
-	_garden_view.set_hover(coord, valid)
+	var mix: bool = not valid and GameState.grid.has_tile(coord)
+	_garden_view.set_hover(coord, valid, mix)
 
 	# Long-press detection: fire once threshold is reached on an occupied tile.
 	if _pressing and _press_on_occupied and not _long_press_fired:

@@ -34,15 +34,17 @@ func replace_tile(coord: Vector2i, new_biome: int) -> void:
 	tiles[coord].biome = new_biome
 	tiles[coord].locked = true
 
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+
 ## Return true when placing at coord would be legal:
 ##   - The Origin (0,0) is always valid if unoccupied.
-##   - Any other coord must be empty AND have at least one occupied cardinal neighbour.
+##   - Any other coord must be empty AND have at least one occupied hex neighbour.
 func is_placement_valid(coord: Vector2i) -> bool:
 	if has_tile(coord):
 		return false
 	if coord == Vector2i.ZERO:
 		return true
-	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		if has_tile(coord + offset):
+	for neighbor: Vector2i in _HexUtils.get_neighbors(coord):
+		if has_tile(neighbor):
 			return true
 	return false

@@ -22,26 +22,7 @@ func get_discovered_ids() -> Array[String]:
 	return _log.as_id_array()
 
 func _load() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		RuntimeLogger.warn("DiscoveryPersistence", "Failed to open save file: %s" % SAVE_PATH)
-		return
-	var text: String = file.get_as_text()
-	file.close()
-	var parsed: Variant = JSON.parse_string(text)
-	if not (parsed is Dictionary):
-		RuntimeLogger.warn("DiscoveryPersistence", "Invalid discovery save data format")
-		return
-	_log.deserialize(parsed as Dictionary)
+	pass  # DISABLED for testing — re-enable when save/load is ready
 
 func _save() -> void:
-	var data: Dictionary = _log.serialize()
-	var json_text: String = JSON.stringify(data, "\t")
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		RuntimeLogger.warn("DiscoveryPersistence", "Failed to write save file: %s" % SAVE_PATH)
-		return
-	file.store_string(json_text)
-	file.close()
+	pass  # DISABLED for testing — re-enable when save/load is ready
