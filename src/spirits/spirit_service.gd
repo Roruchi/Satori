@@ -59,7 +59,7 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	if not discovery_id.begins_with("spirit_"):
 		return
 	if discovery_id == SkyWhaleEvaluator.SPIRIT_ID:
-		return
+		return  # Sky Whale is triggered by tile_placed balance check, not by PatternMatcher
 	if _active_instances.has(discovery_id):
 		return
 	_summon_spirit(discovery_id, triggering_coords)

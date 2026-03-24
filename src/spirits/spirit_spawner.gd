@@ -26,6 +26,6 @@ func get_wanderer(spirit_id: String) -> Node3D:
 	if _parent_node == null:
 		return null
 	for child in _parent_node.get_children():
-		if child.has_method("get") and child.get("spirit_id") == spirit_id:
+		if child is SpiritWanderer and child.spirit_id == spirit_id:
 			return child
 	return null
