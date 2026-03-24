@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_waterfall"]
+
+[resource]
+script = ExtResource("1_waterfall")
+discovery_id = "disc_waterfall"
+pattern_type = 3
+required_biomes = Array[int]([1])
+forbidden_biomes = Array[int]([])
+size_threshold = 0
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {"radius": 1,
+"biomes": {2: 1}}
+prerequisite_ids = Array[String](["disc_river", "disc_mountain_peak"])

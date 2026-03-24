@@ -11,10 +11,10 @@
 
 **Purpose**: Prepare feature test harness and content scaffolding.
 
-- [ ] T001 Create Tier 1 discovery fixture directory marker in tests/unit/fixtures/discoveries/.keep
-- [ ] T002 Create discovery pipeline test suite scaffold in tests/unit/test_tier1_discovery_pipeline.gd
-- [ ] T003 [P] Create discovery persistence test suite scaffold in tests/unit/test_tier1_discovery_persistence.gd
-- [ ] T004 [P] Create discovery audio mapping test suite scaffold in tests/unit/test_tier1_discovery_audio_map.gd
+- [x] T001 Create Tier 1 discovery fixture directory marker in tests/unit/fixtures/discoveries/.keep
+- [x] T002 Create discovery pipeline test suite scaffold in tests/unit/test_tier1_discovery_pipeline.gd
+- [x] T003 [P] Create discovery persistence test suite scaffold in tests/unit/test_tier1_discovery_persistence.gd
+- [x] T004 [P] Create discovery audio mapping test suite scaffold in tests/unit/test_tier1_discovery_audio_map.gd
 
 ---
 
@@ -24,14 +24,14 @@
 
 **CRITICAL**: Complete this phase before starting user stories.
 
-- [ ] T005 Implement discovery metadata catalog model and lookup API in src/biomes/discovery_catalog.gd
-- [ ] T006 Define all 12 Tier 1 discovery metadata entries in src/biomes/discovery_catalog_data.gd
-- [ ] T007 Add typed discovery payload value object for queue/persistence handoff in src/biomes/discovery_payload.gd
-- [ ] T008 Implement notification queue controller shell with enqueue/dequeue API in src/ui/discovery_notification_queue.gd
-- [ ] T009 [P] Implement discovery audio playback wrapper with no-fail visual fallback in src/ui/discovery_audio_player.gd
-- [ ] T010 Add Tier 1 pattern resource files for all discovery IDs in src/biomes/patterns/tier1/
-- [ ] T011 Wire Tier 1 pattern directory loading into pattern bootstrap path in src/biomes/pattern_loader.gd
-- [ ] T012 Add discovery event router that combines signal + metadata lookup in src/biomes/discovery_event_router.gd
+- [x] T005 Implement discovery metadata catalog model and lookup API in src/biomes/discovery_catalog.gd
+- [x] T006 Define all 12 Tier 1 discovery metadata entries in src/biomes/discovery_catalog_data.gd
+- [x] T007 Add typed discovery payload value object for queue/persistence handoff in src/biomes/discovery_payload.gd
+- [x] T008 Implement notification queue controller shell with enqueue/dequeue API in src/ui/discovery_notification_queue.gd
+- [x] T009 [P] Implement discovery audio playback wrapper with no-fail visual fallback in src/ui/discovery_audio_player.gd
+- [x] T010 Add Tier 1 pattern resource files for all discovery IDs in src/biomes/patterns/tier1/
+- [x] T011 Wire Tier 1 pattern directory loading into pattern bootstrap path in src/biomes/pattern_loader.gd
+- [x] T012 Add discovery event router that combines signal + metadata lookup in src/biomes/discovery_event_router.gd
 
 **Checkpoint**: Foundation ready. User stories can proceed.
 
@@ -45,19 +45,19 @@
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Add deterministic first-trigger notification test coverage in tests/unit/test_tier1_discovery_pipeline.gd
-- [ ] T014 [P] [US1] Add dual-trigger queue ordering/no-overlap coverage in tests/unit/test_tier1_discovery_pipeline.gd
-- [ ] T015 [US1] Add 4-second auto-dismiss timing assertions in tests/unit/test_tier1_discovery_pipeline.gd
-- [ ] T016 [US1] Document manual validation steps for notification and queue behavior in specs/006-tier1-biome-discoveries/quickstart.md
+- [x] T013 [P] [US1] Add deterministic first-trigger notification test coverage in tests/unit/test_tier1_discovery_pipeline.gd
+- [x] T014 [P] [US1] Add dual-trigger queue ordering/no-overlap coverage in tests/unit/test_tier1_discovery_pipeline.gd
+- [x] T015 [US1] Add 4-second auto-dismiss timing assertions in tests/unit/test_tier1_discovery_pipeline.gd
+- [x] T016 [US1] Document manual validation steps for notification and queue behavior in specs/006-tier1-biome-discoveries/quickstart.md
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] Replace single-toast discovery UI flow with queued notification flow in src/ui/TileSelector.gd
-- [ ] T018 [US1] Implement queue item lifecycle timing and next-item transition in src/ui/discovery_notification_queue.gd
-- [ ] T019 [US1] Integrate metadata resolution and queue enqueue on discovery signal in src/biomes/discovery_event_router.gd
-- [ ] T020 [US1] Integrate stinger playback on queue activation in src/ui/discovery_audio_player.gd
-- [ ] T021 [US1] Wire discovery queue/audio nodes into main scene in scenes/Garden.tscn
-- [ ] T022 [US1] Ensure duplicate suppression still gates event emission before UI/audio handling in src/biomes/pattern_matcher.gd
+- [x] T017 [US1] Replace single-toast discovery UI flow with queued notification flow in src/ui/TileSelector.gd
+- [x] T018 [US1] Implement queue item lifecycle timing and next-item transition in src/ui/discovery_notification_queue.gd
+- [x] T019 [US1] Integrate metadata resolution and queue enqueue on discovery signal in src/biomes/discovery_event_router.gd
+- [x] T020 [US1] Integrate stinger playback on queue activation in src/ui/discovery_audio_player.gd
+- [x] T021 [US1] Wire discovery queue/audio nodes into main scene in scenes/Garden.tscn
+- [x] T022 [US1] Ensure duplicate suppression still gates event emission before UI/audio handling in src/biomes/pattern_matcher.gd
 
 **Checkpoint**: US1 is independently functional and demoable as MVP.
 
@@ -71,19 +71,19 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Add discovery log write/read round-trip coverage in tests/unit/test_tier1_discovery_persistence.gd
-- [ ] T024 [P] [US2] Add startup hydration duplicate-suppression coverage in tests/unit/test_tier1_discovery_persistence.gd
-- [ ] T025 [US2] Add timestamp immutability assertions across reload in tests/unit/test_tier1_discovery_persistence.gd
-- [ ] T026 [US2] Document restart persistence validation flow in specs/006-tier1-biome-discoveries/quickstart.md
+- [x] T023 [P] [US2] Add discovery log write/read round-trip coverage in tests/unit/test_tier1_discovery_persistence.gd
+- [x] T024 [P] [US2] Add startup hydration duplicate-suppression coverage in tests/unit/test_tier1_discovery_persistence.gd
+- [x] T025 [US2] Add timestamp immutability assertions across reload in tests/unit/test_tier1_discovery_persistence.gd
+- [x] T026 [US2] Document restart persistence validation flow in specs/006-tier1-biome-discoveries/quickstart.md
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Implement discovery log aggregate with append/contains/serialize/deserialize APIs in src/biomes/discovery_log.gd
-- [ ] T028 [US2] Implement discovery save/load adapter for user:// garden payload integration in src/autoloads/discovery_persistence.gd
-- [ ] T029 [US2] Record discovery payloads (ID, name, timestamp, coords) on first trigger in src/biomes/discovery_event_router.gd
-- [ ] T030 [US2] Hydrate PatternMatcher discovery registry from persisted log during startup in src/biomes/pattern_scan_scheduler.gd
-- [ ] T031 [US2] Wire discovery persistence lifecycle hooks into game state startup/shutdown in src/autoloads/GameState.gd
-- [ ] T032 [US2] Register discovery persistence autoload configuration in project.godot
+- [x] T027 [US2] Implement discovery log aggregate with append/contains/serialize/deserialize APIs in src/biomes/discovery_log.gd
+- [x] T028 [US2] Implement discovery save/load adapter for user:// garden payload integration in src/autoloads/discovery_persistence.gd
+- [x] T029 [US2] Record discovery payloads (ID, name, timestamp, coords) on first trigger in src/biomes/discovery_event_router.gd
+- [x] T030 [US2] Hydrate PatternMatcher discovery registry from persisted log during startup in src/biomes/pattern_scan_scheduler.gd
+- [x] T031 [US2] Wire discovery persistence lifecycle hooks into game state startup/shutdown in src/autoloads/GameState.gd
+- [x] T032 [US2] Register discovery persistence autoload configuration in project.godot
 
 **Checkpoint**: US2 works independently with restart-safe discovery history.
 
@@ -97,17 +97,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] Add uniqueness assertion for 12 Tier 1 audio keys in tests/unit/test_tier1_discovery_audio_map.gd
-- [ ] T034 [P] [US3] Add audio-key-to-asset resolution coverage in tests/unit/test_tier1_discovery_audio_map.gd
-- [ ] T035 [US3] Add queued playback handoff/ducking behavior coverage in tests/unit/test_tier1_discovery_pipeline.gd
-- [ ] T036 [US3] Document mute/silent-device expected behavior in specs/006-tier1-biome-discoveries/quickstart.md
+- [x] T033 [P] [US3] Add uniqueness assertion for 12 Tier 1 audio keys in tests/unit/test_tier1_discovery_audio_map.gd
+- [x] T034 [P] [US3] Add audio-key-to-asset resolution coverage in tests/unit/test_tier1_discovery_audio_map.gd
+- [x] T035 [US3] Add queued playback handoff/ducking behavior coverage in tests/unit/test_tier1_discovery_pipeline.gd
+- [x] T036 [US3] Document mute/silent-device expected behavior in specs/006-tier1-biome-discoveries/quickstart.md
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] Populate unique audio_key values for all 12 discoveries in src/biomes/discovery_catalog_data.gd
-- [ ] T038 [US3] Add Tier 1 stinger asset mapping table and fallback handling in src/ui/discovery_audio_player.gd
-- [ ] T039 [US3] Implement non-overlapping playback handoff/duck policy for queued stingers in src/ui/discovery_audio_player.gd
-- [ ] T040 [US3] Add placeholder Tier 1 stinger asset manifest for runtime loading in assets/audio/discoveries/README.md
+- [x] T037 [US3] Populate unique audio_key values for all 12 discoveries in src/biomes/discovery_catalog_data.gd
+- [x] T038 [US3] Add Tier 1 stinger asset mapping table and fallback handling in src/ui/discovery_audio_player.gd
+- [x] T039 [US3] Implement non-overlapping playback handoff/duck policy for queued stingers in src/ui/discovery_audio_player.gd
+- [x] T040 [US3] Add placeholder Tier 1 stinger asset manifest for runtime loading in assets/audio/discoveries/README.md
 
 **Checkpoint**: US3 audio distinctness and queue playback quality are independently validated.
 
@@ -119,8 +119,8 @@
 
 - [ ] T041 [P] Run full headless GUT suite for discovery regressions via tests/gut_runner.tscn
 - [ ] T042 Validate all quickstart manual scenarios and record outcomes in specs/006-tier1-biome-discoveries/quickstart.md
-- [ ] T043 [P] Align contract docs with final implementation field names in specs/006-tier1-biome-discoveries/contracts/discovery-event-contract.md
-- [ ] T044 [P] Align persistence schema doc with final save payload shape in specs/006-tier1-biome-discoveries/contracts/discovery-log-schema.md
+- [x] T043 [P] Align contract docs with final implementation field names in specs/006-tier1-biome-discoveries/contracts/discovery-event-contract.md
+- [x] T044 [P] Align persistence schema doc with final save payload shape in specs/006-tier1-biome-discoveries/contracts/discovery-log-schema.md
 - [ ] T045 Verify scan timing budget remains within target under discovery load in tests/unit/test_pattern_scan_performance.gd
 
 ---

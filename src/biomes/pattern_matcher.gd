@@ -114,13 +114,17 @@ func scan_and_emit(grid: RefCounted) -> Array[DiscoverySignal]:
 	var discoveries := scan_grid(grid)
 	var emitted_discoveries: Array[DiscoverySignal] = []
 	var newly_discovered_ids: Array[String] = []
+	var emitted_this_scan: Dictionary = {}
 
 	for payload in discoveries:
 		if _discovery_registry.has_discovery(payload.discovery_id):
 			continue
+		if emitted_this_scan.has(payload.discovery_id):
+			continue
 		discovery_triggered.emit(payload.discovery_id, payload.triggering_coords)
 		emitted_discoveries.append(payload)
 		newly_discovered_ids.append(payload.discovery_id)
+		emitted_this_scan[payload.discovery_id] = true
 
 	if not newly_discovered_ids.is_empty():
 		_discovery_registry.mark_discoveries_atomically(newly_discovered_ids)

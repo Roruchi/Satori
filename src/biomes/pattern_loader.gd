@@ -5,20 +5,32 @@ const DEFAULT_PATTERN_DIR := "res://src/biomes/patterns"
 
 func load_patterns(pattern_dir: String = DEFAULT_PATTERN_DIR) -> Array[PatternDefinition]:
 	var loaded_patterns: Array[PatternDefinition] = []
-	var dir := DirAccess.open(pattern_dir)
+	# Recursively load from dir and all subdirectories first, then sort once.
+	_load_from_dir(pattern_dir, loaded_patterns)
+	loaded_patterns.sort_custom(func(a: PatternDefinition, b: PatternDefinition) -> bool:
+		return a.discovery_id < b.discovery_id
+	)
+	return loaded_patterns
+
+func _load_from_dir(dir_path: String, loaded_patterns: Array[PatternDefinition]) -> void:
+	var dir := DirAccess.open(dir_path)
 	if dir == null:
-		RuntimeLogger.warn("PatternLoader", "Pattern directory does not exist: %s" % pattern_dir)
-		return loaded_patterns
+		RuntimeLogger.warn("PatternLoader", "Pattern directory does not exist: %s" % dir_path)
+		return
 
 	dir.list_dir_begin()
 	while true:
 		var file_name := dir.get_next()
 		if file_name.is_empty():
 			break
-		if dir.current_is_dir() or not file_name.ends_with(".tres"):
+		if dir.current_is_dir():
+			if not file_name.begins_with("."):
+				_load_from_dir("%s/%s" % [dir_path, file_name], loaded_patterns)
+			continue
+		if not file_name.ends_with(".tres"):
 			continue
 
-		var full_path := "%s/%s" % [pattern_dir, file_name]
+		var full_path := "%s/%s" % [dir_path, file_name]
 		var resource := load(full_path)
 		if resource == null:
 			RuntimeLogger.warn("PatternLoader", "Failed to load pattern resource: %s" % full_path)
@@ -34,8 +46,3 @@ func load_patterns(pattern_dir: String = DEFAULT_PATTERN_DIR) -> Array[PatternDe
 
 		loaded_patterns.append(definition)
 	dir.list_dir_end()
-
-	loaded_patterns.sort_custom(func(a: PatternDefinition, b: PatternDefinition) -> bool:
-		return a.discovery_id < b.discovery_id
-	)
-	return loaded_patterns

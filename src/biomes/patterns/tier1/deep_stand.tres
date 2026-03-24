@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_deep_stand"]
+
+[resource]
+script = ExtResource("1_deep_stand")
+discovery_id = "disc_deep_stand"
+pattern_type = 0
+required_biomes = Array[int]([0])
+forbidden_biomes = Array[int]([2])
+size_threshold = 10
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String]([])
