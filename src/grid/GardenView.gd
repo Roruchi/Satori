@@ -14,6 +14,11 @@ const _STAR_COUNT: int = 150
 ## Number of floating mist wisps (6 ambient + 4 edge-biased).
 const _MIST_COUNT: int = 10
 
+## RNG seeds for deterministic background elements.
+const _STAR_SEED: int = 0xC0FFEE
+const _MIST_SEED: int = 0xD1F0A7
+const _GRAIN_SEED: int = 0x5A7201
+
 # ---------------------------------------------------------------------------
 # Hover state
 # ---------------------------------------------------------------------------
@@ -858,7 +863,7 @@ func _draw_obsidian_expanse_overlay(coords: Array[Vector2i]) -> void:
 ## Each wisp: [nx, ny, w_frac, h_frac, alpha_base, pulse_spd, drift_spd, phase, amp_x, amp_y]
 func _init_background_data() -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 0xC0FFEE
+	rng.seed = _STAR_SEED
 
 	_bg_stars.clear()
 	for _i: int in range(_STAR_COUNT):
@@ -873,7 +878,7 @@ func _init_background_data() -> void:
 
 	_bg_mists.clear()
 	var mrng := RandomNumberGenerator.new()
-	mrng.seed = 0xD1F0A7
+	mrng.seed = _MIST_SEED
 
 	# 6 ambient wisps scattered randomly across the screen
 	for _i: int in range(6):
@@ -985,7 +990,7 @@ func _draw_background() -> void:
 
 	# --- Subtle earthen grain (world-space, seeded, capped) ---
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 0x5A7201
+	rng.seed = _GRAIN_SEED
 	var grain_count: int = mini(int(sw * sh * 0.0013), 240)
 	for _i: int in range(grain_count):
 		var gx: float = sx + rng.randf() * sw
