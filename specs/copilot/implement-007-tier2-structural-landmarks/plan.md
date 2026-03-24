@@ -1,103 +1,65 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Feature 007 — Tier 2 Structural Landmark Discoveries
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Branch**: `copilot/implement-007-tier2-structural-landmarks` | **Date**: 2026-03-24 | **Spec**: `specs/007-tier2-structural-landmarks/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Tier 2 Structural Landmarks are ten named geometric recipes that trigger a discovery notification when a player constructs the required tile arrangement. Once discovered, the contributing tiles display a unique visual overlay. Each landmark fires at most once per garden. The implementation extends the existing Pattern Matching Engine (Feature 005) and Tier 1 Discovery Pipeline (Feature 006) with three new shape-recipe constraint types (`must_be_empty`, `absolute_anchor`, forbidden-neighbour), 19 new `.tres` pattern resources, catalog entries for 10 new discoveries, and 10 new overlay drawing functions in `GardenView`.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: GDScript 4.6 (Godot 4.6)
+**Primary Dependencies**: Godot 4.6 engine, GUT test framework
+**Storage**: Existing `DiscoveryLog` / `DiscoveryPersistence` — no schema changes
+**Testing**: GUT (`tests/unit/`)
+**Target Platform**: Mobile-first (Android / iOS), also desktop
+**Project Type**: Godot 4 game (mobile-first)
+**Performance Goals**: Pattern scan < 16 ms per placement on mid-range mobile
+**Constraints**: No new autoloads; Variant-safe typing throughout
+**Scale/Scope**: 10 new landmarks; 19 new `.tres` files; ~400 lines of GDScript changes
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
-
-- **Spec Traceability**: Confirm this work is rooted in the current numbered
-  feature spec and that planned work stays traceable to user stories or shared
-  foundational tasks.
-- **Godot-Native Fit**: Confirm the solution stays within the Godot project model:
-  GDScript in `src/`, scenes in `scenes/`, project wiring in `project.godot`, and
-  autoloads only for cross-cutting services or state.
-- **Validation Strategy**: Identify required GUT coverage in `tests/` and any
-  manual debug-harness or in-editor validation needed for scene-heavy behavior.
-- **World Rule Safety**: State whether the feature changes permanence rules,
-  deterministic discovery or persistence behavior, or save compatibility.
-- **Mobile Budgets**: State expected impact on performance, input ergonomics,
-  accessibility toggles, startup time, and save/load time when applicable.
-- **Guardrails**: Check autoload/class_name naming, `Variant` typing risks in
-  warnings-as-errors contexts, and typed dependency loading strategy.
+- **Spec Traceability**: Rooted in `specs/007-tier2-structural-landmarks/spec.md`. All tasks trace to the four user stories.
+- **Godot-Native Fit**: All code in GDScript under `src/`; no new autoloads; `project.godot` unchanged.
+- **Validation Strategy**: GUT unit tests cover all 10 landmark triggers, duplicate suppression, and three new constraint types. Manual verification via in-editor play (F5).
+- **World Rule Safety**: Discovery is deterministic and additive. Permanence model unchanged. `forbidden_biomes` repurposed from currently-unused state — no existing `.tres` affected.
+- **Mobile Budgets**: 19 new patterns add constant overhead per scan; no render budget change beyond 10 new overlay draw calls already batched in `_draw()`.
+- **Guardrails**: No `class_name` conflicts; explicit types used for all new GDScript paths.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/copilot/implement-007-tier2-structural-landmarks/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+└── tasks.md
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-project.godot
-
 src/
-├── autoloads/
 ├── biomes/
-├── camera/
-├── grid/
-└── ui/
-
-scenes/
-├── Garden.tscn
-└── UI/
+│   ├── discovery_catalog_data.gd      # add get_tier2_entries()
+│   ├── discovery_catalog.gd           # load tier2 entries
+│   ├── matchers/
+│   │   └── shape_matcher.gd           # absolute_anchor + forbidden_biomes
+│   └── patterns/
+│       └── tier2/                     # 19 new .tres files
+└── grid/
+    ├── GardenView.gd                  # 10 new overlay functions
+    └── spatial_query.gd               # must_be_empty + absolute_anchor
 
 tests/
-├── gut_runner.tscn
 └── unit/
-
-specs/[###-feature]/
-└── ...feature artifacts...
+    └── test_tier2_landmark_discoveries.gd
 ```
-
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No constitution violations. All changes are additive extensions to existing machinery.

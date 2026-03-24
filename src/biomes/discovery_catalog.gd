@@ -6,6 +6,8 @@ var _entries: Dictionary = {}
 func load_from_data(data: DiscoveryCatalogData) -> void:
 	for entry in data.get_tier1_entries():
 		_entries[entry["discovery_id"]] = entry
+	for entry in data.get_tier2_entries():
+		_entries[entry["discovery_id"]] = entry
 
 func lookup(discovery_id: String) -> Dictionary:
 	if not _entries.has(discovery_id):

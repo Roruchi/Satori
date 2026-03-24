@@ -42,11 +42,20 @@ func count_biomes_in_radius(center: Vector2i, radius: int, tile_lookup: Callable
 
 func recipe_matches_at(anchor: Vector2i, shape_recipe: Array[Dictionary], tile_lookup: Callable) -> bool:
 	for entry in shape_recipe:
-		if not entry.has("offset") or not entry.has("biome"):
+		if not entry.has("offset"):
 			return false
 		var offset: Vector2i = entry["offset"]
-		var target_biome: int = int(entry["biome"])
-		var tile: GardenTile = tile_lookup.call(anchor + offset)
-		if tile == null or tile.biome != target_biome:
-			return false
+		var must_be_empty: bool = entry.get("must_be_empty", false)
+		var is_absolute: bool = entry.get("absolute_anchor", false)
+		var effective_coord: Vector2i = offset if is_absolute else anchor + offset
+		var tile: GardenTile = tile_lookup.call(effective_coord)
+		if must_be_empty:
+			if tile != null:
+				return false
+		else:
+			if not entry.has("biome"):
+				return false
+			var target_biome: int = int(entry["biome"])
+			if tile == null or tile.biome != target_biome:
+				return false
 	return true

@@ -477,6 +477,17 @@ func _draw_discovery_overlay(discovery_id: String, coords: Array[Vector2i]) -> v
 		"disc_obsidian_expanse":   _draw_obsidian_expanse_overlay(coords)
 		# Cluster-based discoveries (deep_stand, river, mountain_peak, barren_expanse,
 		# peat_bog) are already rendered via _draw_cluster_overlay; no extra marker needed.
+		# --- Tier 2 Structural Landmarks ---
+		"disc_origin_shrine":      _draw_origin_shrine_overlay(coords)
+		"disc_bridge_of_sighs":    _draw_bridge_of_sighs_overlay(coords)
+		"disc_lotus_pagoda":       _draw_lotus_pagoda_overlay(coords)
+		"disc_monks_rest":         _draw_monks_rest_overlay(coords)
+		"disc_star_gazing_deck":   _draw_star_gazing_deck_overlay(coords)
+		"disc_sun_dial":           _draw_sun_dial_overlay(coords)
+		"disc_whale_bone_arch":    _draw_whale_bone_arch_overlay(coords)
+		"disc_echoing_cavern":     _draw_echoing_cavern_overlay(coords)
+		"disc_bamboo_chime":       _draw_bamboo_chime_overlay(coords)
+		"disc_floating_pavilion":  _draw_floating_pavilion_overlay(coords)
 
 
 ## Glade: earth centre ringed by forest — draw sunbeam rays from the centre.
@@ -605,6 +616,208 @@ func _draw_obsidian_expanse_overlay(coords: Array[Vector2i]) -> void:
 			draw_colored_polygon(PackedVector2Array([Vector2(cx + ox, cy + oy - sh), Vector2(cx + ox + sw, cy + oy + sh * 0.4), Vector2(cx + ox - sw, cy + oy + sh * 0.4)]), Color(0.10, 0.12, 0.25, 0.85))
 			# Glint highlight
 			draw_line(Vector2(cx + ox, cy + oy - sh), Vector2(cx + ox + sw * 0.5, cy + oy - sh * 0.3), Color(0.60, 0.70, 1.0, 0.70), 1.0)
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 Landmark overlays
+# ---------------------------------------------------------------------------
+
+## Origin Shrine: golden sacred cross at the world origin + blue halo on Water arms.
+func _draw_origin_shrine_overlay(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	var gold := Color(1.0, 0.85, 0.20, 0.95)
+	var halo := Color(0.45, 0.80, 1.0, 0.55)
+	for coord: Vector2i in coords:
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_colored_polygon(_hex_polygon(tc, TILE_RADIUS * 0.55), halo)
+	# Bright gold cross arms radiating from (0,0)
+	var origin: Vector2 = _HexUtils.axial_to_pixel(Vector2i.ZERO, TILE_RADIUS)
+	var arm: float = TILE_RADIUS * 0.85
+	var thick: float = 4.0
+	draw_line(origin + Vector2(-arm, 0), origin + Vector2(arm, 0), gold, thick)
+	draw_line(origin + Vector2(0, -arm), origin + Vector2(0, arm), gold, thick)
+	draw_circle(origin, 5.5, gold)
+
+
+## Bridge of Sighs: stone arch arc over the Water tile.
+func _draw_bridge_of_sighs_overlay(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	var arch_col := Color(0.70, 0.68, 0.62, 0.90)
+	var water_shimmer := Color(0.40, 0.75, 1.0, 0.45)
+	for coord: Vector2i in coords:
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_colored_polygon(_hex_polygon(tc, TILE_RADIUS * 0.5), water_shimmer)
+		# Single arc above each tile
+		draw_arc(tc, TILE_RADIUS * 0.65, deg_to_rad(200.0), deg_to_rad(340.0), 14, arch_col, 3.0)
+
+
+## Lotus Pagoda: a stylised tiered pagoda silhouette on each Swamp tile.
+func _draw_lotus_pagoda_overlay(coords: Array[Vector2i]) -> void:
+	var pagoda_col := Color(0.80, 0.55, 0.20, 0.88)
+	var roof_col   := Color(0.60, 0.18, 0.18, 0.90)
+	for coord: Vector2i in coords:
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		var cx: float = tc.x
+		var cy: float = tc.y - TILE_RADIUS * 0.3
+		# Three stacked trapezoidal tiers
+		for tier: int in range(3):
+			var tw: float = 7.0 - float(tier) * 2.0
+			var th: float = 4.0
+			var ty: float = cy + float(tier) * (th + 1.0)
+			draw_colored_polygon(PackedVector2Array([Vector2(cx - tw, ty + th), Vector2(cx + tw, ty + th), Vector2(cx + tw - 1.5, ty), Vector2(cx - tw + 1.5, ty)]), pagoda_col)
+			draw_line(Vector2(cx - tw - 2.0, ty + th * 0.5), Vector2(cx + tw + 2.0, ty + th * 0.5), roof_col, 1.5)
+		# Spire
+		draw_line(Vector2(cx, cy - 2.0), Vector2(cx, cy - 10.0), pagoda_col, 2.0)
+		draw_circle(Vector2(cx, cy - 10.0), 2.0, roof_col)
+
+
+## Monk's Rest: concentric meditation rings on the enclosed Earth tile.
+func _draw_monks_rest_overlay(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	# Centre tile is coords[0] (Earth)
+	var center_tc: Vector2 = _HexUtils.axial_to_pixel(coords[0], TILE_RADIUS)
+	var ring_col := Color(0.90, 0.80, 0.55, 0.70)
+	for r: int in range(2, 6):
+		draw_arc(center_tc, float(r) * 3.0, 0.0, TAU, 20, Color(ring_col.r, ring_col.g, ring_col.b, ring_col.a / float(r)), 1.5)
+	draw_circle(center_tc, 3.0, Color(0.95, 0.88, 0.45, 0.95))
+	# Forest ring: small leaf dot on each surrounding tile
+	var leaf_col := Color(0.15, 0.50, 0.15, 0.80)
+	var rng := RandomNumberGenerator.new()
+	for i: int in range(1, coords.size()):
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coords[i], TILE_RADIUS)
+		rng.seed = hash(coords[i]) ^ 0xF01E5
+		draw_circle(tc + Vector2(rng.randf_range(-4.0, 4.0), rng.randf_range(-4.0, 4.0)), 4.5, leaf_col)
+
+
+## Star-Gazing Deck: twinkling star cluster above the tile.
+func _draw_star_gazing_deck_overlay(coords: Array[Vector2i]) -> void:
+	var star_col  := Color(1.0, 0.98, 0.85, 0.92)
+	var glow_col  := Color(0.60, 0.75, 1.0, 0.35)
+	var rng := RandomNumberGenerator.new()
+	for coord: Vector2i in coords:
+		rng.seed = hash(coord) ^ 0x57A4
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_colored_polygon(_hex_polygon(tc, TILE_RADIUS * 0.55), glow_col)
+		var star_count: int = rng.randi_range(3, 6)
+		for _i: int in range(star_count):
+			var sx: float = tc.x + rng.randf_range(-TILE_RADIUS * 0.7, TILE_RADIUS * 0.7)
+			var sy: float = tc.y + rng.randf_range(-TILE_RADIUS * 0.7, TILE_RADIUS * 0.7)
+			var sr: float = rng.randf_range(1.0, 2.5)
+			draw_circle(Vector2(sx, sy), sr, star_col)
+			# 4-point star cross
+			draw_line(Vector2(sx - sr * 2.0, sy), Vector2(sx + sr * 2.0, sy), star_col, 0.8)
+			draw_line(Vector2(sx, sy - sr * 2.0), Vector2(sx, sy + sr * 2.0), star_col, 0.8)
+
+
+## Sun-Dial: golden radiating rays from the Stone centre tile.
+func _draw_sun_dial_overlay(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	var center_tc: Vector2 = _HexUtils.axial_to_pixel(coords[0], TILE_RADIUS)
+	var ray_col := Color(1.0, 0.88, 0.20, 0.85)
+	var core_col := Color(1.0, 0.70, 0.10, 0.95)
+	for i: int in range(12):
+		var angle: float = deg_to_rad(float(i) * 30.0)
+		var inner: float = TILE_RADIUS * 0.22
+		var outer: float = TILE_RADIUS * (0.80 if i % 2 == 0 else 0.50)
+		draw_line(center_tc + Vector2(cos(angle), sin(angle)) * inner, center_tc + Vector2(cos(angle), sin(angle)) * outer, ray_col, 1.5)
+	draw_circle(center_tc, 5.0, core_col)
+	# Earth neighbour tiles: subtle dust ring
+	var dust := Color(0.80, 0.65, 0.30, 0.30)
+	for i: int in range(1, coords.size()):
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coords[i], TILE_RADIUS)
+		draw_arc(tc, TILE_RADIUS * 0.45, 0.0, TAU, 16, dust, 2.5)
+
+
+## Whale-Bone Arch: bleached bone-arch curves over each Canyon tile.
+func _draw_whale_bone_arch_overlay(coords: Array[Vector2i]) -> void:
+	var bone_col := Color(0.92, 0.88, 0.80, 0.88)
+	var shadow   := Color(0.40, 0.30, 0.20, 0.35)
+	var rng := RandomNumberGenerator.new()
+	for coord: Vector2i in coords:
+		rng.seed = hash(coord) ^ 0xB04E
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_colored_polygon(_hex_polygon(tc, TILE_RADIUS), shadow)
+		# Curved bone arc
+		var arc_r: float = rng.randf_range(7.0, 11.0)
+		var arc_cx: float = tc.x + rng.randf_range(-3.0, 3.0)
+		var arc_cy: float = tc.y + arc_r * 0.3
+		draw_arc(Vector2(arc_cx, arc_cy), arc_r, deg_to_rad(195.0), deg_to_rad(345.0), 14, bone_col, 3.0)
+		# Two end knobs
+		draw_circle(Vector2(arc_cx - arc_r * 0.85, arc_cy + arc_r * 0.25), 2.5, bone_col)
+		draw_circle(Vector2(arc_cx + arc_r * 0.85, arc_cy + arc_r * 0.25), 2.5, bone_col)
+
+
+## Echoing Cavern: dark cave-mouth glow on the ring tiles; void shimmer on centre.
+func _draw_echoing_cavern_overlay(coords: Array[Vector2i]) -> void:
+	var cave_tint := Color(0.08, 0.06, 0.10, 0.55)
+	var glow_col  := Color(0.55, 0.35, 0.80, 0.70)
+	var rng := RandomNumberGenerator.new()
+	for coord: Vector2i in coords:
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_colored_polygon(_hex_polygon(tc, TILE_RADIUS), cave_tint)
+		rng.seed = hash(coord) ^ 0xCA5E
+		# Concentric glow rings
+		for r: int in range(1, 4):
+			draw_arc(tc, float(r) * 4.5, 0.0, TAU, 18, Color(glow_col.r, glow_col.g, glow_col.b, glow_col.a / float(r + 1)), 1.5)
+		# Stalactite nubs
+		var nubs: int = rng.randi_range(2, 4)
+		for _i: int in range(nubs):
+			var nx: float = tc.x + rng.randf_range(-TILE_RADIUS * 0.55, TILE_RADIUS * 0.55)
+			var ny: float = tc.y - TILE_RADIUS * 0.60
+			draw_colored_polygon(PackedVector2Array([Vector2(nx, ny), Vector2(nx + 2.0, ny + 5.0), Vector2(nx - 2.0, ny + 5.0)]), Color(0.30, 0.25, 0.35, 0.80))
+
+
+## Bamboo Chime: vertical bamboo stalks with node rings on each Savannah tile.
+func _draw_bamboo_chime_overlay(coords: Array[Vector2i]) -> void:
+	var stalk_col := Color(0.55, 0.72, 0.18, 0.92)
+	var node_col  := Color(0.30, 0.48, 0.10, 0.95)
+	var rng := RandomNumberGenerator.new()
+	for coord: Vector2i in coords:
+		rng.seed = hash(coord) ^ 0xBAB0
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		var cx: float = tc.x
+		var cy: float = tc.y
+		var count: int = rng.randi_range(2, 3)
+		for _i: int in range(count):
+			var ox: float = rng.randf_range(-TILE_RADIUS * 0.5, TILE_RADIUS * 0.5)
+			var top_y: float = cy - rng.randf_range(12.0, 18.0)
+			draw_line(Vector2(cx + ox, cy + TILE_RADIUS * 0.4), Vector2(cx + ox, top_y), stalk_col, 2.5)
+			# 2 node rings along stalk
+			for n: int in range(2):
+				var ny: float = cy + TILE_RADIUS * 0.4 - (cy + TILE_RADIUS * 0.4 - top_y) * (float(n + 1) / 3.0)
+				draw_line(Vector2(cx + ox - 3.0, ny), Vector2(cx + ox + 3.0, ny), node_col, 1.5)
+			# Leafy tip
+			draw_line(Vector2(cx + ox, top_y), Vector2(cx + ox + rng.randf_range(4.0, 7.0), top_y - rng.randf_range(4.0, 7.0)), stalk_col, 1.5)
+			draw_line(Vector2(cx + ox, top_y), Vector2(cx + ox - rng.randf_range(4.0, 7.0), top_y - rng.randf_range(4.0, 7.0)), stalk_col, 1.5)
+
+
+## Floating Pavilion: a small floating pavilion structure on the Swamp tile.
+func _draw_floating_pavilion_overlay(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	var tc: Vector2 = _HexUtils.axial_to_pixel(coords[0], TILE_RADIUS)
+	var cx: float = tc.x
+	var cy: float = tc.y
+	var water_ring := Color(0.40, 0.75, 1.0, 0.45)
+	var floor_col  := Color(0.75, 0.60, 0.35, 0.90)
+	var roof_col   := Color(0.60, 0.20, 0.12, 0.88)
+	var pillar_col := Color(0.82, 0.68, 0.40, 0.92)
+	# Ripple rings showing it floats
+	for r: int in range(2, 5):
+		draw_arc(tc, float(r) * 4.5, 0.0, TAU, 20, Color(water_ring.r, water_ring.g, water_ring.b, water_ring.a / float(r)), 1.2)
+	# Platform floor
+	draw_colored_polygon(PackedVector2Array([Vector2(cx - 9.0, cy + 2.0), Vector2(cx + 9.0, cy + 2.0), Vector2(cx + 7.0, cy - 1.0), Vector2(cx - 7.0, cy - 1.0)]), floor_col)
+	# Four corner pillars
+	for px: float in [-6.0, 6.0]:
+		draw_line(Vector2(cx + px, cy - 1.0), Vector2(cx + px, cy - 10.0), pillar_col, 2.0)
+	# Curved roof
+	draw_colored_polygon(PackedVector2Array([Vector2(cx - 10.0, cy - 9.0), Vector2(cx + 10.0, cy - 9.0), Vector2(cx + 5.0, cy - 16.0), Vector2(cx - 5.0, cy - 16.0)]), roof_col)
+	draw_line(Vector2(cx, cy - 16.0), Vector2(cx, cy - 20.0), pillar_col, 1.5)
+	draw_circle(Vector2(cx, cy - 20.0), 2.5, roof_col)
 
 
 # ---------------------------------------------------------------------------
