@@ -6,7 +6,7 @@ const _HexUtils = preload("res://src/grid/hex_utils.gd")
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
 
-## Depth of the 2.5D voxel side-face in pixels (at zoom=2 this is ~7px on screen).
+## Depth of the 2.5D voxel side-face in world units (appears as ~7px on screen at zoom=2).
 const VOXEL_DEPTH: float = 3.5
 
 ## Number of background stars.

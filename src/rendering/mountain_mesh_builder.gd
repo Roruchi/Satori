@@ -10,7 +10,7 @@ const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const TILE_RADIUS: float = 1.0   ## Hex circumradius in world units (matches TileChunkRenderer)
 const BASE_HEIGHT: float = 0.35  ## Height of the base plateau
 const PEAK_HEIGHT: float = 0.90  ## Max height at the cluster centroid
-const SNOW_START_T: float = 0.72 ## Normalised height fraction where snow begins
+const SNOW_START_T: float = 0.72 ## Normalized height fraction where snow begins
 
 ## Build a unified Mountain mesh for the given tile coordinates.
 ## Returns an ArrayMesh; the caller is responsible for creating the
@@ -122,9 +122,8 @@ static func _add_tile_box(surface: SurfaceTool, coord: Vector2i, height: float, 
 	surface.add_vertex(Vector3(x0, y1, z0))
 	surface.add_vertex(Vector3(x0, y1, z1))
 
-	surface.set_color(base_col.darkened(0.15))
-
 	# Bottom face (y = y0) — optional, hidden by ground plane
+	surface.set_color(base_col.darkened(0.15))
 	surface.add_vertex(Vector3(x1, y0, z0))
 	surface.add_vertex(Vector3(x0, y0, z0))
 	surface.add_vertex(Vector3(x0, y0, z1))
