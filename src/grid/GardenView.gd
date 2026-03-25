@@ -57,11 +57,11 @@ var _clusters_dirty: bool = true
 ## Minimum cluster size to show a biome overlay.
 ## Matches the size_threshold in the corresponding PatternDefinition .tres.
 const _CLUSTER_THRESHOLDS: Dictionary = {
-	BiomeType.Value.FOREST: 10,
-	BiomeType.Value.WATER:  10,
 	BiomeType.Value.STONE:  10,
-	BiomeType.Value.EARTH:  25,
-	BiomeType.Value.SWAMP:  20,
+	BiomeType.Value.RIVER:  10,
+	BiomeType.Value.EMBER_FIELD: 10,
+	BiomeType.Value.MEADOW: 25,
+	BiomeType.Value.CLAY:  20,
 }
 
 # ---------------------------------------------------------------------------

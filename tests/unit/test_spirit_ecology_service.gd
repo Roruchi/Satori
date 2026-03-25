@@ -5,8 +5,9 @@ func test_tension_fires_when_distance_within_threshold() -> void:
 	add_child(service)
 	service._spirit_positions["spirit_red_fox"] = Vector2i(0, 0)
 	service._spirit_positions["spirit_hare"] = Vector2i(2, 0)
+	service._tension_pairs_by_spirit["spirit_red_fox"] = ["spirit_hare"]
 	watch_signals(service)
-	service._check_tension()
+	service._check_tension("spirit_red_fox")
 	assert_signal_emitted(service, "tension_active")
 	service.queue_free()
 
