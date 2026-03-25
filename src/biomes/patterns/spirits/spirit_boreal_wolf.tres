@@ -6,7 +6,7 @@
 script = ExtResource("1_sp027")
 discovery_id = "spirit_boreal_wolf"
 pattern_type = 3
-required_biomes = Array[int]([5])
+required_biomes = Array[int]([8])
 forbidden_biomes = Array[int]([])
 size_threshold = 10
 shape_recipe = Array[Dictionary]([])

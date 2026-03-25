@@ -3,11 +3,11 @@
 ; Install via: Godot editor → AssetLib → search "Gut" → Install, then enable
 ; the plugin under Project → Project Settings → Plugins → GUT.
 ;
-; Run all tests:
-;   godot --path . --headless -s tests/gut_runner.tscn
+; Run all tests (CI / headless):
+;   godot --path . --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gexit
 ;
 ; Run a single suite:
-;   godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_grid.gd
+;   godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_grid.gd -gexit
 
 [gd_scene load_steps=2 format=3]
 

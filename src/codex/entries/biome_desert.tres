@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_desert"
+category = 1
+hint_text = "Where earth forgot the rain."
+full_name = "Desert"
+full_description = "Arid expanse carved by heat and age."
+always_hidden = false

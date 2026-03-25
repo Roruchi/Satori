@@ -21,6 +21,12 @@ GameState="*res://src/autoloads/GameState.gd"
 DiscoveryPersistence="*res://src/autoloads/discovery_persistence.gd"
 PatternScanService="*res://src/biomes/pattern_scan_scheduler.gd"
 SpiritPersistence="*res://src/autoloads/spirit_persistence.gd"
+GardenSettings="*res://src/autoloads/garden_settings.gd"
+SeedAlchemyService="*res://src/autoloads/seed_alchemy_service.gd"
+SeedGrowthService="*res://src/autoloads/seed_growth_service.gd"
+SpiritEcologyService="*res://src/autoloads/spirit_ecology_service.gd"
+CodexService="*res://src/autoloads/codex_service.gd"
+SatoriService="*res://src/autoloads/satori_service.gd"
 
 [physics]
 

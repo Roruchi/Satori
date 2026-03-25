@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_sui_ka"
+category = 0
+hint_text = "Water that carries the memory of fire."
+full_name = "Hot Spring Seed"
+full_description = "Sui and Ka merged into steaming mineral springs."
+always_hidden = false

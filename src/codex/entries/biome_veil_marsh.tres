@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_veil_marsh"
+category = 1
+hint_text = "Mist that never fully lifts."
+full_name = "Veil Marsh"
+full_description = "A shrouded wetland where reality blurs at the edges."
+always_hidden = false

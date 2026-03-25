@@ -42,6 +42,16 @@ func test_spirit_definition_has_default_color_hint() -> void:
 	assert_eq(def.color_hint, Color.WHITE, "Default color_hint should be WHITE")
 
 
+func test_spirit_definition_has_default_habitat_and_gift_fields() -> void:
+	var def := SpiritDefinition.new()
+	assert_eq(def.preferred_biomes.size(), 0)
+	assert_eq(def.disliked_biomes.size(), 0)
+	assert_eq(def.harmony_partner_id, &"")
+	assert_eq(def.tension_partner_id, &"")
+	assert_eq(def.gift_type, 0)
+	assert_eq(def.gift_payload, &"")
+
+
 func test_spirit_instance_create_sets_spirit_id() -> void:
 	var bounds := Rect2i(Vector2i(-4, -4), Vector2i(9, 9))
 	var inst: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 2), bounds)

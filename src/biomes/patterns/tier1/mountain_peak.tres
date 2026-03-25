@@ -6,7 +6,7 @@
 script = ExtResource("1_mountain_peak")
 discovery_id = "disc_mountain_peak"
 pattern_type = 0
-required_biomes = Array[int]([2])
+required_biomes = Array[int]([0])
 forbidden_biomes = Array[int]([])
 size_threshold = 10
 shape_recipe = Array[Dictionary]([])

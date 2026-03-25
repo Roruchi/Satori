@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+*.import
 
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt
@@ -12,3 +13,5 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+*.log
+.env*

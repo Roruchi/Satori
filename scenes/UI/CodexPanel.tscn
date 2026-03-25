@@ -1,0 +1,150 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/CodexPanel.gd" id="1"]
+
+[node name="CodexPanel" type="PanelContainer"]
+visible = false
+offset_left = 36.0
+offset_top = 72.0
+offset_right = 780.0
+offset_bottom = 620.0
+script = ExtResource("1")
+
+[node name="TopOrnament" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 36.0
+offset_top = 18.0
+offset_right = -36.0
+offset_bottom = 44.0
+mouse_filter = 2
+
+[node name="BottomOrnament" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 36.0
+offset_top = -44.0
+offset_right = -36.0
+offset_bottom = -18.0
+mouse_filter = 2
+
+[node name="LeftSpine" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 13
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 52.0
+offset_right = 42.0
+offset_bottom = -52.0
+mouse_filter = 2
+
+[node name="RightSpine" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_left = 1.0
+anchor_bottom = 1.0
+offset_left = -42.0
+offset_top = 52.0
+offset_right = -18.0
+offset_bottom = -52.0
+mouse_filter = 2
+
+[node name="TitleBlock" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 72.0
+offset_top = 52.0
+offset_right = -72.0
+offset_bottom = 118.0
+alignment = 1
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="TitleBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Field Codex"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="TitleBlock"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Pressed leaves, whispers, and records from the garden"
+horizontal_alignment = 1
+
+[node name="Tabs" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 56.0
+offset_top = 132.0
+offset_right = -56.0
+offset_bottom = -34.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Seeds" type="Control" parent="Tabs"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Tabs/Seeds"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Entries" type="VBoxContainer" parent="Tabs/Seeds/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Biomes" type="Control" parent="Tabs"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Tabs/Biomes"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Entries" type="VBoxContainer" parent="Tabs/Biomes/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Spirits" type="Control" parent="Tabs"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Tabs/Spirits"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Entries" type="VBoxContainer" parent="Tabs/Spirits/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Structures" type="Control" parent="Tabs"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Tabs/Structures"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Entries" type="VBoxContainer" parent="Tabs/Structures/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3

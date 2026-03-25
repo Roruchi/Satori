@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="SatoriConditionSet" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/satori/SatoriConditionSet.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+condition_id = &"satori_first_awakening"
+requirements = Array[Dictionary]([
+{
+"type": "biome_present",
+"biome": 0
+},
+{
+"type": "biome_present",
+"biome": 1
+},
+{
+"type": "biome_present",
+"biome": 2
+},
+{
+"type": "biome_present",
+"biome": 3
+},
+{
+"type": "spirit_count_gte",
+"count": 3
+}
+])
+unlock_type = 4
+unlock_payload = &""

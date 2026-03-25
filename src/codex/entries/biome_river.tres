@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_river"
+category = 1
+hint_text = "Movement that remembers every bend."
+full_name = "River"
+full_description = "Flowing water carving quiet channels."
+always_hidden = false

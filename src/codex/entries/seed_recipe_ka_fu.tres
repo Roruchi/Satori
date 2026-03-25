@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_ka_fu"
+category = 0
+hint_text = "Where fire and wind once raced each other."
+full_name = "Cinder Heath Seed"
+full_description = "Ka and Fū consumed into ashen heathland."
+always_hidden = false

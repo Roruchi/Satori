@@ -5,6 +5,8 @@ const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const TILE_RADIUS: float = 20.0
 const SPIRIT_RADIUS: float = 8.0
 
+signal moved_to(spirit_id: String, coord: Vector2i)
+
 var spirit_id: String = ""
 var wander_bounds: Rect2i = Rect2i()
 var _speed: float = 2.0
@@ -13,6 +15,7 @@ var _wait_time: float = 0.0
 var _display_color: Color = Color.WHITE
 var _label: Label
 var _preferred_biomes: Array[int] = []
+var _disliked_biomes: Array[int] = []
 
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
@@ -26,6 +29,12 @@ func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 		if preferred_variant is Array:
 			for biome_variant in preferred_variant:
 				_preferred_biomes.append(int(biome_variant))
+	_disliked_biomes.clear()
+	if catalog_entry.has("disliked_biomes"):
+		var disliked_variant: Variant = catalog_entry["disliked_biomes"]
+		if disliked_variant is Array:
+			for biome_variant in disliked_variant:
+				_disliked_biomes.append(int(biome_variant))
 	var display_name: String = str(catalog_entry.get("display_name", spirit_id))
 	if _label != null:
 		_label.text = display_name
@@ -82,6 +91,11 @@ func _process(delta: float) -> void:
 		return
 	var diff: Vector2 = _target_world - position
 	if diff.length() < 0.1:
+		var coord: Vector2i = _world_to_coord(position)
+		if _is_disliked_coord(coord):
+			_pick_new_target()
+			return
+		moved_to.emit(spirit_id, coord)
 		_wait_time = randf_range(1.5, 4.0)
 		return
 	position += diff.normalized() * _speed * delta
@@ -140,6 +154,23 @@ func _get_effective_bounds() -> Rect2i:
 func _coord_to_world(coord: Vector2i) -> Vector2:
 	var px: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	return px
+
+func _world_to_coord(world_pos: Vector2) -> Vector2i:
+	return _HexUtils.pixel_to_axial(world_pos, TILE_RADIUS)
+
+func _is_disliked_coord(coord: Vector2i) -> bool:
+	if _disliked_biomes.is_empty():
+		return false
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return false
+	var grid: RefCounted = game_state.get("grid")
+	if grid == null:
+		return false
+	var tile: GardenTile = grid.get_tile(coord)
+	if tile == null:
+		return false
+	return _disliked_biomes.has(tile.biome)
 
 func update_bounds(new_bounds: Rect2i) -> void:
 	wander_bounds = new_bounds

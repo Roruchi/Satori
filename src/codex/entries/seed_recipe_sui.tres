@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_sui"
+category = 0
+hint_text = "It finds its own way through stone."
+full_name = "River Seed"
+full_description = "A single Sui seed that blooms into river."
+always_hidden = false
