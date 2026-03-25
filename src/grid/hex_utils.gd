@@ -94,6 +94,8 @@ static func axial_reflect(coord: Vector2i) -> Vector2i:
 
 
 ## Return unique rotated and reflected variants of a shape recipe.
+## Entries with `must_be_empty: true` are transformed identically to biome entries
+## and preserved in the output so callers can enforce empty-cell constraints.
 static func shape_recipe_variants(shape_recipe: Array[Dictionary]) -> Array:
 	var variants: Array = []
 	var seen: Dictionary = {}
@@ -107,10 +109,13 @@ static func shape_recipe_variants(shape_recipe: Array[Dictionary]) -> Array:
 				if should_reflect:
 					transformed_offset = axial_reflect(transformed_offset)
 				transformed_offset = axial_rotate(transformed_offset, rotation_steps)
-				variant.append({
-					"offset": transformed_offset,
-					"biome": int(entry.get("biome", -1))
-				})
+				if entry.get("must_be_empty", false):
+					variant.append({"offset": transformed_offset, "must_be_empty": true})
+				else:
+					variant.append({
+						"offset": transformed_offset,
+						"biome": int(entry.get("biome", -1))
+					})
 			variant.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 				var offset_a: Vector2i = a.get("offset", Vector2i.ZERO)
 				var offset_b: Vector2i = b.get("offset", Vector2i.ZERO)
@@ -123,7 +128,10 @@ static func shape_recipe_variants(shape_recipe: Array[Dictionary]) -> Array:
 			var key_parts: Array[String] = []
 			for variant_entry: Dictionary in variant:
 				var variant_offset: Vector2i = variant_entry.get("offset", Vector2i.ZERO)
-				key_parts.append("%d,%d:%d" % [variant_offset.x, variant_offset.y, int(variant_entry.get("biome", -1))])
+				if variant_entry.get("must_be_empty", false):
+					key_parts.append("%d,%d:empty" % [variant_offset.x, variant_offset.y])
+				else:
+					key_parts.append("%d,%d:%d" % [variant_offset.x, variant_offset.y, int(variant_entry.get("biome", -1))])
 			var key: String = "|".join(key_parts)
 			if seen.has(key):
 				continue

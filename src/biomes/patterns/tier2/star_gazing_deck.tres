@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_star_gazing_deck"]
+
+[resource]
+script = ExtResource("1_star_gazing_deck")
+discovery_id = "disc_star_gazing_deck"
+pattern_type = 3
+required_biomes = Array[int]([2])
+forbidden_biomes = Array[int]([])
+size_threshold = 20
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String](["disc_mountain_peak"])

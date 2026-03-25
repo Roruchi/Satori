@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_whale_0"]
+
+[resource]
+script = ExtResource("1_whale_0")
+discovery_id = "disc_whale_bone_arch"
+pattern_type = 1
+required_biomes = Array[int]([])
+forbidden_biomes = Array[int]([])
+size_threshold = 0
+shape_recipe = Array[Dictionary]([{
+"offset": Vector2i(0, -1),
+"biome": 9
+}, {
+"offset": Vector2i(0, 0),
+"biome": 9
+}, {
+"offset": Vector2i(1, 0),
+"biome": 9
+}, {
+"offset": Vector2i(2, 0),
+"biome": 9
+}, {
+"offset": Vector2i(2, -1),
+"biome": 9
+}])
+neighbour_requirements = {}
+prerequisite_ids = Array[String]([])

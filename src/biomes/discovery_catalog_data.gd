@@ -88,3 +88,77 @@ func get_tier1_entries() -> Array[Dictionary]:
 			"tier": 1
 		},
 	]
+
+func get_tier2_entries() -> Array[Dictionary]:
+	return [
+		{
+			"discovery_id": "disc_origin_shrine",
+			"display_name": "Origin Shrine",
+			"flavor_text": "At the heart of the world, stone and water remember the first breath.",
+			"audio_key": "stinger_origin_shrine",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_bridge_of_sighs",
+			"display_name": "Bridge of Sighs",
+			"flavor_text": "Stone arches over still water. Beneath it, all crossings are felt.",
+			"audio_key": "stinger_bridge_of_sighs",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_lotus_pagoda",
+			"display_name": "Lotus Pagoda",
+			"flavor_text": "A tower of mist and memory rises where marsh meets sky.",
+			"audio_key": "stinger_lotus_pagoda",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_monks_rest",
+			"display_name": "Monk's Rest",
+			"flavor_text": "Surrounded by ancient trees, a single patch of earth finds peace.",
+			"audio_key": "stinger_monks_rest",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_star_gazing_deck",
+			"display_name": "Star-Gazing Deck",
+			"flavor_text": "Atop the highest stone, a silence so deep the stars seem close enough to touch.",
+			"audio_key": "stinger_star_gazing_deck",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_sun_dial",
+			"display_name": "Sun-Dial",
+			"flavor_text": "Earth circles stone and time is measured in shadows and seasons.",
+			"audio_key": "stinger_sun_dial",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_whale_bone_arch",
+			"display_name": "Whale-Bone Arch",
+			"flavor_text": "Bleached relics form a gateway that neither begins nor ends.",
+			"audio_key": "stinger_whale_bone_arch",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_echoing_cavern",
+			"display_name": "Echoing Cavern",
+			"flavor_text": "The ring of stone amplifies every sound into a whisper of the deep.",
+			"audio_key": "stinger_echoing_cavern",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_bamboo_chime",
+			"display_name": "Bamboo Chime",
+			"flavor_text": "A row of golden stalks sways together, singing one unbroken note.",
+			"audio_key": "stinger_bamboo_chime",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_floating_pavilion",
+			"display_name": "Floating Pavilion",
+			"flavor_text": "Adrift on open water, untethered to the earth below.",
+			"audio_key": "stinger_floating_pavilion",
+			"tier": 2
+		},
+	]
