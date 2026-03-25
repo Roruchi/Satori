@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SeedRecipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/seeds/SeedRecipe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+recipe_id = &"recipe_sui_ka"
+elements = Array[int]([1, 2])
+tier = 2
+produces_biome = 7
+spirit_unlock_id = &""
+codex_hint = "Water that carries the memory of fire."

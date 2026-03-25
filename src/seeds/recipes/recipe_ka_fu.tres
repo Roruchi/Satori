@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SeedRecipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/seeds/SeedRecipe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+recipe_id = &"recipe_ka_fu"
+elements = Array[int]([2, 3])
+tier = 2
+produces_biome = 9
+spirit_unlock_id = &""
+codex_hint = "Where fire and wind once raced each other."

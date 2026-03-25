@@ -6,7 +6,7 @@
 script = ExtResource("1_sp016")
 discovery_id = "spirit_golden_bee"
 pattern_type = 0
-required_biomes = Array[int]([8])
+required_biomes = Array[int]([3])
 forbidden_biomes = Array[int]([])
 size_threshold = 10
 shape_recipe = Array[Dictionary]([])

@@ -6,6 +6,7 @@ signal riddle_hint_triggered(spirit_id: String, riddle_text: String)
 signal sky_whale_event_triggered()
 
 const _PatternLoaderScript = preload("res://src/biomes/pattern_loader.gd")
+const _SpiritGiftProcessorScript = preload("res://src/spirits/SpiritGiftProcessor.gd")
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -56,7 +57,10 @@ func restore_from_persistence() -> void:
 			continue
 		_active_instances[instance.spirit_id] = instance
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
-		_spawner.spawn(instance, entry)
+		var wanderer: Node = _spawner.spawn(instance, entry)
+		var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
+		if ecology != null and ecology.has_method("register_wanderer"):
+			ecology.register_wanderer(wanderer)
 
 func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i]) -> void:
 	if not discovery_id.begins_with("spirit_"):
@@ -74,8 +78,15 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i]) -> void:
 	var spawn: Vector2i = SpiritWanderBounds.centroid(coords)
 	var instance: SpiritInstance = SpiritInstance.create(spirit_id, spawn, bounds)
 	_active_instances[spirit_id] = instance
-	_spawner.spawn(instance, entry)
+	var wanderer: Node = _spawner.spawn(instance, entry)
+	_SpiritGiftProcessorScript.process(spirit_id, entry)
+	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
+	if ecology != null and ecology.has_method("register_wanderer"):
+		ecology.register_wanderer(wanderer)
 	spirit_summoned.emit(spirit_id, instance)
+	var codex: Node = get_node_or_null("/root/CodexService")
+	if codex != null and codex.has_method("mark_discovered"):
+		codex.mark_discovered(StringName(spirit_id))
 	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
 	if persistence != null and persistence.has_method("record_instance"):
 		persistence.record_instance(instance)
@@ -118,9 +129,18 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 	)
 	var instance: SpiritInstance = SpiritInstance.create(SkyWhaleEvaluator.SPIRIT_ID, center, expanded_bounds)
 	_active_instances[SkyWhaleEvaluator.SPIRIT_ID] = instance
-	_spawner.spawn(instance, entry)
+	var wanderer: Node = _spawner.spawn(instance, entry)
+	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
+	if ecology != null and ecology.has_method("register_wanderer"):
+		ecology.register_wanderer(wanderer)
 	spirit_summoned.emit(SkyWhaleEvaluator.SPIRIT_ID, instance)
 	sky_whale_event_triggered.emit()
 	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
 	if persistence != null and persistence.has_method("record_instance"):
 		persistence.record_instance(instance)
+
+func active_count() -> int:
+	return _active_instances.size()
+
+func get_catalog_entry(spirit_id: String) -> Dictionary:
+	return _catalog.lookup(spirit_id)

@@ -60,6 +60,9 @@ func _ready() -> void:
 			game_state.tile_placed.connect(_on_tile_placed)
 		if game_state.has_signal("tile_mixed"):
 			game_state.tile_mixed.connect(_on_tile_mixed)
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service != null and growth_service.has_signal("bloom_confirmed"):
+		growth_service.bloom_confirmed.connect(_on_bloom_confirmed)
 
 	# Hydrate registry from persisted discoveries on startup
 	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
@@ -90,6 +93,9 @@ func _on_tile_placed(coord: Vector2i, _tile: GardenTile) -> void:
 
 
 func _on_tile_mixed(coord: Vector2i, _tile: GardenTile) -> void:
+	enqueue_scan(coord)
+
+func _on_bloom_confirmed(coord: Vector2i, _biome: int) -> void:
 	enqueue_scan(coord)
 
 func enqueue_scan(placement_coord: Vector2i) -> void:

@@ -4,6 +4,7 @@
 extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
 const TILE_RADIUS: float = 20.0
 const LONG_PRESS_THRESHOLD_MS: float = 500.0
 
@@ -52,7 +53,36 @@ func _unhandled_input(event: InputEvent) -> void:
 				if _long_press_fired:
 					return  # long-press already handled; skip normal tap placement
 				var coord := _world_to_tile(get_global_mouse_position())
-				GameState.try_place_tile(coord)
+				var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+				if growth_service != null and growth_service.has_method("get_pouch"):
+					if growth_service.has_method("try_bloom") and growth_service.has_method("get_tracker"):
+						var tracker: GrowthSlotTracker = growth_service.get_tracker()
+						if tracker != null and tracker.get_at(coord) != null:
+							growth_service.try_bloom(coord)
+							return
+				var hud: Node = get_node_or_null("../HUD")
+				if hud != null and hud.has_method("is_plant_mode") and not hud.is_plant_mode():
+					return
+				if growth_service != null and growth_service.has_method("get_pouch"):
+					var pouch: SeedPouch = growth_service.get_pouch()
+					if pouch != null:
+						var selected_biome: int = int(GameState.selected_biome)
+						var recipe_index: int = pouch.find_index_by_biome(selected_biome)
+						if recipe_index < 0:
+							return
+						var recipe: SeedRecipe = pouch.get_at(recipe_index)
+						if recipe == null:
+							return
+						if not GameState.grid.is_placement_valid(coord):
+							return
+						if growth_service.try_plant(coord, recipe):
+							pouch.consume_use_at(recipe_index)
+							if growth_service.has_method("notify_pouch_updated"):
+								growth_service.notify_pouch_updated()
+							if growth_service.has_method("get_mode") and int(growth_service.get_mode()) == GrowthModeScript.Value.INSTANT:
+								growth_service.try_bloom(coord)
+							return
+				return
 
 func _on_long_press(coord: Vector2i) -> void:
 	GameState.try_mix_tile(coord)

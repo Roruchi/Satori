@@ -6,7 +6,7 @@
 script = ExtResource("1_deep_stand")
 discovery_id = "disc_deep_stand"
 pattern_type = 0
-required_biomes = Array[int]([0])
+required_biomes = Array[int]([3])
 forbidden_biomes = Array[int]([2])
 size_threshold = 10
 shape_recipe = Array[Dictionary]([])

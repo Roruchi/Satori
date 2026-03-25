@@ -10,7 +10,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_red_fox",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [0],
+			"preferred_biomes": [3, 6],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "spirit_hare",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 0.5, 0.0)
 		},
 		{
@@ -20,7 +25,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mist_stag",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
-			"preferred_biomes": [0],
+			"preferred_biomes": [8, 11],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 1,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 1.0, 1.0)
 		},
 		{
@@ -60,7 +70,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_white_heron",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [1, 4, 6],
+			"preferred_biomes": [1, 8],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 1.0, 1.0)
 		},
 		{
@@ -71,6 +86,11 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [1],
+			"disliked_biomes": [],
+			"harmony_partner_id": "spirit_blue_kingfisher",
+			"tension_partner_id": "",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 0.5, 0.0)
 		},
 		{
@@ -80,7 +100,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_river_otter",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [1, 4],
+			"preferred_biomes": [1, 8],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 2,
+			"gift_payload": "recipe_chi_sui_fu",
 			"color_hint": Color(0.5, 0.3, 0.1)
 		},
 		{
@@ -90,7 +115,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_blue_kingfisher",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
-			"preferred_biomes": [0, 1, 4],
+			"preferred_biomes": [1],
+			"disliked_biomes": [],
+			"harmony_partner_id": "spirit_koi_fish",
+			"tension_partner_id": "",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(0.0, 0.0, 1.0)
 		},
 		{
@@ -110,7 +140,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mountain_goat",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [2, 7, 9],
+			"preferred_biomes": [0, 6],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(0.7, 0.7, 0.7)
 		},
 		{
@@ -120,7 +155,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_stone_golem",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [2],
+			"preferred_biomes": [0],
 			"color_hint": Color(0.5, 0.5, 0.5)
 		},
 		{
@@ -160,7 +195,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_golden_bee",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [8, 0, 3],
+			"preferred_biomes": [3, 6],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 0.85, 0.0)
 		},
 		{
@@ -180,7 +220,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_meadow_lark",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [8, 0, 3],
+			"preferred_biomes": [3],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "",
+			"gift_type": 4,
+			"gift_payload": "",
 			"color_hint": Color(1.0, 0.9, 0.3)
 		},
 		{
@@ -270,7 +315,12 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_boreal_wolf",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
-			"preferred_biomes": [5, 0],
+			"preferred_biomes": [8],
+			"disliked_biomes": [],
+			"harmony_partner_id": "",
+			"tension_partner_id": "spirit_tundra_lynx",
+			"gift_type": 0,
+			"gift_payload": "",
 			"color_hint": Color(0.7, 0.8, 0.9)
 		},
 		{

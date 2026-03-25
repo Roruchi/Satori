@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_dune"
+category = 1
+hint_text = "Sand that never rests."
+full_name = "Dune"
+full_description = "Windswept crests that drift and reform endlessly."
+always_hidden = false

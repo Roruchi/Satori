@@ -6,7 +6,7 @@
 script = ExtResource("1_sp012")
 discovery_id = "spirit_stone_golem"
 pattern_type = 0
-required_biomes = Array[int]([2])
+required_biomes = Array[int]([0])
 forbidden_biomes = Array[int]([])
 size_threshold = 9
 shape_recipe = Array[Dictionary]([])

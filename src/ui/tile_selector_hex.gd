@@ -12,35 +12,36 @@ const _RADIUS: float = 30.0
 const _DEPTH: float = 5.0
 ## Gap between adjacent hex centres.
 const _GAP: float = 16.0
+## Backdrop padding values used both for drawing and layout.
+const _BACKDROP_PAD_TOP: float = 14.0
+const _BACKDROP_PAD_BOTTOM: float = 28.0
+## Extra space between selector backdrop and bottom HUD bar.
+const _BOTTOM_SAFE_GAP: float = 10.0
 ## Font size for biome labels.
 const _LABEL_SIZE: int = 11
 
-## The four selectable base biomes — order matches _LABELS and _COLORS.
-const _BIOMES: Array = [
-	BiomeType.Value.FOREST,
-	BiomeType.Value.WATER,
-	BiomeType.Value.STONE,
-	BiomeType.Value.EARTH,
-]
-
-const _LABELS: Array = ["Forest", "Water", "Stone", "Earth"]
-
-## Colours matching GardenView._biome_color() for the four base biomes.
-const _COLORS: Array = [
-	Color(0.298, 0.686, 0.314),   # FOREST
-	Color(0.129, 0.588, 0.953),   # WATER
-	Color(0.620, 0.620, 0.620),   # STONE
-	Color(0.757, 0.580, 0.376),   # EARTH
-]
-
-var _selected: int = BiomeType.Value.FOREST
+var _selected: int = BiomeType.Value.STONE
 var _hover_idx: int = -1
 var _centers: Array[Vector2] = []
+var _seed_biomes: Array[int] = []
+var _seed_labels: Array[String] = []
+var _seed_colors: Array[Color] = []
+var _bottom_bar: Control = null
 
 
 func _ready() -> void:
+	var scene_root: Node = get_tree().current_scene
+	if scene_root != null:
+		_bottom_bar = scene_root.get_node_or_null("HUD/Root/BottomBar") as Control
 	_rebuild_centers()
 	get_viewport().size_changed.connect(_on_viewport_resized)
+	_refresh_from_pouch(false)
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
+		alchemy.seed_added_to_pouch.connect(func(_recipe: SeedRecipe) -> void: _refresh_from_pouch(true))
+	var growth: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth != null and growth.has_signal("pouch_updated"):
+		growth.pouch_updated.connect(func() -> void: _refresh_from_pouch(true))
 	set_process_input(true)
 
 
@@ -52,18 +53,57 @@ func _on_viewport_resized() -> void:
 func _rebuild_centers() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var spacing: float = _RADIUS * 2.0 + _GAP
-	var total_w: float = spacing * 3.0
+	var item_count: int = maxi(1, _seed_biomes.size())
+	var total_w: float = spacing * float(maxi(0, item_count - 1))
 	var sx: float = vp.x * 0.5 - total_w * 0.5
-	var cy: float = vp.y - _RADIUS - _DEPTH - 28.0
+	var cy: float = vp.y - _RADIUS - _DEPTH - _BACKDROP_PAD_BOTTOM
+	if _bottom_bar != null:
+		var safe_bottom: float = _bottom_bar.position.y - _BOTTOM_SAFE_GAP
+		cy = safe_bottom - (_RADIUS + _DEPTH + _BACKDROP_PAD_BOTTOM)
 	_centers.clear()
-	for i: int in range(4):
+	for i: int in range(item_count):
 		_centers.append(Vector2(sx + float(i) * spacing, cy))
+
+
+func _refresh_from_pouch(emit_selection: bool) -> void:
+	_seed_biomes.clear()
+	_seed_labels.clear()
+	_seed_colors.clear()
+	var growth: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth != null and growth.has_method("get_pouch"):
+		var pouch: SeedPouch = growth.get_pouch()
+		if pouch != null:
+			for i: int in range(pouch.size()):
+				var recipe: SeedRecipe = pouch.get_at(i)
+				if recipe == null:
+					continue
+				var uses: int = pouch.get_uses_at(i)
+				_seed_biomes.append(recipe.produces_biome)
+				_seed_labels.append("%s x%d" % [_label_for_biome(recipe.produces_biome), uses])
+				_seed_colors.append(_color_for_biome(recipe.produces_biome))
+	if _seed_biomes.is_empty():
+		_selected = BiomeType.Value.NONE
+	else:
+		if not _seed_biomes.has(_selected):
+			_selected = _seed_biomes[0]
+			if emit_selection:
+				biome_selected.emit(_selected)
+	_rebuild_centers()
+	queue_redraw()
 
 
 ## Programmatically select a biome without emitting biome_selected.
 func select(biome: int) -> void:
 	_selected = biome
 	queue_redraw()
+
+
+func get_selected_biome() -> int:
+	if _selected != BiomeType.Value.NONE:
+		return _selected
+	if not _seed_biomes.is_empty():
+		return _seed_biomes[0]
+	return BiomeType.Value.STONE
 
 
 func _input(event: InputEvent) -> void:
@@ -76,8 +116,8 @@ func _input(event: InputEvent) -> void:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 			var idx: int = _hit_test(mb.position)
-			if idx >= 0:
-				_selected = _BIOMES[idx]
+			if idx >= 0 and idx < _seed_biomes.size():
+				_selected = _seed_biomes[idx]
 				biome_selected.emit(_selected)
 				queue_redraw()
 				get_viewport().set_input_as_handled()
@@ -99,9 +139,10 @@ func _draw() -> void:
 	# --- Dark backdrop panel ---
 	var spacing: float = _RADIUS * 2.0 + _GAP
 	var pad_x: float = 18.0
-	var pad_top: float = 14.0
-	var pad_bot: float = 28.0   # room for labels
-	var bw: float = spacing * 3.0 + _RADIUS * 2.0 + pad_x * 2.0
+	var pad_top: float = _BACKDROP_PAD_TOP
+	var pad_bot: float = _BACKDROP_PAD_BOTTOM   # room for labels
+	var item_count: int = maxi(1, _seed_biomes.size())
+	var bw: float = spacing * float(maxi(0, item_count - 1)) + _RADIUS * 2.0 + pad_x * 2.0
 	var bh: float = _RADIUS * 2.0 + _DEPTH + pad_top + pad_bot
 	var bx: float = _centers[0].x - _RADIUS - pad_x
 	var by: float = _centers[0].y - _RADIUS - pad_top
@@ -124,15 +165,23 @@ func _draw() -> void:
 		1.0
 	)
 
-	# --- Hex tiles ---
-	for i: int in range(4):
+	if _seed_biomes.is_empty():
+		var font: Font = ThemeDB.fallback_font
+		var empty_text: String = "Mix to craft seeds"
+		var text_size: Vector2 = font.get_string_size(empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
+		var text_pos: Vector2 = Vector2(_centers[0].x - text_size.x * 0.5, _centers[0].y + 5.0)
+		draw_string(font, text_pos, empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.86, 0.86, 0.90))
+		return
+
+	# --- Seed tiles ---
+	for i: int in range(_seed_biomes.size()):
 		_draw_hex(i)
 
 
 func _draw_hex(idx: int) -> void:
 	var c: Vector2 = _centers[idx]
-	var base_col: Color = Color(_COLORS[idx])
-	var biome: int = _BIOMES[idx]
+	var base_col: Color = Color(_seed_colors[idx])
+	var biome: int = _seed_biomes[idx]
 	var is_sel: bool = _selected == biome
 	var is_hov: bool = _hover_idx == idx and not is_sel
 
@@ -176,7 +225,7 @@ func _draw_hex(idx: int) -> void:
 
 	# --- Biome label ---
 	var font: Font = ThemeDB.fallback_font
-	var label: String = _LABELS[idx]
+	var label: String = _seed_labels[idx]
 	var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE).x
 	var lpos: Vector2 = Vector2(c.x - tw * 0.5, c.y + _RADIUS + _DEPTH + 13.0)
 	# Drop shadow
@@ -192,3 +241,69 @@ static func _hex_polygon(center: Vector2, radius: float) -> PackedVector2Array:
 		var angle: float = deg_to_rad(-90.0 + 60.0 * float(i))
 		pts.append(center + Vector2(cos(angle), sin(angle)) * radius)
 	return pts
+
+
+static func _label_for_biome(biome: int) -> String:
+	match biome:
+		BiomeType.Value.STONE:
+			return "Stone"
+		BiomeType.Value.RIVER:
+			return "River"
+		BiomeType.Value.EMBER_FIELD:
+			return "Ember"
+		BiomeType.Value.MEADOW:
+			return "Meadow"
+		BiomeType.Value.CLAY:
+			return "Clay"
+		BiomeType.Value.DESERT:
+			return "Desert"
+		BiomeType.Value.DUNE:
+			return "Dune"
+		BiomeType.Value.HOT_SPRING:
+			return "Spring"
+		BiomeType.Value.BOG:
+			return "Bog"
+		BiomeType.Value.CINDER_HEATH:
+			return "Heath"
+		BiomeType.Value.SACRED_STONE:
+			return "Sacred"
+		BiomeType.Value.VEIL_MARSH:
+			return "Veil"
+		BiomeType.Value.EMBER_SHRINE:
+			return "Shrine"
+		BiomeType.Value.CLOUD_RIDGE:
+			return "Cloud"
+	return "Seed"
+
+
+static func _color_for_biome(biome: int) -> Color:
+	match biome:
+		BiomeType.Value.STONE:
+			return Color(0.620, 0.620, 0.620)
+		BiomeType.Value.RIVER:
+			return Color(0.129, 0.588, 0.953)
+		BiomeType.Value.EMBER_FIELD:
+			return Color(0.922, 0.42, 0.18)
+		BiomeType.Value.MEADOW:
+			return Color(0.298, 0.686, 0.314)
+		BiomeType.Value.CLAY:
+			return Color(0.757, 0.580, 0.376)
+		BiomeType.Value.DESERT:
+			return Color(0.82, 0.68, 0.35)
+		BiomeType.Value.DUNE:
+			return Color(0.84, 0.76, 0.50)
+		BiomeType.Value.HOT_SPRING:
+			return Color(0.56, 0.72, 0.86)
+		BiomeType.Value.BOG:
+			return Color(0.30, 0.42, 0.24)
+		BiomeType.Value.CINDER_HEATH:
+			return Color(0.46, 0.24, 0.18)
+		BiomeType.Value.SACRED_STONE:
+			return Color(0.78, 0.78, 0.68)
+		BiomeType.Value.VEIL_MARSH:
+			return Color(0.50, 0.58, 0.60)
+		BiomeType.Value.EMBER_SHRINE:
+			return Color(0.80, 0.36, 0.22)
+		BiomeType.Value.CLOUD_RIDGE:
+			return Color(0.70, 0.74, 0.82)
+	return Color(0.502, 0.502, 0.502)

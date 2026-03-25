@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_chi_fu"
+category = 0
+hint_text = "Stone surrendered to the breath of wind."
+full_name = "Dune Seed"
+full_description = "Chi and Fū lifted into shifting, windswept dunes."
+always_hidden = false
