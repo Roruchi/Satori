@@ -2,7 +2,7 @@ name: Godot Tests
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
     branches: ["**"]
 
@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Import project resources
+        run: godot --path . --headless --import
 
       - name: Run GUT tests headless
         run: godot --path . --headless -s tests/gut_runner.tscn

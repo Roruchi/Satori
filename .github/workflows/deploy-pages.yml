@@ -18,6 +18,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Import project resources
+        run: godot --path . --headless --import
+
       - name: Export game to Web
         run: |
           mkdir -v -p build/web
