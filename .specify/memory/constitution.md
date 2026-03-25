@@ -85,14 +85,33 @@ tradeoff and mitigation before implementation proceeds.
 - Accessibility-facing settings such as haptics, contrast, and audio controls
 	MUST persist independently from garden-save data.
 
+## Living Reference Artifacts
+
+- `specs/master/recipes.md` is the canonical reference for ALL in-game unlocks:
+	seed recipes (tier 1, 2, 3), discoveries (tier 1, tier 2), spirit animals,
+	and progression milestones. It MUST be kept in sync whenever an unlock is
+	added, modified, or removed. Any PR touching `src/seeds/recipes/`, discovery
+	catalog data, spirit catalog data, or unlock conditions MUST also update
+	recipes.md with the corresponding table row(s).
+- The automated test `tests/unit/test_recipes_catalog.gd` validates count and ID
+	consistency between recipes.md and live catalog data; PRs that add an unlock
+	but fail to update recipes.md will fail this test during review.
+- Reference artifacts such as recipes.md are not "documentation only"—they serve
+	as a shared interface contract between designers, the engine, and the CI/test
+	pipeline. Maintaining them is a build-time validation requirement.
+
 ## Workflow & Review
 
 - Each plan MUST document the affected runtime areas, validation strategy, and any
 	impact on permanence, determinism, performance, or accessibility budgets.
 - Each task list MUST include the concrete files touched in `src/`, `scenes/`,
 	`tests/`, or `specs/`, plus the validation work required to prove completion.
+	If the work involves adding or modifying unlocks (recipes, discoveries, spirits),
+	tasks MUST explicitly include updating `specs/master/recipes.md`.
 - Reviews MUST reject changes that bypass Speckit artifacts, add unplanned engine
-	complexity, weaken deterministic rules, or omit verification for game logic.
+	complexity, weaken deterministic rules, omit verification for game logic, **or add
+	an unlock without updating recipes.md** (recipes.md sync failures in automated
+	tests are a blocker).
 - Debug scenes, overlays, and instant-action tooling are allowed only when they
 	stay excluded from release behavior or are explicitly gated for non-release use.
 - Runtime guidance files such as `CLAUDE.md` and `project.godot` MUST be treated
