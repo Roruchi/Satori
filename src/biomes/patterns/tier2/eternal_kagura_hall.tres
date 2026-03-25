@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_eternal_kagura_hall"]
+
+[resource]
+script = ExtResource("1_eternal_kagura_hall")
+discovery_id = "disc_eternal_kagura_hall"
+pattern_type = 0
+required_biomes = Array[int]([12])
+forbidden_biomes = Array[int]([])
+size_threshold = 4
+shape_recipe = Array[Dictionary]([])
+neighbour_requirements = {}
+prerequisite_ids = Array[String]([])

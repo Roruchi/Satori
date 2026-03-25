@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"ku_unlock_guidance"
+category = 0
+hint_text = "Seek the Mist Stag. Follow its trail through ancient growth and wetland signs; patience reveals Kū."
+full_name = "Kū Awakening"
+full_description = "You have walked the Mist Stag's path and awakened Kū. Pair Kū with Chi, Sui, Ka, or Fu to shape new seeds."
+always_hidden = false

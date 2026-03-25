@@ -10,6 +10,10 @@ const COLOR_ACCENT := Color(0.58, 0.39, 0.19)
 const COLOR_SHADOW := Color(0.31, 0.22, 0.12, 0.60)
 const COLOR_TRIM := Color(0.69, 0.52, 0.28, 0.95)
 const COLOR_SCROLL_EDGE := Color(0.73, 0.61, 0.42, 0.92)
+const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
+const LABEL_DISCOVERED: String = "Discovered"
+const LABEL_HINT: String = "Hint"
+const LABEL_HINTED_PATH: String = "Hinted Path"
 
 @onready var _tabs: TabContainer = $Tabs
 @onready var _seed_list: VBoxContainer = $Tabs/Seeds/Scroll/Entries
@@ -22,12 +26,13 @@ const COLOR_SCROLL_EDGE := Color(0.73, 0.61, 0.42, 0.92)
 @onready var _bottom_ornament: Panel = $BottomOrnament
 @onready var _left_spine: Panel = $LeftSpine
 @onready var _right_spine: Panel = $RightSpine
+var _codex_service: Node = null
 
 func _ready() -> void:
 	_style_panel()
-	var codex: Node = get_node_or_null("/root/CodexService")
-	if codex != null and codex.has_signal("entry_discovered"):
-		codex.entry_discovered.connect(_on_entry_discovered)
+	_codex_service = get_node_or_null("/root/CodexService")
+	if _codex_service != null and _codex_service.has_signal("entry_discovered"):
+		_codex_service.entry_discovered.connect(_on_entry_discovered)
 	_rebuild_all()
 
 func _on_entry_discovered(_entry_id: StringName) -> void:
@@ -43,7 +48,10 @@ func _fill_category(category: int, container: VBoxContainer) -> void:
 	for child in container.get_children():
 		child.queue_free()
 	container.add_theme_constant_override("separation", 12)
-	var codex: Node = get_node_or_null("/root/CodexService")
+	var codex: Node = _codex_service
+	if codex == null:
+		codex = get_node_or_null("/root/CodexService")
+		_codex_service = codex
 	if codex == null or not codex.has_method("get_entries_by_category"):
 		return
 	var entries: Array[CodexEntry] = codex.get_entries_by_category(category)
@@ -122,6 +130,7 @@ func _style_panel() -> void:
 	_style_scrolls()
 
 func _build_entry_card(entry: CodexEntry, discovered: bool, category: int) -> PanelContainer:
+	var codex: Node = _codex_service
 	var card: PanelContainer = PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -154,7 +163,10 @@ func _build_entry_card(entry: CodexEntry, discovered: bool, category: int) -> Pa
 	content.add_child(header)
 
 	var subtitle: Label = Label.new()
-	subtitle.text = "Discovered" if discovered and not entry.always_hidden else "Hint"
+	var guidance_state: String = LABEL_DISCOVERED if discovered and not entry.always_hidden else LABEL_HINT
+	if entry.entry_id == KU_GUIDANCE_ENTRY_ID and codex != null and codex.has_method("get_ku_guidance_state"):
+		guidance_state = LABEL_DISCOVERED if StringName(codex.get_ku_guidance_state()) == &"discovered" else LABEL_HINTED_PATH
+	subtitle.text = guidance_state
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", COLOR_ACCENT)
 	content.add_child(subtitle)

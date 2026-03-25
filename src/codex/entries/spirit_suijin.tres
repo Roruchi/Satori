@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"spirit_suijin"
+category = 2
+hint_text = "A water kami lingers in the hush of Veil Marsh."
+full_name = "Suijin"
+full_description = "A deity of water and flowing life, honored in places of springs, rivers, and ritual purification."
+always_hidden = false

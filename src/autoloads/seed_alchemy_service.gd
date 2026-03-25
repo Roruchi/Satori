@@ -16,6 +16,7 @@ var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.FU,
 ]
 var _discovered: Dictionary = {}
+const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
 
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
@@ -23,11 +24,16 @@ func _ready() -> void:
 func is_element_unlocked(element: int) -> bool:
 	return _unlocked_elements.has(element)
 
+func is_ku_unlocked() -> bool:
+	return is_element_unlocked(GodaiElementScript.Value.KU)
+
 func unlock_element(element: int) -> void:
 	if _unlocked_elements.has(element):
 		return
 	_unlocked_elements.append(element)
 	element_unlocked.emit(element)
+	if element == GodaiElementScript.Value.KU:
+		_register_discovery(KU_GUIDANCE_ENTRY_ID, false)
 
 func lookup_recipe(elements: Array[int]) -> SeedRecipe:
 	for element: int in elements:
@@ -45,13 +51,20 @@ func craft_seed(elements: Array[int]) -> bool:
 	if not pouch.add(recipe):
 		return false
 	if not _discovered.has(recipe.recipe_id):
-		_discovered[recipe.recipe_id] = true
-		recipe_discovered.emit(recipe.recipe_id)
-		var codex_service: Node = get_node_or_null("/root/CodexService")
-		if codex_service != null and codex_service.has_method("mark_discovered"):
-			codex_service.mark_discovered(recipe.recipe_id)
+		_register_discovery(recipe.recipe_id, true)
 	seed_added_to_pouch.emit(recipe)
 	return true
+
+func _register_discovery(entry_id: StringName, should_emit_recipe_signal: bool) -> void:
+	_discovered[entry_id] = true
+	if should_emit_recipe_signal:
+		recipe_discovered.emit(entry_id)
+	_mark_codex_discovered(entry_id)
+
+func _mark_codex_discovered(entry_id: StringName) -> void:
+	var codex_service: Node = get_node_or_null("/root/CodexService")
+	if codex_service != null and codex_service.has_method("mark_discovered"):
+		codex_service.mark_discovered(entry_id)
 
 func get_pouch() -> SeedPouch:
 	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")

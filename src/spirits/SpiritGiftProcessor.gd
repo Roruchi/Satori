@@ -18,6 +18,8 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 	match gift_type:
 		SpiritGiftTypeScript.Value.KU_UNLOCK:
 			var alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
+			if alchemy != null and alchemy.has_method("is_ku_unlocked") and alchemy.is_ku_unlocked():
+				return
 			if alchemy != null and alchemy.has_method("unlock_element"):
 				alchemy.unlock_element(GodaiElementScript.Value.KU)
 		SpiritGiftTypeScript.Value.TIER3_RECIPE:

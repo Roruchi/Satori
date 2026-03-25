@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"spirit_kagutsuchi"
+category = 2
+hint_text = "A fire kami keeps vigil where Ember Shrine glows."
+full_name = "Kagutsuchi"
+full_description = "A deity of fire whose presence is tied to sacred flame, transformation, and the awe of heat."
+always_hidden = false

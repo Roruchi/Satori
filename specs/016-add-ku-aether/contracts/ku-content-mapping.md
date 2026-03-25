@@ -33,3 +33,11 @@ Defines one-to-one mapping requirements for Ku recipes, biomes, deity spirits, a
 2. Discovery catalogs contain all mapped spirit and structure IDs.
 3. Codex entries exist for each mapped biome, spirit, and structure.
 4. Manual quickstart run verifies end-to-end visibility for each mapping row.
+
+## Implementation sync notes
+
+- Added spirit entries and pattern resources for:
+  - `spirit_oyamatsumi`, `spirit_suijin`, `spirit_kagutsuchi`, `spirit_fujin`
+- Added structure metadata and tier2 patterns for:
+  - `disc_iwakura_sanctum`, `disc_misogi_spring_shrine`, `disc_eternal_kagura_hall`, `disc_heavenwind_torii`
+- Added codex entries for all four new deity spirits and all four new structures.

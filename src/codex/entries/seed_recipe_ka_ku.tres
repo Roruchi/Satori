@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_ka_ku"
+category = 0
+hint_text = "A shrine ember fed by Kū."
+full_name = "Ember Shrine Seed"
+full_description = "Ka and Kū shape a seed that blooms as Ember Shrine."
+always_hidden = false

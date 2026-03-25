@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_sui_ku"
+category = 0
+hint_text = "A marsh hidden beneath mist and Kū."
+full_name = "Veil Marsh Seed"
+full_description = "Sui and Kū merge into a seed that blooms as Veil Marsh."
+always_hidden = false

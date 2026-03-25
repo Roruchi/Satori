@@ -8,6 +8,8 @@ extends GutTest
 
 const GridMapScript = preload("res://src/grid/GridMap.gd")
 
+# Ku-focused SpiritService coverage
+
 
 func _make_grid() -> RefCounted:
 	return GridMapScript.new()
@@ -120,4 +122,36 @@ func test_summoned_instance_wander_bounds_contains_spawn_coord() -> void:
 	assert_not_null(inst, "Instance should exist")
 	assert_true(inst.wander_bounds.has_point(inst.spawn_coord),
 		"Wander bounds should contain the spawn coord")
+	svc.queue_free()
+
+func test_repeated_mist_stag_discovery_unlocks_ku_once() -> void:
+	var root: Node = get_tree().root
+	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
+	alchemy.name = "SeedAlchemyService"
+	root.add_child(alchemy)
+	alchemy._ready()
+	watch_signals(alchemy)
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1)]
+	svc._on_discovery_triggered("spirit_mist_stag", coords)
+	svc._on_discovery_triggered("spirit_mist_stag", coords)
+	assert_eq(alchemy.is_ku_unlocked(), true, "Mist Stag summon should unlock Ku")
+	assert_eq(get_signal_emit_count(alchemy, "element_unlocked"), 1, "Repeated Mist Stag discovery should not re-unlock Ku")
+	svc.queue_free()
+	alchemy.queue_free()
+
+func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var deity_ids: Array[String] = [
+		"spirit_oyamatsumi",
+		"spirit_suijin",
+		"spirit_kagutsuchi",
+		"spirit_fujin",
+	]
+	for deity_id: String in deity_ids:
+		var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(2, 1), Vector2i(1, 1)]
+		svc._on_discovery_triggered(deity_id, coords)
+		assert_true(svc._active_instances.has(deity_id), "Expected active instance for %s" % deity_id)
 	svc.queue_free()

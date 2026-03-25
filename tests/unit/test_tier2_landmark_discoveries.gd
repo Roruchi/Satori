@@ -316,3 +316,32 @@ var expected_ids: Array[String] = [
 ]
 for id: String in expected_ids:
 assert_true(catalog.has_entry(id), "Catalog must contain: %s" % id)
+
+func test_ku_structure_patterns_fire_for_required_biomes() -> void:
+	var structures: Array[Dictionary] = [
+		{"id": "disc_iwakura_sanctum", "biome": BiomeType.Value.SACRED_STONE},
+		{"id": "disc_misogi_spring_shrine", "biome": BiomeType.Value.VEIL_MARSH},
+		{"id": "disc_eternal_kagura_hall", "biome": BiomeType.Value.EMBER_SHRINE},
+		{"id": "disc_heavenwind_torii", "biome": BiomeType.Value.CLOUD_RIDGE},
+	]
+	for structure: Dictionary in structures:
+		var test_grid: RefCounted = GridMapScript.new()
+		test_grid.place_tile(Vector2i(0, 0), int(structure["biome"]))
+		test_grid.place_tile(Vector2i(1, 0), int(structure["biome"]))
+		test_grid.place_tile(Vector2i(0, 1), int(structure["biome"]))
+		test_grid.place_tile(Vector2i(-1, 1), int(structure["biome"]))
+		var pattern: PatternDefinition = _make_cluster(str(structure["id"]), int(structure["biome"]), 4)
+		assert_eq(_scan([pattern], test_grid), [str(structure["id"])], "Expected structure discovery for %s" % str(structure["id"]))
+
+func test_tier2_catalog_has_ku_entries() -> void:
+	var data := DiscoveryCatalogData.new()
+	var catalog := DiscoveryCatalog.new()
+	catalog.load_from_data(data)
+	var ku_ids: Array[String] = [
+		"disc_iwakura_sanctum",
+		"disc_misogi_spring_shrine",
+		"disc_eternal_kagura_hall",
+		"disc_heavenwind_torii",
+	]
+	for discovery_id: String in ku_ids:
+		assert_true(catalog.has_entry(discovery_id), "Catalog must contain Ku structure: %s" % discovery_id)
