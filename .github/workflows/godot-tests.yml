@@ -1,0 +1,27 @@
+name: Godot Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    name: Run GUT Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: barichello/godot-ci:4.6
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Import project resources
+        run: godot --path . --headless --import
+
+      - name: Run GUT tests headless
+        run: godot --path . --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gexit
