@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_cinder_heath"
+category = 1
+hint_text = "Burned and calm, quietly breathing."
+full_name = "Cinder Heath"
+full_description = "Ashen moorland where embers have long since cooled."
+always_hidden = false

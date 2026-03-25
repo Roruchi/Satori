@@ -37,6 +37,7 @@ func test_set_mode_instant_promotes_growing_seeds() -> void:
 	assert_true(service.try_plant(Vector2i(1, 0), recipe))
 	var seed_before: SeedInstance = service.get_tracker().get_at(Vector2i(1, 0))
 	assert_eq(seed_before.state, SeedState.Value.GROWING)
+	assert_eq(seed_before.growth_duration, 10.0)
 	service.set_mode(GrowthMode.Value.INSTANT)
 	var seed_after: SeedInstance = service.get_tracker().get_at(Vector2i(1, 0))
 	assert_eq(seed_after.state, SeedState.Value.READY)

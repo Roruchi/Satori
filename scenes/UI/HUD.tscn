@@ -16,6 +16,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Panels" type="Control" parent="Root"]
 layout_mode = 1
@@ -24,6 +25,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+z_index = 10
+mouse_filter = 2
 
 [node name="SeedAlchemyPanel" parent="Root/Panels" instance=ExtResource("2")]
 
@@ -59,33 +62,56 @@ layout_mode = 2
 script = ExtResource("4")
 text = "RT"
 
+[node name="BottomTray" type="Panel" parent="Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 76.0
+offset_top = -96.0
+offset_right = -76.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ActiveTabIndicator" type="ColorRect" parent="Root/BottomTray"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 10.0
+offset_right = 160.0
+offset_bottom = 76.0
+mouse_filter = 2
+color = Color(0.95, 0.89, 0.73, 0.18)
+
 [node name="BottomBar" type="HBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -64.0
-offset_right = -16.0
-offset_bottom = -16.0
+offset_left = 92.0
+offset_top = -92.0
+offset_right = -92.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
 
 [node name="PlantButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Plant"
+text = "⬢\nPlant"
 
 [node name="MixButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Mix"
+text = "✦\nMix"
 
 [node name="CodexButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Codex"
+text = "☷\nCodex"

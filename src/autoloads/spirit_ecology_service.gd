@@ -22,9 +22,19 @@ func register_wanderer(wanderer: Node) -> void:
 		return
 	if not wanderer.moved_to.is_connected(on_spirit_moved):
 		wanderer.moved_to.connect(on_spirit_moved)
-	if wanderer.has_variable("spirit_id"):
-		var spirit_id: String = str(wanderer.get("spirit_id"))
-		_index_spirit_pairs(spirit_id)
+	if _has_property(wanderer, "spirit_id"):
+		var spirit_id_variant: Variant = wanderer.get("spirit_id")
+		if spirit_id_variant is String and not String(spirit_id_variant).is_empty():
+			_index_spirit_pairs(String(spirit_id_variant))
+
+func _has_property(target: Object, property_name: String) -> bool:
+	if target == null:
+		return false
+	for property_info_variant in target.get_property_list():
+		var property_info: Dictionary = property_info_variant
+		if str(property_info.get("name", "")) == property_name:
+			return true
+	return false
 
 func on_spirit_moved(spirit_id: String, coord: Vector2i) -> void:
 	_spirit_positions[spirit_id] = coord

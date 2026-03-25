@@ -155,7 +155,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_stone_golem",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [2],
+			"preferred_biomes": [0],
 			"color_hint": Color(0.5, 0.5, 0.5)
 		},
 		{

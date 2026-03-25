@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_clay"
+category = 1
+hint_text = "Soft earth that holds its shape."
+full_name = "Clay"
+full_description = "Fertile clay land shaped by yielding water."
+always_hidden = false

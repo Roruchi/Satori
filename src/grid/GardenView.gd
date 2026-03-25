@@ -2,6 +2,7 @@
 extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const SeedStateScript = preload("res://src/seeds/SeedState.gd")
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
@@ -60,7 +61,7 @@ const _CLUSTER_THRESHOLDS: Dictionary = {
 	BiomeType.Value.STONE:  10,
 	BiomeType.Value.RIVER:  10,
 	BiomeType.Value.EMBER_FIELD: 10,
-	BiomeType.Value.MEADOW: 25,
+	BiomeType.Value.MEADOW: 10,
 	BiomeType.Value.CLAY:  20,
 }
 
@@ -160,6 +161,9 @@ func _draw() -> void:
 			var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 			draw_circle(Vector2(tc.x + TILE_RADIUS * 0.6, tc.y - TILE_RADIUS * 0.5), 4.0, Color(1.0, 0.85, 0.0))
 
+	# 1.5 Draw pending seed previews (ephemeral tiles in growth pipeline).
+	_draw_pending_seed_previews()
+
 	# 2. Biome cluster overlays
 	for biome: int in _CLUSTER_THRESHOLDS:
 		var threshold: int = _CLUSTER_THRESHOLDS[biome]
@@ -205,6 +209,43 @@ func _draw() -> void:
 
 	# 6. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
+
+
+func _draw_pending_seed_previews() -> void:
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service == null or not growth_service.has_method("get_tracker"):
+		return
+	var tracker: GrowthSlotTracker = growth_service.get_tracker()
+	if tracker == null:
+		return
+	for seed: SeedInstance in tracker.active_seeds:
+		if seed == null:
+			continue
+		var elapsed: float = Time.get_unix_time_from_system() - seed.planted_at
+		var remaining: float = max(0.0, seed.growth_duration - elapsed)
+		if seed.state == SeedStateScript.Value.GROWING and remaining <= 0.0 and seed.evaluate_growth():
+			# Promote state immediately so UI switches from timer to confirm prompt.
+			pass
+		var base: Color = _biome_color(seed.produces_biome)
+		var center: Vector2 = _HexUtils.axial_to_pixel(seed.hex_coord, TILE_RADIUS)
+		_draw_tile(seed.hex_coord, Color(base.r, base.g, base.b, 0.55))
+		var outline: PackedVector2Array = _hex_polygon(center, TILE_RADIUS + 2.0)
+		outline.append(outline[0])
+		if seed.state == SeedStateScript.Value.READY:
+			draw_polyline(outline, Color(1.0, 1.0, 1.0, 0.9), 2.0)
+			_draw_seed_overlay_text(center, "Confirm", 12, Color(1.0, 0.97, 0.86, 0.95))
+		else:
+			draw_polyline(outline, Color(0.70, 0.82, 1.0, 0.75), 1.5)
+			var secs: int = int(ceil(remaining))
+			_draw_seed_overlay_text(center, "%ds" % secs, 12, Color(0.78, 0.90, 1.0, 0.92))
+
+
+func _draw_seed_overlay_text(center: Vector2, text: String, font_size: int, color: Color) -> void:
+	var font: Font = ThemeDB.fallback_font
+	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	var pos: Vector2 = Vector2(center.x - text_size.x * 0.5, center.y + 4.0)
+	draw_string(font, pos + Vector2(1.0, 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.0, 0.0, 0.0, 0.6))
+	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 # ---------------------------------------------------------------------------
@@ -256,7 +297,52 @@ func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool)
 	var half: float = TILE_RADIUS
 
 	match biome:
-		BiomeType.Value.FOREST:
+		BiomeType.Value.STONE:
+			# Rock shapes — small triangular & rectangular outlines
+			var count: int = rng.randi_range(2, 4)
+			for _i: int in range(count):
+				var rx: float = cx + rng.randf_range(-half * 0.55, half * 0.55)
+				var ry: float = cy + rng.randf_range(-half * 0.50, half * 0.50)
+				var rw: float = rng.randf_range(3.5, 6.5)
+				var rh: float = rng.randf_range(2.0, 4.5)
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(rx - rw, ry + rh + 1.5), Vector2(rx + rw, ry + rh + 1.5),
+					Vector2(rx + rw + 1.5, ry + rh * 2.0), Vector2(rx - rw + 1.5, ry + rh * 2.0)
+				]), Color(0.15, 0.15, 0.18, 0.35))
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(rx, ry - rh), Vector2(rx + rw, ry + rh),
+					Vector2(rx - rw, ry + rh)
+				]), Color(0.48, 0.48, 0.52, 0.85))
+				draw_line(Vector2(rx - rw * 0.6, ry - rh * 0.4), Vector2(rx + rw * 0.2, ry - rh * 0.7), Color(0.80, 0.82, 0.85, 0.60), 1.2)
+			draw_line(Vector2(cx + rng.randf_range(-8.0, -3.0), cy + rng.randf_range(-8.0, 0.0)), Vector2(cx + rng.randf_range(3.0, 8.0), cy + rng.randf_range(0.0, 8.0)), Color(0.28, 0.28, 0.30, 0.65), 1.0)
+
+		BiomeType.Value.RIVER:
+			# Ripple lines + sparkle dots
+			for w: int in range(3):
+				var y_off: float = -7.0 + w * 7.0
+				var pts := PackedVector2Array()
+				for i: int in range(7):
+					var tt: float = float(i) / 6.0
+					pts.append(Vector2(cx - half * 0.72 + tt * TILE_RADIUS * 1.44, cy + y_off + sin(tt * PI * 2.0 + rng.randf() * 0.8) * 2.5))
+				var alpha: float = 0.70 if w == 1 else 0.45
+				draw_polyline(pts, Color(0.72, 0.92, 1.0, alpha), 1.5)
+			var sparks: int = rng.randi_range(2, 4)
+			for _s: int in range(sparks):
+				draw_circle(Vector2(cx + rng.randf_range(-half * 0.65, half * 0.65), cy + rng.randf_range(-half * 0.65, half * 0.65)), 1.2, Color(1.0, 1.0, 1.0, 0.80))
+
+		BiomeType.Value.EMBER_FIELD:
+			# Ember cracks and glowing cinders
+			for _e: int in range(rng.randi_range(3, 5)):
+				var ex: float = cx + rng.randf_range(-half * 0.55, half * 0.55)
+				var ey: float = cy + rng.randf_range(-half * 0.55, half * 0.55)
+				draw_circle(Vector2(ex, ey), rng.randf_range(1.8, 3.4), Color(1.0, 0.72, 0.24, 0.82))
+				draw_circle(Vector2(ex, ey), rng.randf_range(0.6, 1.5), Color(1.0, 0.96, 0.70, 0.92))
+			for _c: int in range(3):
+				var sx: float = cx + rng.randf_range(-half * 0.65, half * 0.65)
+				var sy: float = cy + rng.randf_range(-half * 0.65, half * 0.65)
+				draw_line(Vector2(sx, sy), Vector2(sx + rng.randf_range(-7.0, 7.0), sy + rng.randf_range(-7.0, 7.0)), Color(0.36, 0.10, 0.06, 0.78), 1.3)
+
+		BiomeType.Value.MEADOW:
 			if in_large_cluster:
 				# Canopy clusters — 2 large overlapping circles with shadow
 				var count: int = rng.randi_range(2, 3)
@@ -287,6 +373,29 @@ func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool)
 					# Highlight on canopy top
 					draw_circle(Vector2(cx + ox - r * 0.20, cy + oy - r * 0.45), r * 0.35, Color(0.30, 0.70, 0.25, 0.45))
 
+		BiomeType.Value.FOREST:
+			if in_large_cluster:
+				var count: int = rng.randi_range(2, 3)
+				for _i: int in range(count):
+					var ox: float = rng.randf_range(-half * 0.45, half * 0.45)
+					var oy: float = rng.randf_range(-half * 0.40, half * 0.40)
+					var r: float = rng.randf_range(4.5, 7.0)
+					draw_circle(Vector2(cx + ox + 1.5, cy + oy + 2.0), r, Color(0.03, 0.18, 0.03, 0.35))
+					draw_circle(Vector2(cx + ox, cy + oy), r, Color(0.08, 0.36, 0.10, 0.78))
+					draw_circle(Vector2(cx + ox - r * 0.35, cy + oy + r * 0.25), r * 0.72, Color(0.10, 0.42, 0.12, 0.65))
+			else:
+				var count: int = rng.randi_range(2, 4)
+				for _i: int in range(count):
+					var ox: float = rng.randf_range(-half * 0.55, half * 0.55)
+					var oy: float = rng.randf_range(-half * 0.45, half * 0.45)
+					var r: float = rng.randf_range(3.5, 5.5)
+					draw_circle(Vector2(cx + ox + 1.5, cy + oy + 2.0), r, Color(0.0, 0.12, 0.0, 0.30))
+					draw_line(Vector2(cx + ox, cy + oy + r * 0.5), Vector2(cx + ox, cy + oy + r * 1.25), Color(0.32, 0.20, 0.07, 0.95), 2.0)
+					draw_circle(Vector2(cx + ox, cy + oy - r * 0.2), r, Color(0.12, 0.42, 0.13, 0.90))
+					draw_circle(Vector2(cx + ox - r * 0.60, cy + oy + r * 0.30), r * 0.72, Color(0.10, 0.38, 0.11, 0.80))
+					draw_circle(Vector2(cx + ox + r * 0.60, cy + oy + r * 0.30), r * 0.72, Color(0.10, 0.38, 0.11, 0.80))
+					draw_circle(Vector2(cx + ox - r * 0.20, cy + oy - r * 0.45), r * 0.35, Color(0.30, 0.70, 0.25, 0.45))
+
 		BiomeType.Value.WATER:
 			# Ripple lines + sparkle dots
 			for w: int in range(3):
@@ -301,29 +410,6 @@ func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool)
 			var sparks: int = rng.randi_range(2, 4)
 			for _s: int in range(sparks):
 				draw_circle(Vector2(cx + rng.randf_range(-half * 0.65, half * 0.65), cy + rng.randf_range(-half * 0.65, half * 0.65)), 1.2, Color(1.0, 1.0, 1.0, 0.80))
-
-		BiomeType.Value.STONE:
-			# Rock shapes — small triangular & rectangular outlines
-			var count: int = rng.randi_range(2, 4)
-			for _i: int in range(count):
-				var rx: float = cx + rng.randf_range(-half * 0.55, half * 0.55)
-				var ry: float = cy + rng.randf_range(-half * 0.50, half * 0.50)
-				var rw: float = rng.randf_range(3.5, 6.5)
-				var rh: float = rng.randf_range(2.0, 4.5)
-				# Rock shadow
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(rx - rw, ry + rh + 1.5), Vector2(rx + rw, ry + rh + 1.5),
-					Vector2(rx + rw + 1.5, ry + rh * 2.0), Vector2(rx - rw + 1.5, ry + rh * 2.0)
-				]), Color(0.15, 0.15, 0.18, 0.35))
-				# Rock body
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(rx, ry - rh), Vector2(rx + rw, ry + rh),
-					Vector2(rx - rw, ry + rh)
-				]), Color(0.48, 0.48, 0.52, 0.85))
-				# Rock highlight
-				draw_line(Vector2(rx - rw * 0.6, ry - rh * 0.4), Vector2(rx + rw * 0.2, ry - rh * 0.7), Color(0.80, 0.82, 0.85, 0.60), 1.2)
-			# Crack lines
-			draw_line(Vector2(cx + rng.randf_range(-8.0, -3.0), cy + rng.randf_range(-8.0, 0.0)), Vector2(cx + rng.randf_range(3.0, 8.0), cy + rng.randf_range(0.0, 8.0)), Color(0.28, 0.28, 0.30, 0.65), 1.0)
 
 		BiomeType.Value.EARTH:
 			# Soil texture: pebbles + thin cross-hatch marks
@@ -525,9 +611,13 @@ func _is_in_large_cluster(coord: Vector2i, biome: int) -> bool:
 
 func _draw_cluster_overlay(biome: int, members: Array) -> void:
 	match biome:
+		BiomeType.Value.STONE:  _draw_mountain_overlay(members)
+		BiomeType.Value.RIVER:  _draw_river_overlay(members)
+		BiomeType.Value.EMBER_FIELD: _draw_obsidian_expanse_overlay(members)
+		BiomeType.Value.MEADOW: _draw_forest_overlay(members)
+		BiomeType.Value.CLAY:  _draw_barren_expanse_overlay(members)
 		BiomeType.Value.FOREST: _draw_forest_overlay(members)
 		BiomeType.Value.WATER:  _draw_river_overlay(members)
-		BiomeType.Value.STONE:  _draw_mountain_overlay(members)
 		BiomeType.Value.EARTH:  _draw_barren_expanse_overlay(members)
 		BiomeType.Value.SWAMP:  _draw_peat_bog_overlay(members)
 
@@ -1323,9 +1413,22 @@ static func _hex_polygon(center: Vector2, radius: float) -> PackedVector2Array:
 
 static func _biome_color(biome: int) -> Color:
 	match biome:
+		BiomeType.Value.STONE:      return Color(0.620, 0.620, 0.620)
+		BiomeType.Value.RIVER:      return Color(0.129, 0.588, 0.953)
+		BiomeType.Value.EMBER_FIELD:return Color(0.922, 0.42, 0.18)
+		BiomeType.Value.MEADOW:     return Color(0.298, 0.686, 0.314)
+		BiomeType.Value.CLAY:       return Color(0.757, 0.580, 0.376)
+		BiomeType.Value.DESERT:     return Color(0.78, 0.65, 0.25)
+		BiomeType.Value.DUNE:       return Color(0.84, 0.76, 0.50)
+		BiomeType.Value.HOT_SPRING: return Color(0.75, 0.88, 0.95)
+		BiomeType.Value.BOG:        return Color(0.25, 0.40, 0.20)
+		BiomeType.Value.CINDER_HEATH: return Color(0.42, 0.28, 0.15)
+		BiomeType.Value.SACRED_STONE: return Color(0.72, 0.72, 0.62)
+		BiomeType.Value.VEIL_MARSH: return Color(0.45, 0.52, 0.35)
+		BiomeType.Value.EMBER_SHRINE:return Color(0.72, 0.35, 0.18)
+		BiomeType.Value.CLOUD_RIDGE:return Color(0.72, 0.80, 0.88)
 		BiomeType.Value.FOREST:     return Color(0.298, 0.686, 0.314)
 		BiomeType.Value.WATER:      return Color(0.129, 0.588, 0.953)
-		BiomeType.Value.STONE:      return Color(0.620, 0.620, 0.620)
 		BiomeType.Value.EARTH:      return Color(0.757, 0.580, 0.376)
 		BiomeType.Value.SWAMP:      return Color(0.25, 0.40, 0.20)
 		BiomeType.Value.TUNDRA:     return Color(0.75, 0.88, 0.95)

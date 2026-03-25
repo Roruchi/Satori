@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_cloud_ridge"
+category = 1
+hint_text = "The summit that touches the sky."
+full_name = "Cloud Ridge"
+full_description = "High terrain where wind and stone meet the infinite."
+always_hidden = false

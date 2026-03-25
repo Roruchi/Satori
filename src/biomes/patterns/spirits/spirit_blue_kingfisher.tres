@@ -6,7 +6,7 @@
 script = ExtResource("1_sp009")
 discovery_id = "spirit_blue_kingfisher"
 pattern_type = 0
-required_biomes = Array[int]([4])
+required_biomes = Array[int]([1])
 forbidden_biomes = Array[int]([])
 size_threshold = 3
 shape_recipe = Array[Dictionary]([])
