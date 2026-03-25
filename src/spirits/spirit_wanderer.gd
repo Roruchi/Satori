@@ -38,14 +38,41 @@ func _ready() -> void:
 	_label = Label.new()
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_label.position = Vector2(-48.0, -26.0)
-	_label.size = Vector2(96.0, 20.0)
+	_label.position = Vector2(-52.0, -30.0)
+	_label.size = Vector2(104.0, 22.0)
+	_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.9))
+	_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	_label.add_theme_constant_override("shadow_offset_x", 1)
+	_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(_label)
 	queue_redraw()
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, SPIRIT_RADIUS, _display_color)
-	draw_arc(Vector2.ZERO, SPIRIT_RADIUS, 0.0, TAU, 24, _display_color.lightened(0.25), 1.5)
+	var outer_r: float = SPIRIT_RADIUS + 5.5
+	var inner_r: float = SPIRIT_RADIUS
+	var core_r: float = SPIRIT_RADIUS * 0.55
+
+	# Outer atmospheric glow (large, very transparent)
+	draw_circle(Vector2.ZERO, outer_r + 4.0, Color(_display_color.r, _display_color.g, _display_color.b, 0.10))
+	# Glow ring
+	draw_circle(Vector2.ZERO, outer_r, Color(_display_color.r, _display_color.g, _display_color.b, 0.22))
+	# Drop shadow (offset)
+	draw_circle(Vector2(2.0, 2.5), inner_r, Color(0.0, 0.0, 0.0, 0.35))
+	# Main spirit body
+	draw_circle(Vector2.ZERO, inner_r, _display_color)
+	# Inner highlight ring
+	draw_arc(Vector2.ZERO, inner_r, 0.0, TAU, 24, _display_color.lightened(0.30), 1.8)
+	# Bright inner core
+	draw_circle(Vector2.ZERO, core_r, _display_color.lightened(0.45))
+	# Specular highlight dot (upper-right)
+	draw_circle(Vector2(inner_r * 0.32, -inner_r * 0.32), core_r * 0.50, Color(1.0, 1.0, 1.0, 0.75))
+	# Cross/sparkle lines emanating from centre
+	for i: int in range(4):
+		var angle: float = deg_to_rad(float(i) * 45.0 + 22.5)
+		var arm: float = outer_r * 0.80
+		var start: Vector2 = Vector2(cos(angle), sin(angle)) * inner_r * 0.85
+		var end: Vector2 = Vector2(cos(angle), sin(angle)) * arm
+		draw_line(start, end, Color(_display_color.r, _display_color.g, _display_color.b, 0.50), 1.2)
 
 func _process(delta: float) -> void:
 	if _wait_time > 0.0:
