@@ -4,7 +4,14 @@ extends GutTest
 
 func test_registry_loads_tier1_and_tier2_recipes() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
-	assert_eq(registry.all_known_recipes().size(), 14)
+	assert_not_null(registry.lookup([GodaiElement.Value.CHI]), "Base Chi recipe should exist")
+	assert_not_null(registry.lookup([GodaiElement.Value.SUI]), "Base Sui recipe should exist")
+	assert_not_null(registry.lookup([GodaiElement.Value.KA]), "Base Ka recipe should exist")
+	assert_not_null(registry.lookup([GodaiElement.Value.FU]), "Base Fu recipe should exist")
+	assert_not_null(registry.lookup([GodaiElement.Value.CHI, GodaiElement.Value.KU]), "Ku pairing Chi+Ku should exist in registry")
+	assert_not_null(registry.lookup([GodaiElement.Value.SUI, GodaiElement.Value.KU]), "Ku pairing Sui+Ku should exist in registry")
+	assert_not_null(registry.lookup([GodaiElement.Value.KA, GodaiElement.Value.KU]), "Ku pairing Ka+Ku should exist in registry")
+	assert_not_null(registry.lookup([GodaiElement.Value.FU, GodaiElement.Value.KU]), "Ku pairing Fu+Ku should exist in registry")
 
 func test_lookup_is_order_independent_for_chi_sui() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()

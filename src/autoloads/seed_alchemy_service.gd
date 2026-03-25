@@ -55,9 +55,9 @@ func craft_seed(elements: Array[int]) -> bool:
 	seed_added_to_pouch.emit(recipe)
 	return true
 
-func _register_discovery(entry_id: StringName, should_emit_recipe_signal: bool) -> void:
+func _register_discovery(entry_id: StringName, emit_recipe_signal: bool) -> void:
 	_discovered[entry_id] = true
-	if should_emit_recipe_signal:
+	if emit_recipe_signal:
 		recipe_discovered.emit(entry_id)
 	_mark_codex_discovered(entry_id)
 

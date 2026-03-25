@@ -49,9 +49,6 @@ func _fill_category(category: int, container: VBoxContainer) -> void:
 		child.queue_free()
 	container.add_theme_constant_override("separation", 12)
 	var codex: Node = _codex_service
-	if codex == null:
-		codex = get_node_or_null("/root/CodexService")
-		_codex_service = codex
 	if codex == null or not codex.has_method("get_entries_by_category"):
 		return
 	var entries: Array[CodexEntry] = codex.get_entries_by_category(category)
