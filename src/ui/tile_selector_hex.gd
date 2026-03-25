@@ -17,23 +17,23 @@ const _LABEL_SIZE: int = 11
 
 ## The four selectable base biomes — order matches _LABELS and _COLORS.
 const _BIOMES: Array = [
-	BiomeType.Value.FOREST,
-	BiomeType.Value.WATER,
 	BiomeType.Value.STONE,
-	BiomeType.Value.EARTH,
+	BiomeType.Value.RIVER,
+	BiomeType.Value.EMBER_FIELD,
+	BiomeType.Value.MEADOW,
 ]
 
-const _LABELS: Array = ["Forest", "Water", "Stone", "Earth"]
+const _LABELS: Array = ["Stone", "River", "Ember", "Meadow"]
 
 ## Colours matching GardenView._biome_color() for the four base biomes.
 const _COLORS: Array = [
-	Color(0.298, 0.686, 0.314),   # FOREST
-	Color(0.129, 0.588, 0.953),   # WATER
 	Color(0.620, 0.620, 0.620),   # STONE
-	Color(0.757, 0.580, 0.376),   # EARTH
+	Color(0.129, 0.588, 0.953),   # RIVER
+	Color(0.922, 0.42, 0.18),     # EMBER
+	Color(0.298, 0.686, 0.314),   # MEADOW
 ]
 
-var _selected: int = BiomeType.Value.FOREST
+var _selected: int = BiomeType.Value.STONE
 var _hover_idx: int = -1
 var _centers: Array[Vector2] = []
 

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"biome_ember_field"
+category = 1
+hint_text = "Heat sleeping in ash."
+full_name = "Ember Field"
+full_description = "Fire held in smoldering memory."
+always_hidden = false

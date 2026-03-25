@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"recipe_fu"
+category = 0
+hint_text = "Grass that bends but does not break."
+full_name = "Meadow Seed"
+full_description = "A single Fū seed that blooms into meadow."
+always_hidden = false

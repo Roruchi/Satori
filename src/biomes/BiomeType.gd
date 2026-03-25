@@ -2,39 +2,35 @@ class_name BiomeType
 extends RefCounted
 
 enum Value {
-	NONE       = -1,
+	NONE         = -1,
+	# Godai-aligned biome IDs.
+	STONE        = 0,  # Chi
+	RIVER        = 1,  # Sui
+	EMBER_FIELD  = 2,  # Ka
+	MEADOW       = 3,  # Fu
+	CLAY         = 4,  # Chi + Sui
+	DESERT       = 5,  # Chi + Ka
+	DUNE         = 6,  # Chi + Fu
+	HOT_SPRING   = 7,  # Sui + Ka
+	BOG          = 8,  # Sui + Fu
+	CINDER_HEATH = 9,  # Ka + Fu
+	SACRED_STONE = 10, # Chi + Ku
+	VEIL_MARSH   = 11, # Sui + Ku
+	EMBER_SHRINE = 12, # Ka + Ku
+	CLOUD_RIDGE  = 13, # Fu + Ku
+
+	# Legacy aliases kept to avoid broad breakage while migrating call sites.
 	FOREST     = 0,
 	WATER      = 1,
-	STONE      = 2,
 	EARTH      = 3,
-	SWAMP      = 4,  # Forest + Water
-	TUNDRA     = 5,  # Stone  + Water
-	MUDFLAT    = 6,  # Earth  + Water
-	MOSSY_CRAG = 7,  # Forest + Stone
-	SAVANNAH   = 8,  # Forest + Earth
-	CANYON     = 9,  # Stone  + Earth
+	SWAMP      = 4,
+	TUNDRA     = 5,
+	MUDFLAT    = 6,
+	MOSSY_CRAG = 7,
+	SAVANNAH   = 8,
+	CANYON     = 9,
 }
 
-## Returns the hybrid biome produced by mixing two base tiles.
-## Returns NONE if either input is not a base tile, if inputs are the same,
-## or if the combination has no defined result.
-static func mix(a: BiomeType.Value, b: BiomeType.Value) -> BiomeType.Value:
-	if a == b or a == BiomeType.Value.NONE or b == BiomeType.Value.NONE:
-		return BiomeType.Value.NONE
-	# Only base tiles (0–3) can be mixed; hybrids are locked
-	if int(a) > 3 or int(b) > 3:
-		return BiomeType.Value.NONE
-
-	# Normalise to (lo, hi) so mixing is commutative
-	var lo := mini(int(a), int(b))
-	var hi := maxi(int(a), int(b))
-
-	match [lo, hi]:
-		[0, 1]: return BiomeType.Value.SWAMP       # FOREST + WATER
-		[0, 2]: return BiomeType.Value.MOSSY_CRAG  # FOREST + STONE
-		[0, 3]: return BiomeType.Value.SAVANNAH    # FOREST + EARTH
-		[1, 2]: return BiomeType.Value.TUNDRA      # STONE  + WATER
-		[1, 3]: return BiomeType.Value.MUDFLAT     # EARTH  + WATER
-		[2, 3]: return BiomeType.Value.CANYON      # STONE  + EARTH
-
+## Deprecated — use SeedRecipeRegistry.lookup() instead.
+static func mix(_a: BiomeType.Value, _b: BiomeType.Value) -> BiomeType.Value:
 	return BiomeType.Value.NONE

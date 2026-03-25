@@ -11,7 +11,7 @@ extends CanvasLayer
 
 func _ready() -> void:
 	_hex_selector.biome_selected.connect(_select)
-	_select(BiomeType.Value.FOREST)
+	_select(BiomeType.Value.STONE)
 
 	_style_discovery_panel()
 

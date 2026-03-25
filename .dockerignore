@@ -1,0 +1,8 @@
+.git/
+.godot/
+node_modules/
+*.log*
+.env*
+Dockerfile*
+.dockerignore
+coverage/

@@ -52,6 +52,19 @@ func _unhandled_input(event: InputEvent) -> void:
 				if _long_press_fired:
 					return  # long-press already handled; skip normal tap placement
 				var coord := _world_to_tile(get_global_mouse_position())
+				var hud: Node = get_node_or_null("../HUD")
+				if hud != null and hud.has_method("is_plant_mode") and not hud.is_plant_mode():
+					return
+				var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+				if growth_service != null and growth_service.has_method("get_pouch"):
+					var pouch: SeedPouch = growth_service.get_pouch()
+					if pouch != null:
+						var recipe: SeedRecipe = pouch.first()
+						if recipe == null:
+							return
+						if growth_service.try_plant(coord, recipe):
+							pouch.remove_at(0)
+							return
 				GameState.try_place_tile(coord)
 
 func _on_long_press(coord: Vector2i) -> void:

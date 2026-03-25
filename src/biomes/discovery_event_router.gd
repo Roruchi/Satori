@@ -26,6 +26,9 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
 	if persistence != null and persistence.has_method("record_discovery"):
 		persistence.record_discovery(payload)
+	var codex: Node = get_node_or_null("/root/CodexService")
+	if codex != null and codex.has_method("mark_discovered"):
+		codex.mark_discovered(StringName(discovery_id))
 	# Enqueue for UI notification
 	if _queue != null:
 		_queue.enqueue(payload)
