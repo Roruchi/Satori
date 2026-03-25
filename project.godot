@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameState="*res://src/autoloads/GameState.gd"
 DiscoveryPersistence="*res://src/autoloads/discovery_persistence.gd"
 PatternScanService="*res://src/biomes/pattern_scan_scheduler.gd"
+SpiritPersistence="*res://src/autoloads/spirit_persistence.gd"
 
 [physics]
 

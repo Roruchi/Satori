@@ -1,8 +1,11 @@
 class_name ShapeMatcher
 extends RefCounted
 
+const _HexUtils = preload("res://src/grid/hex_utils.gd")
+
 func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: SpatialQuery) -> DiscoverySignal:
-	# If any recipe entry has absolute_anchor:true, only try that coordinate as anchor.
+	# Determine if any entry has absolute_anchor:true — if so, restrict anchor iteration
+	# to only that single grid coordinate (prevents firing at arbitrary positions).
 	var absolute_anchor_coord: Vector2i = Vector2i.ZERO
 	var has_absolute_anchor := false
 	for entry in pattern.shape_recipe:
@@ -11,13 +14,17 @@ func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: Spati
 			has_absolute_anchor = true
 			break
 
+	var variants: Array = _HexUtils.shape_recipe_variants(pattern.shape_recipe)
 	for coord_variant in grid.tiles.keys():
 		var anchor: Vector2i = coord_variant
 		if has_absolute_anchor and anchor != absolute_anchor_coord:
 			continue
-		if spatial_query.recipe_matches_at(anchor, pattern.shape_recipe, func(target: Vector2i) -> GardenTile:
-			return grid.get_tile(target)
-		):
+		for variant_variant in variants:
+			var variant: Array[Dictionary] = variant_variant
+			if not spatial_query.recipe_matches_at(anchor, variant, func(target: Vector2i) -> GardenTile:
+				return grid.get_tile(target)
+			):
+				continue
 			# Enforce forbidden_biomes: no neighbour of the anchor may have these biomes.
 			if not pattern.forbidden_biomes.is_empty():
 				var forbidden_match := false
@@ -28,13 +35,12 @@ func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: Spati
 						break
 				if forbidden_match:
 					continue
+			# All constraints satisfied — collect triggering coords and emit.
 			var coords: Array[Vector2i] = []
-			for entry in pattern.shape_recipe:
+			for entry: Dictionary in variant:
 				if entry.get("must_be_empty", false):
 					continue
-				var offset: Vector2i = entry["offset"]
-				var is_absolute: bool = entry.get("absolute_anchor", false)
-				coords.append(offset if is_absolute else anchor + offset)
+				coords.append(anchor + entry["offset"])
 			coords.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
 				if a.x == b.x:
 					return a.y < b.y

@@ -68,6 +68,14 @@ func _ready() -> void:
 		if not ids.is_empty():
 			_matcher.get_discovery_registry().mark_discoveries(ids)
 
+	# Hydrate registry with already-summoned spirit IDs so spirit patterns
+	# do not re-trigger after an app restart.
+	var spirit_persistence: Node = get_node_or_null("/root/SpiritPersistence")
+	if spirit_persistence != null and spirit_persistence.has_method("get_summoned_ids"):
+		var spirit_ids: Array[String] = spirit_persistence.get_summoned_ids()
+		if not spirit_ids.is_empty():
+			_matcher.get_discovery_registry().mark_discoveries(spirit_ids)
+
 func _default_grid_provider() -> RefCounted:
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state == null:

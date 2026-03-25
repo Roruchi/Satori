@@ -32,16 +32,16 @@ const _BIOME_NAMES: Dictionary = {
 
 ## Standard biome colours for fallback box meshes (matches GardenView palette).
 const _BIOME_COLORS: Dictionary = {
-	BiomeType.Value.FOREST:     Color(0.298, 0.686, 0.314),
-	BiomeType.Value.WATER:      Color(0.129, 0.588, 0.953),
-	BiomeType.Value.STONE:      Color(0.620, 0.620, 0.620),
-	BiomeType.Value.EARTH:      Color(0.757, 0.580, 0.376),
-	BiomeType.Value.SWAMP:      Color(0.25, 0.40, 0.20),
-	BiomeType.Value.TUNDRA:     Color(0.75, 0.88, 0.95),
-	BiomeType.Value.MUDFLAT:    Color(0.42, 0.28, 0.15),
-	BiomeType.Value.MOSSY_CRAG: Color(0.45, 0.52, 0.35),
-	BiomeType.Value.SAVANNAH:   Color(0.78, 0.65, 0.25),
-	BiomeType.Value.CANYON:     Color(0.72, 0.35, 0.18),
+	BiomeType.Value.FOREST:     Color(0.20, 0.58, 0.22),
+	BiomeType.Value.WATER:      Color(0.09, 0.48, 0.88),
+	BiomeType.Value.STONE:      Color(0.55, 0.56, 0.62),
+	BiomeType.Value.EARTH:      Color(0.68, 0.50, 0.30),
+	BiomeType.Value.SWAMP:      Color(0.20, 0.35, 0.16),
+	BiomeType.Value.TUNDRA:     Color(0.72, 0.85, 0.94),
+	BiomeType.Value.MUDFLAT:    Color(0.35, 0.22, 0.11),
+	BiomeType.Value.MOSSY_CRAG: Color(0.38, 0.46, 0.28),
+	BiomeType.Value.SAVANNAH:   Color(0.70, 0.56, 0.18),
+	BiomeType.Value.CANYON:     Color(0.64, 0.28, 0.12),
 }
 
 const ASSET_BASE_PATH: String = "res://assets/meshes/tiles/"
@@ -101,9 +101,14 @@ func _load_variants(biome: int, lod: bool) -> Array:
 ## BoxMesh always has exactly one surface (surface index 0), so `surface_set_material(0, mat)` is safe.
 func _make_fallback_box(biome: int) -> Mesh:
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.9, 0.4, 0.9)  # slightly smaller than 1×1 tile footprint
+	mesh.size = Vector3(0.92, 0.45, 0.92)  # slightly taller for chunky voxel look
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = _BIOME_COLORS.get(biome, Color(0.5, 0.5, 0.5))
+	mat.roughness = 0.82
+	mat.metallic = 0.04
+	mat.metallic_specular = 0.35
+	# Subtle depth cue — slightly darken the sides via a faint shading hint
+	mat.vertex_color_use_as_albedo = false
 	mesh.surface_set_material(0, mat)
 	return mesh
 
