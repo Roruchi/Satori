@@ -18,6 +18,7 @@ enum Value {
 	VEIL_MARSH   = 11, # Sui + Ku
 	EMBER_SHRINE = 12, # Ka + Ku
 	CLOUD_RIDGE  = 13, # Fu + Ku
+	KU           = 14, # Ku (standalone abyss — void separator)
 
 	# Legacy aliases kept to avoid broad breakage while migrating call sites.
 	FOREST     = 0,

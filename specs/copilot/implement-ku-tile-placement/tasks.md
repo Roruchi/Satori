@@ -19,9 +19,9 @@
 
 **Purpose**: Extend BiomeType and confirm render colour — shared by all three user stories.
 
-- [ ] T001 Add `KU = 14` to `BiomeType.Value` enum in `src/biomes/BiomeType.gd` with comment `# Ku (standalone abyss — void separator)`
-- [ ] T002 [P] Add KU to the biome-colour lookup in `src/grid/GardenView.gd` (`_get_biome_color` or equivalent) with near-black colour `Color(0.05, 0.02, 0.1)`
-- [ ] T003 [P] Update metadata comment in `src/grid/TileData.gd` to document the `"island_id"` key alongside existing `"discovery_ids"` and `"spirit_id"` entries
+- [x] T001 Add `KU = 14` to `BiomeType.Value` enum in `src/biomes/BiomeType.gd` with comment `# Ku (standalone abyss — void separator)`
+- [x] T002 [P] Add KU to the biome-colour lookup in `src/grid/GardenView.gd` (`_get_biome_color` or equivalent) with near-black colour `Color(0.05, 0.02, 0.1)`
+- [x] T003 [P] Update metadata comment in `src/grid/TileData.gd` to document the `"island_id"` key alongside existing `"discovery_ids"` and `"spirit_id"` entries
 
 **Checkpoint**: BiomeType.KU is defined; GardenView can render it; TileData documents island_id.
 
@@ -33,10 +33,10 @@
 
 **⚠️ CRITICAL**: US2 and US3 cannot be implemented until this phase is complete.
 
-- [ ] T004 Add `_island_map: Dictionary` private field to `GridMap` in `src/grid/GridMap.gd` (Vector2i → String)
-- [ ] T005 Implement `compute_island_ids()` on `GridMap` in `src/grid/GridMap.gd`: BFS flood-fill over all non-KU tiles; writes `tile.metadata["island_id"]` for each tile; island ID = `"{q},{r}"` of lexicographically smallest coord in component; KU tiles get `tile.metadata["island_id"] = ""`
-- [ ] T006 Implement `get_island_id(coord: Vector2i) -> String` on `GridMap` in `src/grid/GridMap.gd`: returns `_island_map.get(coord, "")` (thin wrapper for external callers)
-- [ ] T007 Call `compute_island_ids()` at the end of `GridMap.place_tile()` in `src/grid/GridMap.gd` so island map is always current before `tile_placed` signal fires
+- [x] T004 Add `_island_map: Dictionary` private field to `GridMap` in `src/grid/GridMap.gd` (Vector2i → String)
+- [x] T005 Implement `compute_island_ids()` on `GridMap` in `src/grid/GridMap.gd`: BFS flood-fill over all non-KU tiles; writes `tile.metadata["island_id"]` for each tile; island ID = `"{q},{r}"` of lexicographically smallest coord in component; KU tiles get `tile.metadata["island_id"] = ""`
+- [x] T006 Implement `get_island_id(coord: Vector2i) -> String` on `GridMap` in `src/grid/GridMap.gd`: returns `_island_map.get(coord, "")` (thin wrapper for external callers)
+- [x] T007 Call `compute_island_ids()` at the end of `GridMap.place_tile()` in `src/grid/GridMap.gd` so island map is always current before `tile_placed` signal fires
 
 **Checkpoint**: GridMap computes and stores island IDs after every tile placement. No spirit or UI changes yet.
 
@@ -50,13 +50,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Add GUT test `test_island_labelling.gd` skeleton in `tests/unit/test_island_labelling.gd` with helper `_make_grid()` factory; add test `test_ku_tile_has_no_island_id` that places a KU tile and asserts `metadata["island_id"] == ""`
+- [x] T008 [P] [US1] Add GUT test `test_island_labelling.gd` skeleton in `tests/unit/test_island_labelling.gd` with helper `_make_grid()` factory; add test `test_ku_tile_has_no_island_id` that places a KU tile and asserts `metadata["island_id"] == ""`
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Verify TileSelector UI in `src/ui/TileSelector.gd` (and `scenes/UI/TileSelector.tscn` if needed) exposes `BiomeType.Value.KU` when Ku element is unlocked — confirm existing biome-iteration loop includes new enum value 14 or add explicit entry
-- [ ] T010 [US1] Confirm PlacementController in `src/grid/PlacementController.gd` passes `selected_biome` through to `GameState.try_place_tile()` without biome-filtering that would block KU (no change expected; document confirmation in task notes)
-- [ ] T011 [US1] Ensure `GridMap.is_placement_valid()` in `src/grid/GridMap.gd` allows KU tiles to be placed with the same adjacency rule as all other biomes (no special-casing needed; confirm and document)
+- [x] T009 [US1] Verify TileSelector UI in `src/ui/TileSelector.gd` (and `scenes/UI/TileSelector.tscn` if needed) exposes `BiomeType.Value.KU` when Ku element is unlocked — confirm existing biome-iteration loop includes new enum value 14 or add explicit entry
+- [x] T010 [US1] Confirm PlacementController in `src/grid/PlacementController.gd` passes `selected_biome` through to `GameState.try_place_tile()` without biome-filtering that would block KU (no change expected; document confirmation in task notes)
+- [x] T011 [US1] Ensure `GridMap.is_placement_valid()` in `src/grid/GridMap.gd` allows KU tiles to be placed with the same adjacency rule as all other biomes (no special-casing needed; confirm and document)
 
 **Checkpoint**: Ku tile can be placed via normal plant-mode interaction and renders correctly.
 
@@ -70,7 +70,7 @@
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] Extend `tests/unit/test_island_labelling.gd` with:
+- [x] T012 [P] [US2] Extend `tests/unit/test_island_labelling.gd` with:
   - `test_single_island_all_same_id`: place 3 connected Stone tiles; assert all share the same `island_id`
   - `test_ku_splits_two_groups`: build `S K S` linear layout; assert left and right have distinct island IDs
   - `test_connected_around_ku_is_one_island`: build a U-shape around a Ku tile; assert all non-Ku tiles share one island ID
@@ -78,8 +78,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Review `compute_island_ids()` implementation from T005 against test cases from T012; fix any BFS ordering or ID-derivation bugs revealed by running GUT tests
-- [ ] T014 [US2] Add manual validation entry to `specs/copilot/implement-ku-tile-placement/quickstart.md` Step 2 confirming island IDs are distinct (print via GUT or editor debug script)
+- [x] T013 [US2] Review `compute_island_ids()` implementation from T005 against test cases from T012; fix any BFS ordering or ID-derivation bugs revealed by running GUT tests
+- [x] T014 [US2] Add manual validation entry to `specs/copilot/implement-ku-tile-placement/quickstart.md` Step 2 confirming island IDs are distinct (print via GUT or editor debug script)
 
 **Checkpoint**: Island IDs are correctly assigned and stable. T012 GUT tests all pass.
 
@@ -93,20 +93,20 @@
 
 ### Tests for User Story 3
 
-- [ ] T015 [P] [US3] Create `tests/unit/test_spirit_island_scope.gd` with GUT tests:
+- [x] T015 [P] [US3] Create `tests/unit/test_spirit_island_scope.gd` with GUT tests:
   - `test_record_and_check_island_keyed`: create two SpiritInstances with same spirit_id but different island_ids; call `record_instance()` for both; assert both keys exist in `_summoned_ids`
   - `test_is_summoned_on_island_true_and_false`: after recording spirit on island "0,0"; assert `is_summoned_on_island("spirit_x","0,0") == true` and `is_summoned_on_island("spirit_x","1,0") == false`
   - `test_spirit_instance_serialise_island_id`: create instance with island_id="2,3"; serialise then deserialise; assert island_id round-trips correctly
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Add `island_id: String = ""` field to `SpiritInstance` in `src/spirits/spirit_instance.gd`; update `serialize()` to include `"island_id"` key; update `deserialize()` to read `"island_id"` with `""` default
-- [ ] T017 [US3] Add `is_summoned_on_island(spirit_id: String, island_id: String) -> bool` and `_island_spirit_key(instance: SpiritInstance) -> String` methods to `SpiritPersistence` in `src/autoloads/spirit_persistence.gd`; update `record_instance()` to use compound key when `instance.island_id` is non-empty; keep bare `spirit_id` key fallback for empty island_id
-- [ ] T018 [US3] Add `_spirit_key(spirit_id: String, island_id: String) -> String` and `_island_for_coords(coords: Array[Vector2i]) -> String` helpers to `SpiritService` in `src/spirits/spirit_service.gd`
-- [ ] T019 [US3] Update `SpiritService._on_discovery_triggered()` in `src/spirits/spirit_service.gd`: resolve island_id from triggering_coords via `_island_for_coords()`; build compound key; guard on compound key in `_active_instances`; pass island_id into `_summon_spirit()`
-- [ ] T020 [US3] Update `SpiritService._summon_spirit()` signature to accept `island_id: String = ""`; set `instance.island_id = island_id`; store in `_active_instances` under compound key from `_spirit_key()`
-- [ ] T021 [US3] Update `SpiritService.restore_from_persistence()` in `src/spirits/spirit_service.gd` to restore `_active_instances` using the same compound key (read `instance.island_id` from deserialised data)
-- [ ] T022 [US3] Run GUT tests from T015; fix any issues in T016–T021
+- [x] T016 [US3] Add `island_id: String = ""` field to `SpiritInstance` in `src/spirits/spirit_instance.gd`; update `serialize()` to include `"island_id"` key; update `deserialize()` to read `"island_id"` with `""` default
+- [x] T017 [US3] Add `is_summoned_on_island(spirit_id: String, island_id: String) -> bool` and `_island_spirit_key(instance: SpiritInstance) -> String` methods to `SpiritPersistence` in `src/autoloads/spirit_persistence.gd`; update `record_instance()` to use compound key when `instance.island_id` is non-empty; keep bare `spirit_id` key fallback for empty island_id
+- [x] T018 [US3] Add `_spirit_key(spirit_id: String, island_id: String) -> String` and `_island_for_coords(coords: Array[Vector2i]) -> String` helpers to `SpiritService` in `src/spirits/spirit_service.gd`
+- [x] T019 [US3] Update `SpiritService._on_discovery_triggered()` in `src/spirits/spirit_service.gd`: resolve island_id from triggering_coords via `_island_for_coords()`; build compound key; guard on compound key in `_active_instances`; pass island_id into `_summon_spirit()`
+- [x] T020 [US3] Update `SpiritService._summon_spirit()` signature to accept `island_id: String = ""`; set `instance.island_id = island_id`; store in `_active_instances` under compound key from `_spirit_key()`
+- [x] T021 [US3] Update `SpiritService.restore_from_persistence()` in `src/spirits/spirit_service.gd` to restore `_active_instances` using the same compound key (read `instance.island_id` from deserialised data)
+- [x] T022 [US3] Run GUT tests from T015; fix any issues in T016–T021
 
 **Checkpoint**: Per-island spirit spawning works. T015 GUT tests all pass. Existing spirit tests remain green.
 
@@ -116,10 +116,10 @@
 
 **Purpose**: Regression validation, documentation completion, and code hygiene.
 
-- [ ] T023 [P] Run full GUT test suite headless (`godot --path . --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gexit`) and confirm all existing tests still pass
-- [ ] T024 [P] Perform manual validation per `specs/copilot/implement-ku-tile-placement/quickstart.md` Steps 1–4 in Garden.tscn
-- [ ] T025 Update `specs/copilot/implement-ku-tile-placement/quickstart.md` with any findings or corrections from T024
-- [ ] T026 [P] Add KU to any GardenView biome-colour or bitmask lookup tables in `src/grid/GardenView.gd` that enumerate all valid biome IDs, ensuring no `assert` or range-check errors fire when KU tiles are rendered
+- [x] T023 [P] Run full GUT test suite headless (`godot --path . --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gexit`) and confirm all existing tests still pass
+- [x] T024 [P] Perform manual validation per `specs/copilot/implement-ku-tile-placement/quickstart.md` Steps 1–4 in Garden.tscn
+- [x] T025 Update `specs/copilot/implement-ku-tile-placement/quickstart.md` with any findings or corrections from T024
+- [x] T026 [P] Add KU to any GardenView biome-colour or bitmask lookup tables in `src/grid/GardenView.gd` that enumerate all valid biome IDs, ensuring no `assert` or range-check errors fire when KU tiles are rendered
 
 ---
 

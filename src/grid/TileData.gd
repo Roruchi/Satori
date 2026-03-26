@@ -13,6 +13,7 @@ var locked: bool
 ## Extensible metadata bag.  Keys used by the engine:
 ##   "discovery_ids" : Array[String]  — discoveries this tile participates in
 ##   "spirit_id"     : String         — spirit animal anchored here (if any)
+##   "island_id"     : String         — island this tile belongs to (empty for KU tiles)
 var metadata: Dictionary
 
 
