@@ -95,6 +95,7 @@ func _promote_growing_seeds_for_instant_mode() -> void:
 	for seed: SeedInstance in _tracker.active_seeds:
 		if seed.state == SeedStateScript.Value.GROWING:
 			seed.growth_duration = 0.0
+			seed.state = SeedStateScript.Value.READY
 
 func _auto_bloom_ready_when_possible() -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
