@@ -9,4 +9,4 @@ elements = Array[int]([0, 2])
 tier = 2
 produces_biome = 5
 spirit_unlock_id = &""
-codex_hint = "Earth baked dry under ancient fire."
+codex_hint = "Earth baked until it cracks beneath the sun."

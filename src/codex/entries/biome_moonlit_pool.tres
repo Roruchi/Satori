@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-entry_id = &"biome_veil_marsh"
+entry_id = &"biome_moonlit_pool"
 category = 1
-hint_text = "Mist that never fully lifts."
-full_name = "Veil Marsh"
-full_description = "A shrouded wetland where reality blurs at the edges."
+hint_text = "Water reflecting the heavens."
+full_name = "Moonlit Pool"
+full_description = "Water reflecting the heavens. Sui and Ku create a mirror between the mortal world and the void."
 always_hidden = false

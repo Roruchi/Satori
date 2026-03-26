@@ -18,30 +18,30 @@ var _transitions: Dictionary = {}
 
 ## Biome name map used for asset path construction.
 const _BIOME_NAMES: Dictionary = {
-	BiomeType.Value.STONE:      "stone",
-	BiomeType.Value.RIVER:      "river",
-	BiomeType.Value.EMBER_FIELD: "ember_field",
-	BiomeType.Value.MEADOW:     "meadow",
-	BiomeType.Value.CLAY:       "clay",
-	BiomeType.Value.DESERT:     "desert",
-	BiomeType.Value.DUNE:       "dune",
-	BiomeType.Value.HOT_SPRING: "hot_spring",
-	BiomeType.Value.BOG:        "bog",
-	BiomeType.Value.CINDER_HEATH: "cinder_heath",
+	BiomeType.Value.STONE:             "stone",
+	BiomeType.Value.RIVER:             "river",
+	BiomeType.Value.EMBER_FIELD:       "ember_field",
+	BiomeType.Value.MEADOW:            "meadow",
+	BiomeType.Value.WETLANDS:          "wetlands",
+	BiomeType.Value.BADLANDS:          "badlands",
+	BiomeType.Value.WHISTLING_CANYONS: "whistling_canyons",
+	BiomeType.Value.PRISMATIC_TERRACES: "prismatic_terraces",
+	BiomeType.Value.FROSTLANDS:        "frostlands",
+	BiomeType.Value.THE_ASHFALL:       "the_ashfall",
 }
 
 ## Standard biome colours for fallback box meshes (matches GardenView palette).
 const _BIOME_COLORS: Dictionary = {
-	BiomeType.Value.STONE:      Color(0.55, 0.56, 0.62),
-	BiomeType.Value.RIVER:      Color(0.09, 0.48, 0.88),
-	BiomeType.Value.EMBER_FIELD: Color(0.86, 0.34, 0.18),
-	BiomeType.Value.MEADOW:     Color(0.20, 0.58, 0.22),
-	BiomeType.Value.CLAY:       Color(0.57, 0.42, 0.34),
-	BiomeType.Value.DESERT:     Color(0.82, 0.69, 0.43),
-	BiomeType.Value.DUNE:       Color(0.90, 0.80, 0.60),
-	BiomeType.Value.HOT_SPRING: Color(0.67, 0.80, 0.93),
-	BiomeType.Value.BOG:        Color(0.20, 0.35, 0.16),
-	BiomeType.Value.CINDER_HEATH: Color(0.36, 0.20, 0.18),
+	BiomeType.Value.STONE:             Color(0.55, 0.56, 0.62),
+	BiomeType.Value.RIVER:             Color(0.09, 0.48, 0.88),
+	BiomeType.Value.EMBER_FIELD:       Color(0.86, 0.34, 0.18),
+	BiomeType.Value.MEADOW:            Color(0.20, 0.58, 0.22),
+	BiomeType.Value.WETLANDS:          Color(0.57, 0.42, 0.34),
+	BiomeType.Value.BADLANDS:          Color(0.82, 0.69, 0.43),
+	BiomeType.Value.WHISTLING_CANYONS: Color(0.90, 0.80, 0.60),
+	BiomeType.Value.PRISMATIC_TERRACES: Color(0.67, 0.80, 0.93),
+	BiomeType.Value.FROSTLANDS:        Color(0.72, 0.88, 0.97),
+	BiomeType.Value.THE_ASHFALL:       Color(0.36, 0.20, 0.18),
 }
 
 const ASSET_BASE_PATH: String = "res://assets/meshes/tiles/"

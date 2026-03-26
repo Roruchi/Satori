@@ -62,7 +62,7 @@ const _CLUSTER_THRESHOLDS: Dictionary = {
 	BiomeType.Value.RIVER:  10,
 	BiomeType.Value.EMBER_FIELD: 10,
 	BiomeType.Value.MEADOW: 10,
-	BiomeType.Value.CLAY:  20,
+	BiomeType.Value.WETLANDS:  20,
 }
 
 # ---------------------------------------------------------------------------
@@ -615,7 +615,7 @@ func _draw_cluster_overlay(biome: int, members: Array) -> void:
 		BiomeType.Value.RIVER:  _draw_river_overlay(members)
 		BiomeType.Value.EMBER_FIELD: _draw_obsidian_expanse_overlay(members)
 		BiomeType.Value.MEADOW: _draw_forest_overlay(members)
-		BiomeType.Value.CLAY:  _draw_barren_expanse_overlay(members)
+		BiomeType.Value.WETLANDS:  _draw_barren_expanse_overlay(members)
 		BiomeType.Value.FOREST: _draw_forest_overlay(members)
 		BiomeType.Value.WATER:  _draw_river_overlay(members)
 		BiomeType.Value.EARTH:  _draw_barren_expanse_overlay(members)
@@ -1417,14 +1417,14 @@ static func _biome_color(biome: int) -> Color:
 		BiomeType.Value.RIVER:      return Color(0.129, 0.588, 0.953)
 		BiomeType.Value.EMBER_FIELD:return Color(0.922, 0.42, 0.18)
 		BiomeType.Value.MEADOW:     return Color(0.298, 0.686, 0.314)
-		BiomeType.Value.CLAY:       return Color(0.757, 0.580, 0.376)
-		BiomeType.Value.DESERT:     return Color(0.78, 0.65, 0.25)
-		BiomeType.Value.DUNE:       return Color(0.84, 0.76, 0.50)
-		BiomeType.Value.HOT_SPRING: return Color(0.75, 0.88, 0.95)
-		BiomeType.Value.BOG:        return Color(0.25, 0.40, 0.20)
-		BiomeType.Value.CINDER_HEATH: return Color(0.42, 0.28, 0.15)
+		BiomeType.Value.WETLANDS:   return Color(0.757, 0.580, 0.376)
+		BiomeType.Value.BADLANDS:   return Color(0.78, 0.65, 0.25)
+		BiomeType.Value.WHISTLING_CANYONS: return Color(0.84, 0.76, 0.50)
+		BiomeType.Value.PRISMATIC_TERRACES: return Color(0.75, 0.88, 0.95)
+		BiomeType.Value.FROSTLANDS: return Color(0.72, 0.88, 0.97)
+		BiomeType.Value.THE_ASHFALL: return Color(0.42, 0.28, 0.15)
 		BiomeType.Value.SACRED_STONE: return Color(0.72, 0.72, 0.62)
-		BiomeType.Value.VEIL_MARSH: return Color(0.45, 0.52, 0.35)
+		BiomeType.Value.MOONLIT_POOL: return Color(0.45, 0.52, 0.35)
 		BiomeType.Value.EMBER_SHRINE:return Color(0.72, 0.35, 0.18)
 		BiomeType.Value.CLOUD_RIDGE:return Color(0.72, 0.80, 0.88)
 		BiomeType.Value.KU:         return Color(0.05, 0.02, 0.10)

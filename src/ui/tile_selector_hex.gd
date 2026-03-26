@@ -253,22 +253,22 @@ static func _label_for_biome(biome: int) -> String:
 			return "Ember"
 		BiomeType.Value.MEADOW:
 			return "Meadow"
-		BiomeType.Value.CLAY:
-			return "Clay"
-		BiomeType.Value.DESERT:
-			return "Desert"
-		BiomeType.Value.DUNE:
-			return "Dune"
-		BiomeType.Value.HOT_SPRING:
-			return "Spring"
-		BiomeType.Value.BOG:
-			return "Bog"
-		BiomeType.Value.CINDER_HEATH:
-			return "Heath"
+		BiomeType.Value.WETLANDS:
+			return "Wetlands"
+		BiomeType.Value.BADLANDS:
+			return "Badlands"
+		BiomeType.Value.WHISTLING_CANYONS:
+			return "Canyons"
+		BiomeType.Value.PRISMATIC_TERRACES:
+			return "Terraces"
+		BiomeType.Value.FROSTLANDS:
+			return "Frost"
+		BiomeType.Value.THE_ASHFALL:
+			return "Ashfall"
 		BiomeType.Value.SACRED_STONE:
 			return "Sacred"
-		BiomeType.Value.VEIL_MARSH:
-			return "Veil"
+		BiomeType.Value.MOONLIT_POOL:
+			return "Moonlit"
 		BiomeType.Value.EMBER_SHRINE:
 			return "Shrine"
 		BiomeType.Value.CLOUD_RIDGE:
@@ -288,21 +288,21 @@ static func _color_for_biome(biome: int) -> Color:
 			return Color(0.922, 0.42, 0.18)
 		BiomeType.Value.MEADOW:
 			return Color(0.298, 0.686, 0.314)
-		BiomeType.Value.CLAY:
+		BiomeType.Value.WETLANDS:
 			return Color(0.757, 0.580, 0.376)
-		BiomeType.Value.DESERT:
+		BiomeType.Value.BADLANDS:
 			return Color(0.82, 0.68, 0.35)
-		BiomeType.Value.DUNE:
+		BiomeType.Value.WHISTLING_CANYONS:
 			return Color(0.84, 0.76, 0.50)
-		BiomeType.Value.HOT_SPRING:
+		BiomeType.Value.PRISMATIC_TERRACES:
 			return Color(0.56, 0.72, 0.86)
-		BiomeType.Value.BOG:
-			return Color(0.30, 0.42, 0.24)
-		BiomeType.Value.CINDER_HEATH:
+		BiomeType.Value.FROSTLANDS:
+			return Color(0.75, 0.88, 0.96)
+		BiomeType.Value.THE_ASHFALL:
 			return Color(0.46, 0.24, 0.18)
 		BiomeType.Value.SACRED_STONE:
 			return Color(0.78, 0.78, 0.68)
-		BiomeType.Value.VEIL_MARSH:
+		BiomeType.Value.MOONLIT_POOL:
 			return Color(0.50, 0.58, 0.60)
 		BiomeType.Value.EMBER_SHRINE:
 			return Color(0.80, 0.36, 0.22)

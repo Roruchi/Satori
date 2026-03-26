@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-entry_id = &"biome_dune"
+entry_id = &"biome_the_ashfall"
 category = 1
-hint_text = "Sand that never rests."
-full_name = "Dune"
-full_description = "Windswept crests that drift and reform endlessly."
+hint_text = "Glowing ash carried endlessly on the wind."
+full_name = "The Ashfall"
+full_description = "Scorch marks and glowing ash in the wind. Ka and Fu leave a landscape of beautiful ruin."
 always_hidden = false

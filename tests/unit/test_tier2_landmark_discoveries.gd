@@ -320,7 +320,7 @@ assert_true(catalog.has_entry(id), "Catalog must contain: %s" % id)
 func test_ku_structure_patterns_fire_for_required_biomes() -> void:
 	var structures: Array[Dictionary] = [
 		{"id": "disc_iwakura_sanctum", "biome": BiomeType.Value.SACRED_STONE},
-		{"id": "disc_misogi_spring_shrine", "biome": BiomeType.Value.VEIL_MARSH},
+		{"id": "disc_misogi_spring_shrine", "biome": BiomeType.Value.MOONLIT_POOL},
 		{"id": "disc_eternal_kagura_hall", "biome": BiomeType.Value.EMBER_SHRINE},
 		{"id": "disc_heavenwind_torii", "biome": BiomeType.Value.CLOUD_RIDGE},
 	]

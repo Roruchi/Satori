@@ -9,4 +9,4 @@ elements = Array[int]([1, 3])
 tier = 2
 produces_biome = 8
 spirit_unlock_id = &""
-codex_hint = "Water and wind, slow and heavy together."
+codex_hint = "Water frozen still by the piercing wind."

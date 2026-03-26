@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-entry_id = &"biome_clay"
+entry_id = &"biome_badlands"
 category = 1
-hint_text = "Soft earth that holds its shape."
-full_name = "Clay"
-full_description = "Fertile clay land shaped by yielding water."
+hint_text = "Earth baked until it cracks beneath the sun."
+full_name = "Badlands"
+full_description = "Baked earth, survival, and time. Chi and Ka conspire to leave nothing standing."
 always_hidden = false

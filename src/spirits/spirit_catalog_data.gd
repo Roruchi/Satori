@@ -10,7 +10,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_red_fox",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [3, 6],
+			"preferred_biomes": [3, 5],
 			"disliked_biomes": [],
 			"harmony_partner_id": "",
 			"tension_partner_id": "spirit_hare",
@@ -25,7 +25,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mist_stag",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
-			"preferred_biomes": [8, 11],
+			"preferred_biomes": [3, 8],
 			"disliked_biomes": [],
 			"harmony_partner_id": "",
 			"tension_partner_id": "",
@@ -70,7 +70,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_white_heron",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [1, 8],
+			"preferred_biomes": [1, 4],
 			"disliked_biomes": [],
 			"harmony_partner_id": "",
 			"tension_partner_id": "",
@@ -100,7 +100,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_river_otter",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [1, 8],
+			"preferred_biomes": [1, 4],
 			"disliked_biomes": [],
 			"harmony_partner_id": "",
 			"tension_partner_id": "",
@@ -130,7 +130,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_dragonfly",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
-			"preferred_biomes": [1, 3, 6],
+			"preferred_biomes": [1, 3, 4],
 			"color_hint": Color(0.2, 0.6, 0.9)
 		},
 		{
@@ -175,7 +175,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_sun_lizard",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
-			"preferred_biomes": [2, 3, 9],
+			"preferred_biomes": [2, 5, 9],
 			"color_hint": Color(1.0, 1.0, 0.0)
 		},
 		{
@@ -210,7 +210,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_jade_beetle",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
-			"preferred_biomes": [0, 8, 7],
+			"preferred_biomes": [0, 3],
 			"color_hint": Color(0.0, 0.6, 0.3)
 		},
 		{
@@ -235,17 +235,17 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_field_mouse",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
-			"preferred_biomes": [0, 8, 3, 4],
+			"preferred_biomes": [0, 1, 3, 4],
 			"color_hint": Color(0.7, 0.6, 0.5)
 		},
 		{
 			"spirit_id": "spirit_hare",
 			"display_name": "Hare",
-			"riddle_text": "Four savannah steps taken in a single breath\u2026",
+			"riddle_text": "Four meadow steps taken in a single breath\u2026",
 			"pattern_id": "spirit_hare",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [8, 3, 0],
+			"preferred_biomes": [3, 0],
 			"color_hint": Color(0.9, 0.85, 0.8)
 		},
 		{
@@ -265,7 +265,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_peat_salamander",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
-			"preferred_biomes": [4, 6],
+			"preferred_biomes": [4, 1],
 			"color_hint": Color(0.3, 0.5, 0.3)
 		},
 		{
@@ -275,7 +275,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_swamp_crane",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [4, 1, 0, 6],
+			"preferred_biomes": [4, 1, 0],
 			"color_hint": Color(0.8, 0.9, 0.9)
 		},
 		{
@@ -295,7 +295,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mud_crab",
 			"wander_radius": 2,
 			"wander_speed": 2.0,
-			"preferred_biomes": [6, 1],
+			"preferred_biomes": [4, 1],
 			"color_hint": Color(0.6, 0.5, 0.3)
 		},
 		{
@@ -305,7 +305,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_frost_owl",
 			"wander_radius": 4,
 			"wander_speed": 2.0,
-			"preferred_biomes": [5, 0, 1, 2],
+			"preferred_biomes": [8, 0],
 			"color_hint": Color(0.9, 0.95, 1.0)
 		},
 		{
@@ -330,7 +330,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_tundra_lynx",
 			"wander_radius": 5,
 			"wander_speed": 2.0,
-			"preferred_biomes": [5, 1],
+			"preferred_biomes": [8, 1],
 			"color_hint": Color(0.8, 0.75, 0.7)
 		},
 		{
@@ -340,7 +340,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_ice_cavern_bat",
 			"wander_radius": 3,
 			"wander_speed": 2.0,
-			"preferred_biomes": [5, 2, 1],
+			"preferred_biomes": [8, 0],
 			"color_hint": Color(0.6, 0.7, 0.9)
 		},
 		{
