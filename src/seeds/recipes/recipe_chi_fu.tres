@@ -9,4 +9,4 @@ elements = Array[int]([0, 3])
 tier = 2
 produces_biome = 6
 spirit_unlock_id = &""
-codex_hint = "Stone surrendered to the breath of wind."
+codex_hint = "Stone carved hollow by the breath of wind."

@@ -19,8 +19,8 @@ func test_lookup_is_order_independent_for_chi_sui() -> void:
 	var b: SeedRecipe = registry.lookup([1, 0])
 	assert_not_null(a)
 	assert_not_null(b)
-	assert_eq(a.produces_biome, BiomeType.Value.CLAY)
-	assert_eq(b.produces_biome, BiomeType.Value.CLAY)
+	assert_eq(a.produces_biome, BiomeType.Value.WETLANDS)
+	assert_eq(b.produces_biome, BiomeType.Value.WETLANDS)
 
 func test_unknown_combo_returns_null() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
@@ -32,7 +32,7 @@ func test_tier3_recipe_requires_unlock() -> void:
 	tier3.recipe_id = &"recipe_chi_sui_ka"
 	tier3.elements = [0, 1, 2]
 	tier3.tier = 3
-	tier3.produces_biome = BiomeType.Value.CLAY
+	tier3.produces_biome = BiomeType.Value.WETLANDS
 	tier3.spirit_unlock_id = &"spirit_river_otter"
 	registry.add_recipe_for_testing(tier3)
 	assert_null(registry.lookup([0, 1, 2]))
@@ -46,7 +46,7 @@ func test_ku_pairings_are_valid_and_order_independent_after_unlock() -> void:
 	alchemy.unlock_element(GodaiElement.Value.KU)
 	var expected: Dictionary = {
 		"0_4": BiomeType.Value.SACRED_STONE,
-		"1_4": BiomeType.Value.VEIL_MARSH,
+		"1_4": BiomeType.Value.MOONLIT_POOL,
 		"2_4": BiomeType.Value.EMBER_SHRINE,
 		"3_4": BiomeType.Value.CLOUD_RIDGE,
 	}
@@ -74,6 +74,6 @@ func test_solo_ku_and_unknown_ku_combinations_return_null() -> void:
 
 func test_existing_non_ku_pairing_compatibility_is_preserved() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
-	var clay_recipe: SeedRecipe = registry.lookup([GodaiElement.Value.CHI, GodaiElement.Value.SUI])
-	assert_not_null(clay_recipe, "Chi+Sui must stay craftable")
-	assert_eq(clay_recipe.produces_biome, BiomeType.Value.CLAY, "Chi+Sui must still produce Clay")
+	var wetlands_recipe: SeedRecipe = registry.lookup([GodaiElement.Value.CHI, GodaiElement.Value.SUI])
+	assert_not_null(wetlands_recipe, "Chi+Sui must stay craftable")
+	assert_eq(wetlands_recipe.produces_biome, BiomeType.Value.WETLANDS, "Chi+Sui must produce Wetlands")
