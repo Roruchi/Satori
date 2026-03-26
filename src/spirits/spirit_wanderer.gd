@@ -9,6 +9,9 @@ signal moved_to(spirit_id: String, coord: Vector2i)
 
 var spirit_id: String = ""
 var wander_bounds: Rect2i = Rect2i()
+## Island the spirit belongs to.  When non-empty, candidate wander tiles are
+## restricted to tiles with the same island_id so spirits never cross Ku tiles.
+var _island_id: String = ""
 var _speed: float = 2.0
 var _target_world: Vector2 = Vector2.ZERO
 var _wait_time: float = 0.0
@@ -20,6 +23,7 @@ var _disliked_biomes: Array[int] = []
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
 	wander_bounds = instance.wander_bounds
+	_island_id = instance.island_id
 	_speed = float(catalog_entry.get("wander_speed", 2.0)) * TILE_RADIUS * 0.25
 	var color: Color = catalog_entry.get("color_hint", Color.WHITE)
 	_display_color = color
@@ -117,12 +121,20 @@ func _get_candidate_coords(effective_bounds: Rect2i) -> Array[Vector2i]:
 	var grid: RefCounted = game_state.get("grid")
 	if grid == null or not grid.has_method("has_tile") or not grid.has_method("get_tile"):
 		return []
+	# When this spirit belongs to an island, check if the grid supports island IDs.
+	var use_island_filter: bool = (
+		not _island_id.is_empty() and grid.has_method("get_island_id")
+	)
 	var preferred_candidates: Array[Vector2i] = []
 	var occupied_candidates: Array[Vector2i] = []
 	for x: int in range(effective_bounds.position.x, effective_bounds.position.x + effective_bounds.size.x):
 		for y: int in range(effective_bounds.position.y, effective_bounds.position.y + effective_bounds.size.y):
 			var coord: Vector2i = Vector2i(x, y)
 			if not grid.has_tile(coord):
+				continue
+			# Spirits stay on their own island — skip tiles on a different island
+			# (including KU tiles which have an empty island_id).
+			if use_island_filter and grid.get_island_id(coord) != _island_id:
 				continue
 			occupied_candidates.append(coord)
 			if _preferred_biomes.is_empty():

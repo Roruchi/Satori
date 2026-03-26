@@ -47,6 +47,7 @@ Expected: `test_island_labelling.gd` and `test_spirit_island_scope.gd` all pass.
 2. Observe Mist Stag spawning on Island 1.
 3. Build an identical or triggering pattern on Island 2 (right group, separated by Ku strip).
 4. **Expected**: Mist Stag spawns a second instance wandering Island 2's area.
+5. **Expected (island confinement)**: Each spirit instance stays on its own island — it only wanders onto tiles that share the same `island_id`. It will never cross a Ku tile or appear on a different island. A spirit treats Ku tiles (and empty space) identically: both are impassable void.
 
 ### Step 4 — Regression Check
 
