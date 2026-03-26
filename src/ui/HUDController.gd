@@ -44,6 +44,8 @@ enum Mode {
 @onready var _codex_panel: CodexPanel = $Root/Panels/CodexPanel
 @onready var _instant_badge: Label = $Root/TopBar/InstantModeBadge
 @onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/SeedPouchDisplay
+@onready var _settings_button: Button = $Root/TopBar/SettingsButton
+@onready var _settings_menu: SettingsMenu = $SettingsMenu
 
 var _mode: int = Mode.PLANT
 var _tile_selector_hex: Node2D = null
@@ -68,6 +70,7 @@ func _ready() -> void:
 	_plant_button.pressed.connect(func() -> void: _set_mode(Mode.PLANT))
 	_mix_button.pressed.connect(func() -> void: _set_mode(Mode.MIX))
 	_codex_button.pressed.connect(func() -> void: _set_mode(Mode.CODEX))
+	_settings_button.pressed.connect(_on_settings_pressed)
 	_tile_selector_hex = get_node_or_null("../TileSelector/TileSelectorHex")
 	var settings: Node = get_node_or_null("/root/GardenSettings")
 	if settings != null and settings.has_signal("growth_mode_changed"):
@@ -121,6 +124,10 @@ func _set_mode(next_mode: int) -> void:
 
 func is_plant_mode() -> bool:
 	return _mode == Mode.PLANT
+
+func _on_settings_pressed() -> void:
+	if _settings_menu != null:
+		_settings_menu.show_menu()
 
 func _style_mode_tabs() -> void:
 	var tray_style: StyleBoxFlat = StyleBoxFlat.new()

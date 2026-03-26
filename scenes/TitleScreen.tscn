@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3 uid="uid://b4n7mfpqwvx2k"]
+
+[ext_resource type="Script" path="res://src/ui/TitleScreen.gd" id="1_title"]
+[ext_resource type="PackedScene" path="res://scenes/UI/SettingsMenu.tscn" id="2_settings"]
+
+[node name="TitleScreen" type="Node2D"]
+script = ExtResource("1_title")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Root" type="Control" parent="UILayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="UILayer/Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="UILayer/Root/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(380, 0)
+
+[node name="VBox" type="VBoxContainer" parent="UILayer/Root/Center/Card"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+text = "⬡  SATORI"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+text = "A Garden of Patterns"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 10)
+
+[node name="PlayButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+text = "▶  Play"
+
+[node name="SettingsButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+text = "⚙  Settings"
+
+[node name="QuitButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+layout_mode = 2
+text = "✕  Quit"
+
+[node name="SettingsOverlay" parent="." instance=ExtResource("2_settings")]
+visible = false
