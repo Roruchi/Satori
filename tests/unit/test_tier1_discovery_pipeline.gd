@@ -137,5 +137,6 @@ func test_4_second_auto_dismiss_timing() -> void:
 
 	queue.enqueue(p)
 	assert_eq(dismissed_count, 0, "Not yet dismissed")
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().process_frame
+	await get_tree().create_timer(0.2).timeout
 	assert_eq(dismissed_count, 1, "Should auto-dismiss after duration")

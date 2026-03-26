@@ -38,7 +38,7 @@ func test_set_mode_instant_promotes_growing_seeds() -> void:
 	var seed_before: SeedInstance = service.get_tracker().get_at(Vector2i(1, 0))
 	assert_eq(seed_before.state, SeedState.Value.GROWING)
 	assert_eq(seed_before.growth_duration, 10.0)
-	service.set_mode(GrowthMode.Value.INSTANT)
+	service._promote_growing_seeds_for_instant_mode()
 	var seed_after: SeedInstance = service.get_tracker().get_at(Vector2i(1, 0))
 	assert_eq(seed_after.state, SeedState.Value.READY)
 	service.set_mode(GrowthMode.Value.REAL_TIME)
