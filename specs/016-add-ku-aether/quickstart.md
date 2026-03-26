@@ -69,3 +69,37 @@ godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_codex_
 ```
 
 If a listed test file does not yet exist, create it during implementation tasks and run the relevant suite after creation.
+
+## Ku feature validation checklist headings
+
+### US1 — Unlock and Mix Ku Pairings
+
+- [x] Mist Stag unlock path enables Ku exactly once.
+- [x] Chi+Ku, Sui+Ku, Ka+Ku, and Fu+Ku all preview and craft.
+- [x] Solo Ku remains invalid.
+
+### US2 — Ku Biome/Deity/Structure One-to-One Mapping
+
+- [x] Each Ku recipe maps to one Ku biome (4 total).
+- [x] Each Ku biome maps to one deity spirit (Ōyamatsumi, Suijin, Kagutsuchi, Fūjin).
+- [x] Each Ku biome maps to one structure discovery (4 total).
+
+### US3 — Codex Guidance and Reveal States
+
+- [x] Pre-unlock Ku guidance names Mist Stag and stays non-numeric.
+- [x] Post-unlock Ku guidance switches to discovered-state copy.
+
+## Implementation verification evidence
+
+- Automated suites executed:
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/seeds/test_seed_recipe_registry.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/seeds/test_seed_growth_service.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/spirits/test_spirit_service.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_tier2_landmark_discoveries.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_data_driven_pattern_addition.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_codex_service.gd`
+  - `godot --path . --headless -s tests/gut_runner.tscn -gtest=tests/unit/test_tier1_discovery_persistence.gd`
+- Manual checklist notes:
+  - Ku unlock chain remains `Deep Stand -> Mist Stag -> Ku`.
+  - New Ku deity and structure IDs are present in data catalogs and codex entries.
+  - No persistence contract changes were introduced by this feature.

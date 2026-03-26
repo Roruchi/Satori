@@ -6,6 +6,7 @@ signal entry_discovered(entry_id: StringName)
 const CodexEntryScript = preload("res://src/codex/CodexEntry.gd")
 const SpiritCatalogDataScript = preload("res://src/spirits/spirit_catalog_data.gd")
 const DiscoveryCatalogDataScript = preload("res://src/biomes/discovery_catalog_data.gd")
+const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
 
 var _entries: Dictionary = {}
 var _discovered: Dictionary = {}
@@ -152,6 +153,14 @@ func get_entries_by_category(category: int) -> Array[CodexEntry]:
 		if entry != null and entry.category == category:
 			entries.append(entry)
 	return entries
+
+func is_entry_hinted(entry_id: StringName) -> bool:
+	if not _entries.has(entry_id):
+		return false
+	return not is_discovered(entry_id)
+
+func get_ku_guidance_state() -> StringName:
+	return &"discovered" if is_discovered(KU_GUIDANCE_ENTRY_ID) else &"hinted"
 
 func force_reveal(entry_id: StringName) -> void:
 	mark_discovered(entry_id)

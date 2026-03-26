@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"disc_heavenwind_torii"
+category = 3
+hint_text = "Raise Cloud Ridge into a gate open to the winds."
+full_name = "Heavenwind Torii"
+full_description = "A high torii where moving air marks the threshold between everyday and sacred space."
+always_hidden = false

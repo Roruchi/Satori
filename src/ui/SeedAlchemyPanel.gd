@@ -22,6 +22,10 @@ const RECIPE_DISPLAY_NAMES: Dictionary = {
 	&"recipe_sui_ka": "Hot Spring Seed",
 	&"recipe_sui_fu": "Bog Seed",
 	&"recipe_ka_fu": "Cinder Heath Seed",
+	&"recipe_chi_ku": "Sacred Stone Seed",
+	&"recipe_sui_ku": "Veil Marsh Seed",
+	&"recipe_ka_ku": "Ember Shrine Seed",
+	&"recipe_fu_ku": "Cloud Ridge Seed",
 }
 
 @onready var _preview_label: Label = $VBox/Preview
@@ -206,6 +210,10 @@ func _update_ui() -> void:
 		_feedback_label.text = _last_feedback
 	elif recipe != null:
 		_feedback_label.text = "Confirm to craft"
+	elif _selected.size() == 2:
+		_feedback_label.text = "No stable resonance for that pairing"
+	elif _selected.size() == 1:
+		_feedback_label.text = "Select one more element"
 	else:
 		_feedback_label.text = ""
 	_confirm_button.disabled = recipe == null or pouch_full

@@ -91,3 +91,17 @@ func test_timestamp_immutability_across_reload() -> void:
 	restored.deserialize(serialized)
 
 	assert_eq(restored.entries[0]["trigger_timestamp"], 9999999, "Timestamp must not change on reload")
+
+func test_ku_discovery_ids_follow_existing_persistence_contract() -> void:
+	var log := DiscoveryLog.new()
+	var ku_payload := DiscoveryPayload.new()
+	ku_payload.discovery_id = "disc_iwakura_sanctum"
+	ku_payload.display_name = "Iwakura Sanctum"
+	ku_payload.trigger_timestamp = 1234567
+	ku_payload.triggering_coords = [Vector2i(0, 0), Vector2i(1, 0)]
+	log.append_entry(ku_payload)
+	var serialized: Dictionary = log.serialize()
+	var restored := DiscoveryLog.new()
+	restored.deserialize(serialized)
+	assert_true(restored.has_discovery("disc_iwakura_sanctum"), "Ku structure discovery should persist using existing log behavior")
+	assert_eq(restored.entries.size(), 1, "No extra persistence artifacts should be introduced")

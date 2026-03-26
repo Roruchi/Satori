@@ -161,4 +161,32 @@ func get_tier2_entries() -> Array[Dictionary]:
 			"audio_key": "stinger_floating_pavilion",
 			"tier": 2
 		},
+		{
+			"discovery_id": "disc_iwakura_sanctum",
+			"display_name": "Iwakura Sanctum",
+			"flavor_text": "Consecrated stone rises in still reverence to the mountain kami.",
+			"audio_key": "stinger_iwakura_sanctum",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_misogi_spring_shrine",
+			"display_name": "Misogi Spring Shrine",
+			"flavor_text": "Purifying waters gather in quiet rites beneath drifting mist.",
+			"audio_key": "stinger_misogi_spring_shrine",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_eternal_kagura_hall",
+			"display_name": "Eternal Kagura Hall",
+			"flavor_text": "Sacred embers glow where ritual dance and flame endure.",
+			"audio_key": "stinger_eternal_kagura_hall",
+			"tier": 2
+		},
+		{
+			"discovery_id": "disc_heavenwind_torii",
+			"display_name": "Heavenwind Torii",
+			"flavor_text": "A gate to the open sky where every current is prayer.",
+			"audio_key": "stinger_heavenwind_torii",
+			"tier": 2
+		},
 	]

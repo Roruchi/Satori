@@ -45,3 +45,10 @@ These conditions are part of progression design and must remain true unless a fu
 
 1. This feature does not introduce new save/load persistence guarantees.
 2. This feature does not add alternate Ku unlock triggers.
+
+## Implementation sync notes
+
+- `SpiritGiftProcessor` now short-circuits repeated `KU_UNLOCK` gifts when Ku is already unlocked.
+- `SeedAlchemyService` exposes `is_ku_unlocked()` and keeps unlock signal emission idempotent.
+- Ku recipes implemented: `recipe_chi_ku`, `recipe_sui_ku`, `recipe_ka_ku`, `recipe_fu_ku`.
+- Ku guidance codex entry (`ku_unlock_guidance`) names Mist Stag and avoids numeric thresholds pre-unlock.

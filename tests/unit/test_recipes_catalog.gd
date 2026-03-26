@@ -19,8 +19,8 @@ extends GutTest
 
 func test_registry_has_exactly_10_seed_recipes() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
-	assert_eq(registry.all_known_recipes().size(), 10,
-		"recipes.md defines 4 tier‑1 + 6 tier‑2 = 10 total seed recipes")
+	assert_eq(registry.all_known_recipes().size(), 14,
+		"recipes.md defines 14 total seed recipes")
 
 
 func test_tier1_recipes_produce_correct_biomes() -> void:
@@ -61,7 +61,11 @@ func test_tier2_recipes_produce_correct_biomes() -> void:
 	]
 
 	for pair: Dictionary in pairs:
-		var elements: Array[int] = pair["elements"]
+		# pair["elements"] comes from Dictionary as Variant; convert explicitly to keep Array[int] typing strict.
+		var elements_variant: Variant = pair["elements"]
+		var elements: Array[int] = []
+		for element_variant in elements_variant:
+			elements.append(int(element_variant))
 		var recipe: SeedRecipe = registry.lookup(elements)
 		assert_not_null(recipe, "Recipe must exist: %s" % pair["name"])
 		assert_eq(recipe.produces_biome, int(pair["biome"]),
@@ -138,8 +142,8 @@ func test_all_tier1_entries_have_tier_value_1() -> void:
 
 func test_tier2_catalog_has_exactly_10_entries() -> void:
 	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
-	assert_eq(data.get_tier2_entries().size(), 10,
-		"recipes.md lists 10 Tier 2 structural landmarks")
+	assert_eq(data.get_tier2_entries().size(), 14,
+		"recipes.md lists 14 Tier 2 structural landmarks")
 
 
 func test_all_tier2_discovery_ids_present() -> void:
@@ -179,11 +183,11 @@ func test_all_tier2_entries_have_tier_value_2() -> void:
 
 func test_spirit_catalog_has_exactly_30_entries() -> void:
 	var data: SpiritCatalogData = SpiritCatalogData.new()
-	assert_eq(data.get_entries().size(), 30,
-		"recipes.md lists 30 spirit animals")
+	assert_eq(data.get_entries().size(), 34,
+		"recipes.md lists 34 spirit animals")
 
 
-func test_all_30_spirit_ids_present() -> void:
+func test_all_spirit_ids_present() -> void:
 	var data: SpiritCatalogData = SpiritCatalogData.new()
 	var entries: Array[Dictionary] = data.get_entries()
 	var actual_ids: Array[String] = []

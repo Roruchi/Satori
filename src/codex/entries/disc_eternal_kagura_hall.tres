@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"disc_eternal_kagura_hall"
+category = 3
+hint_text = "Shape Ember Shrine into a hall worthy of sacred dance."
+full_name = "Eternal Kagura Hall"
+full_description = "A ceremonial hall where ritual movement and flame are kept in reverent balance."
+always_hidden = false

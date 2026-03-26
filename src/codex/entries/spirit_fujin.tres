@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CodexEntry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/codex/CodexEntry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+entry_id = &"spirit_fujin"
+category = 2
+hint_text = "A wind kami circles the heights of Cloud Ridge."
+full_name = "Fūjin"
+full_description = "A deity of wind associated with swift currents, storms, and the breadth of open sky."
+always_hidden = false
