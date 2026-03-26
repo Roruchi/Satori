@@ -27,6 +27,7 @@ SeedGrowthService="*res://src/autoloads/seed_growth_service.gd"
 SpiritEcologyService="*res://src/autoloads/spirit_ecology_service.gd"
 CodexService="*res://src/autoloads/codex_service.gd"
 SatoriService="*res://src/autoloads/satori_service.gd"
+SoundscapeEngine="*res://src/audio/soundscape_engine.gd"
 
 [physics]
 

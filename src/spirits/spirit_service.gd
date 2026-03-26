@@ -32,9 +32,15 @@ func _ready() -> void:
 		game_state.tile_placed.connect(_on_tile_placed)
 	call_deferred("_setup_spawner")
 	call_deferred("restore_from_persistence")
+	call_deferred("_connect_soundscape")
 
 func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
+
+func _connect_soundscape() -> void:
+	var soundscape: Node = get_node_or_null("/root/SoundscapeEngine")
+	if soundscape != null and soundscape.has_method("on_spirit_summoned"):
+		spirit_summoned.connect(soundscape.on_spirit_summoned)
 
 func _setup_spawner() -> void:
 	var garden_view: Node = get_node_or_null("../GardenView")
