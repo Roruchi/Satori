@@ -1,6 +1,7 @@
 extends GutTest
 
 const GridMapScript = preload("res://src/grid/GridMap.gd")
+const AUTO_DISMISS_WAIT_SECONDS: float = 0.2
 
 func test_first_trigger_emits_notification_payload() -> void:
 	var matcher := PatternMatcher.new()
@@ -137,6 +138,7 @@ func test_4_second_auto_dismiss_timing() -> void:
 
 	queue.enqueue(p)
 	assert_eq(dismissed_count, 0, "Not yet dismissed")
+	# Yield a frame so queue _process starts, then wait slightly above payload duration.
 	await get_tree().process_frame
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(AUTO_DISMISS_WAIT_SECONDS).timeout
 	assert_eq(dismissed_count, 1, "Should auto-dismiss after duration")

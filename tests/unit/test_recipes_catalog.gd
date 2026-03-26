@@ -61,6 +61,7 @@ func test_tier2_recipes_produce_correct_biomes() -> void:
 	]
 
 	for pair: Dictionary in pairs:
+		# pair["elements"] comes from Dictionary as Variant; convert explicitly to keep Array[int] typing strict.
 		var elements_variant: Variant = pair["elements"]
 		var elements: Array[int] = []
 		for element_variant in elements_variant:
@@ -186,7 +187,7 @@ func test_spirit_catalog_has_exactly_30_entries() -> void:
 		"recipes.md lists 34 spirit animals")
 
 
-func test_all_30_spirit_ids_present() -> void:
+func test_all_spirit_ids_present() -> void:
 	var data: SpiritCatalogData = SpiritCatalogData.new()
 	var entries: Array[Dictionary] = data.get_entries()
 	var actual_ids: Array[String] = []

@@ -1,4 +1,5 @@
 extends GutTest
+const EXPECTED_DEBUG_POUCH_CAPACITY: int = 4
 
 func test_satori_condition_evaluator_biome_present_true() -> void:
 	var gs: Node = Node.new()
@@ -25,7 +26,7 @@ func test_trigger_debug_safe_call() -> void:
 	add_child(service)
 	service.trigger_debug()
 	service._complete_sequence()
-	assert_eq(growth_service.get_pouch().capacity, 4)
+	assert_eq(growth_service.get_pouch().capacity, EXPECTED_DEBUG_POUCH_CAPACITY)
 	assert_eq(growth_service.get_tracker().capacity, track_before)
 	service.queue_free()
 	growth_service.queue_free()
