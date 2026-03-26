@@ -1,4 +1,4 @@
-## Unit tests for SoundscapeEngine and SpiritRhythmCatalog.
+## Unit tests for SoundscapeEngine, SpiritRhythmCatalog, and ProceduralAudioBed.
 extends GutTest
 
 # ---------------------------------------------------------------------------
@@ -57,12 +57,83 @@ func test_stacked_volume_db_four_spirits() -> void:
 
 
 # ---------------------------------------------------------------------------
-# SoundscapeEngine basic instantiation tests
+# ProceduralAudioBed tests
 # ---------------------------------------------------------------------------
 
-func test_soundscape_engine_can_be_instantiated() -> void:
-	pending("SoundscapeEngine is an autoload; instantiation tested via autoload presence in game context")
+func test_procedural_audio_bed_layer_to_mode_hihat() -> void:
+	var mode: int = int(ProceduralAudioBed.LAYER_TO_MODE.get("hihat", -1))
+	assert_eq(mode, ProceduralAudioBed.SynthMode.HIHAT, "hihat layer should map to HIHAT mode")
 
+
+func test_procedural_audio_bed_layer_to_mode_drum() -> void:
+	var mode: int = int(ProceduralAudioBed.LAYER_TO_MODE.get("drum", -1))
+	assert_eq(mode, ProceduralAudioBed.SynthMode.DRUM, "drum layer should map to DRUM mode")
+
+
+func test_procedural_audio_bed_layer_to_mode_texture() -> void:
+	var mode: int = int(ProceduralAudioBed.LAYER_TO_MODE.get("texture", -1))
+	assert_eq(mode, ProceduralAudioBed.SynthMode.DRONE, "texture layer should map to DRONE mode")
+
+
+func test_procedural_audio_bed_biome_to_mode_covers_all_biomes() -> void:
+	# All 14 BiomeType.Value IDs (0–13) must have a fallback synthesis mode.
+	for biome: int in range(14):
+		assert_true(
+			ProceduralAudioBed.BIOME_TO_MODE.has(biome),
+			"Biome %d should have a fallback SynthMode" % biome
+		)
+
+
+func test_procedural_audio_bed_volume_property_default() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	assert_almost_eq(bed.volume_db, -80.0, 0.01, "Default volume_db should be -80.0")
+
+
+func test_procedural_audio_bed_volume_property_set() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	bed.setup(ProceduralAudioBed.SynthMode.WIND)
+	bed.volume_db = -12.0
+	assert_almost_eq(bed.volume_db, -12.0, 0.01, "volume_db should reflect set value")
+
+
+func test_procedural_audio_bed_setup_wind() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	bed.setup(ProceduralAudioBed.SynthMode.WIND, 60.0, 80.0)
+	assert_almost_eq(bed._bpm, 60.0, 0.01, "BPM should be stored")
+	assert_almost_eq(bed._base_freq, 80.0, 0.01, "base_freq should be stored")
+	assert_almost_eq(bed._lp_coeff, 0.015, 0.001, "WIND lp_coeff should be 0.015")
+
+
+func test_procedural_audio_bed_setup_hihat() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	bed.setup(ProceduralAudioBed.SynthMode.HIHAT)
+	assert_almost_eq(bed._lp_coeff, 0.40, 0.001, "HIHAT lp_coeff should be 0.40")
+
+
+func test_procedural_audio_bed_setup_drum() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	bed.setup(ProceduralAudioBed.SynthMode.DRUM)
+	assert_almost_eq(bed._lp_coeff, 0.008, 0.001, "DRUM lp_coeff should be 0.008")
+
+
+func test_procedural_audio_bed_silence_threshold_skips_synthesis() -> void:
+	var bed: ProceduralAudioBed = ProceduralAudioBed.new()
+	add_child(bed)
+	bed.setup(ProceduralAudioBed.SynthMode.HIHAT)
+	bed.volume_db = -80.0  # well below silence threshold
+	# At volume_db = -80, synthesis should be skipped; no assertions beyond no crash.
+	bed._process(0.016)
+	assert_true(true, "Synthesis at silence threshold should not crash")
+
+
+# ---------------------------------------------------------------------------
+# SoundscapeEngine tests
+# ---------------------------------------------------------------------------
 
 func test_soundscape_engine_master_volume_clamps() -> void:
 	var engine := Node.new()
@@ -91,10 +162,8 @@ func test_soundscape_engine_stinger_queue_respects_max_depth() -> void:
 	var engine := Node.new()
 	engine.set_script(load("res://src/audio/soundscape_engine.gd"))
 	add_child(engine)
-	# Fill beyond MAX_STINGER_QUEUE (5); the 6th should be dropped silently.
 	for i: int in range(6):
 		engine.play_stinger("stinger_river")
-	# Queue size should not exceed MAX_STINGER_QUEUE.
 	assert_lte(
 		engine._stinger_queue.size(),
 		engine.MAX_STINGER_QUEUE,
@@ -121,6 +190,29 @@ func test_soundscape_engine_spirit_summoned_registers_entry() -> void:
 	assert_true(
 		engine._spirit_world_pos.has("spirit_mist_stag"),
 		"Stag should have a world position recorded"
+	)
+
+
+func test_soundscape_engine_spirit_player_is_procedural_bed() -> void:
+	var engine := Node.new()
+	engine.set_script(load("res://src/audio/soundscape_engine.gd"))
+	add_child(engine)
+
+	var instance: SpiritInstance = SpiritInstance.create(
+		"spirit_mist_stag",
+		Vector2i(0, 0),
+		Rect2i(-4, -4, 8, 8)
+	)
+	engine.on_spirit_summoned("spirit_mist_stag", instance)
+
+	assert_true(
+		engine._spirit_players.has("spirit_mist_stag"),
+		"Stag spirit player should be registered"
+	)
+	var bed: Variant = engine._spirit_players.get("spirit_mist_stag")
+	assert_true(
+		bed is ProceduralAudioBed,
+		"Spirit player should be a ProceduralAudioBed (procedural synthesis, no .ogg needed)"
 	)
 
 
