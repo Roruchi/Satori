@@ -25,7 +25,7 @@ const _BIOME_NAMES: Dictionary = {
 	BiomeType.Value.WETLANDS:          "wetlands",
 	BiomeType.Value.BADLANDS:          "badlands",
 	BiomeType.Value.WHISTLING_CANYONS: "whistling_canyons",
-	BiomeType.Value.PRISMATIC_TERRACES:"prismatic_terraces",
+	BiomeType.Value.PRISMATIC_TERRACES: "prismatic_terraces",
 	BiomeType.Value.FROSTLANDS:        "frostlands",
 	BiomeType.Value.THE_ASHFALL:       "the_ashfall",
 }
@@ -39,7 +39,7 @@ const _BIOME_COLORS: Dictionary = {
 	BiomeType.Value.WETLANDS:          Color(0.57, 0.42, 0.34),
 	BiomeType.Value.BADLANDS:          Color(0.82, 0.69, 0.43),
 	BiomeType.Value.WHISTLING_CANYONS: Color(0.90, 0.80, 0.60),
-	BiomeType.Value.PRISMATIC_TERRACES:Color(0.67, 0.80, 0.93),
+	BiomeType.Value.PRISMATIC_TERRACES: Color(0.67, 0.80, 0.93),
 	BiomeType.Value.FROSTLANDS:        Color(0.72, 0.88, 0.97),
 	BiomeType.Value.THE_ASHFALL:       Color(0.36, 0.20, 0.18),
 }
