@@ -7,17 +7,19 @@
 extends GutTest
 
 var _catalog: SpiritCatalog
+var _expected_count: int = 0
 
 
 func before_each() -> void:
 	_catalog = SpiritCatalog.new()
-	_catalog.load_from_data(SpiritCatalogData.new())
+	var data: SpiritCatalogData = SpiritCatalogData.new()
+	_expected_count = data.get_entries().size()
+	_catalog.load_from_data(data)
 
 
 func test_catalog_loads_all_entries() -> void:
-	var expected_count: int = SpiritCatalogData.new().get_entries().size()
-	assert_eq(_catalog.get_all_spirit_ids().size(), expected_count,
-		"Catalog should load exactly %d spirit entries" % expected_count)
+	assert_eq(_catalog.get_all_spirit_ids().size(), _expected_count,
+		"Catalog should load exactly %d spirit entries" % _expected_count)
 
 
 func test_catalog_lookup_returns_correct_entry_for_red_fox() -> void:
@@ -51,8 +53,7 @@ func test_catalog_has_entry_returns_false_for_unknown_id() -> void:
 
 func test_catalog_get_all_spirit_ids_returns_all_ids() -> void:
 	var ids: Array[String] = _catalog.get_all_spirit_ids()
-	var expected_count: int = SpiritCatalogData.new().get_entries().size()
-	assert_eq(ids.size(), expected_count, "get_all_spirit_ids should return all spirit IDs")
+	assert_eq(ids.size(), _expected_count, "get_all_spirit_ids should return all spirit IDs")
 
 
 func test_catalog_all_entries_have_required_fields() -> void:

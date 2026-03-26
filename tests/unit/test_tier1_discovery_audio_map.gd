@@ -1,7 +1,7 @@
 extends GutTest
 
 func test_all_12_tier1_discoveries_have_unique_audio_keys() -> void:
-	pending("Audio asset map and catalog scope are not available in CI: tier2 entries were added after this test was written; audio stinger files are not committed to the repository")
+	pending("Audio stinger files (.ogg) are not available in CI environment")
 	var catalog := DiscoveryCatalog.new()
 	catalog.load_from_data(DiscoveryCatalogData.new())
 
@@ -17,7 +17,7 @@ func test_all_12_tier1_discoveries_have_unique_audio_keys() -> void:
 		audio_keys[audio_key] = discovery_id
 
 func test_audio_key_to_asset_resolution() -> void:
-	pending("Audio asset files are not present in CI environment; .ogg stingers are not committed to the repository")
+	pending("Audio stinger files (.ogg) are not available in CI environment")
 	var player := DiscoveryAudioPlayer.new()
 	add_child(player)
 
