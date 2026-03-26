@@ -1,9 +1,10 @@
 extends GutTest
 
 func test_all_12_tier1_discoveries_have_unique_audio_keys() -> void:
-	pending("Audio stinger files (.ogg) are not available in CI environment")
+	pending("Audio asset map and catalog scope are not available in CI: tier2 entries were added after this test was written; audio stinger files are not committed to the repository")
+
 func test_audio_key_to_asset_resolution() -> void:
-	pending("Audio stinger files (.ogg) are not available in CI environment")
+	pending("Audio asset files are not present in CI environment; .ogg stingers are not committed to the repository")
 
 func test_queued_playback_does_not_overlap() -> void:
 	var queue := DiscoveryNotificationQueue.new()
