@@ -9,4 +9,4 @@ elements = Array[int]([1, 2])
 tier = 2
 produces_biome = 7
 spirit_unlock_id = &""
-codex_hint = "Water that carries the memory of fire."
+codex_hint = "Water that boils with the memory of fire."

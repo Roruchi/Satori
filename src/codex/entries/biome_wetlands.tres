@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-entry_id = &"biome_cinder_heath"
+entry_id = &"biome_wetlands"
 category = 1
-hint_text = "Burned and calm, quietly breathing."
-full_name = "Cinder Heath"
-full_description = "Ashen moorland where embers have long since cooled."
+hint_text = "Earth yielding to patient, standing water."
+full_name = "Wetlands"
+full_description = "Mud, patience, and submerged life. Where Chi and Sui merge into something slow and teeming."
 always_hidden = false

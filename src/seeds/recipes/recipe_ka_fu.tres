@@ -9,4 +9,4 @@ elements = Array[int]([2, 3])
 tier = 2
 produces_biome = 9
 spirit_unlock_id = &""
-codex_hint = "Where fire and wind once raced each other."
+codex_hint = "Where wind carries the glowing bones of fire."

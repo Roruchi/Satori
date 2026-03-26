@@ -6,7 +6,7 @@
 script = ExtResource("1_sp025")
 discovery_id = "spirit_mud_crab"
 pattern_type = 3
-required_biomes = Array[int]([6])
+required_biomes = Array[int]([4])
 forbidden_biomes = Array[int]([])
 size_threshold = 3
 shape_recipe = Array[Dictionary]([])

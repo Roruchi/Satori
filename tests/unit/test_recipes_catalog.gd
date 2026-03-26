@@ -52,12 +52,12 @@ func test_tier2_recipes_produce_correct_biomes() -> void:
 	var fu:  int = GodaiElement.Value.FU
 
 	var pairs: Array[Dictionary] = [
-		{"elements": [chi, sui], "biome": BiomeType.Value.CLAY,         "name": "Chi+Sui → Clay"},
-		{"elements": [chi, ka],  "biome": BiomeType.Value.DESERT,       "name": "Chi+Ka → Desert"},
-		{"elements": [chi, fu],  "biome": BiomeType.Value.DUNE,         "name": "Chi+Fu → Dune"},
-		{"elements": [sui, ka],  "biome": BiomeType.Value.HOT_SPRING,   "name": "Sui+Ka → Hot Spring"},
-		{"elements": [sui, fu],  "biome": BiomeType.Value.BOG,          "name": "Sui+Fu → Bog"},
-		{"elements": [ka, fu],   "biome": BiomeType.Value.CINDER_HEATH, "name": "Ka+Fu → Cinder Heath"},
+		{"elements": [chi, sui], "biome": BiomeType.Value.WETLANDS,           "name": "Chi+Sui → Wetlands"},
+		{"elements": [chi, ka],  "biome": BiomeType.Value.BADLANDS,           "name": "Chi+Ka → Badlands"},
+		{"elements": [chi, fu],  "biome": BiomeType.Value.WHISTLING_CANYONS,  "name": "Chi+Fu → Whistling Canyons"},
+		{"elements": [sui, ka],  "biome": BiomeType.Value.PRISMATIC_TERRACES, "name": "Sui+Ka → Prismatic Terraces"},
+		{"elements": [sui, fu],  "biome": BiomeType.Value.FROSTLANDS,         "name": "Sui+Fu → Frostlands"},
+		{"elements": [ka, fu],   "biome": BiomeType.Value.THE_ASHFALL,        "name": "Ka+Fu → The Ashfall"},
 	]
 
 	for pair: Dictionary in pairs:

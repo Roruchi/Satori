@@ -6,7 +6,7 @@
 script = ExtResource("1_sp029")
 discovery_id = "spirit_ice_cavern_bat"
 pattern_type = 3
-required_biomes = Array[int]([5])
+required_biomes = Array[int]([8])
 forbidden_biomes = Array[int]([])
 size_threshold = 5
 shape_recipe = Array[Dictionary]([])

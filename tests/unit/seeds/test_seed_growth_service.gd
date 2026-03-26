@@ -33,7 +33,7 @@ func test_set_mode_instant_promotes_growing_seeds() -> void:
 	var recipe: SeedRecipe = SeedRecipe.new()
 	recipe.recipe_id = &"test"
 	recipe.tier = 2
-	recipe.produces_biome = BiomeType.Value.CLAY
+	recipe.produces_biome = BiomeType.Value.WETLANDS
 	assert_true(service.try_plant(Vector2i(1, 0), recipe))
 	var seed_before: SeedInstance = service.get_tracker().get_at(Vector2i(1, 0))
 	assert_eq(seed_before.state, SeedState.Value.GROWING)

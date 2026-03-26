@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-entry_id = &"biome_hot_spring"
+entry_id = &"biome_frostlands"
 category = 1
-hint_text = "Warmth rising from deep below."
-full_name = "Hot Spring"
-full_description = "Thermal pools where water and fire reach agreement."
+hint_text = "Water frozen still by the piercing wind."
+full_name = "Frostlands"
+full_description = "Piercing wind, frozen water, endurance. Sui and Fu at their most unforgiving."
 always_hidden = false

@@ -41,7 +41,7 @@ func test_ku_mapping_cardinality_integrity() -> void:
 	var ku_recipe_ids: Array[StringName] = [&"recipe_chi_ku", &"recipe_sui_ku", &"recipe_ka_ku", &"recipe_fu_ku"]
 	var expected_recipe_to_biome: Dictionary = {
 		&"recipe_chi_ku": BiomeType.Value.SACRED_STONE,
-		&"recipe_sui_ku": BiomeType.Value.VEIL_MARSH,
+		&"recipe_sui_ku": BiomeType.Value.MOONLIT_POOL,
 		&"recipe_ka_ku": BiomeType.Value.EMBER_SHRINE,
 		&"recipe_fu_ku": BiomeType.Value.CLOUD_RIDGE,
 	}

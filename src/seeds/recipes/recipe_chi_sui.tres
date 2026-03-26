@@ -9,4 +9,4 @@ elements = Array[int]([0, 1])
 tier = 2
 produces_biome = 4
 spirit_unlock_id = &""
-codex_hint = "Earth softened by patient water."
+codex_hint = "Earth softened by patient, standing water."
