@@ -1427,6 +1427,7 @@ static func _biome_color(biome: int) -> Color:
 		BiomeType.Value.MOONLIT_POOL: return Color(0.45, 0.52, 0.35)
 		BiomeType.Value.EMBER_SHRINE:return Color(0.72, 0.35, 0.18)
 		BiomeType.Value.CLOUD_RIDGE:return Color(0.72, 0.80, 0.88)
+		BiomeType.Value.KU:         return Color(0.05, 0.02, 0.10)
 		BiomeType.Value.FOREST:     return Color(0.298, 0.686, 0.314)
 		BiomeType.Value.WATER:      return Color(0.129, 0.588, 0.953)
 		BiomeType.Value.EARTH:      return Color(0.757, 0.580, 0.376)

@@ -273,6 +273,8 @@ static func _label_for_biome(biome: int) -> String:
 			return "Shrine"
 		BiomeType.Value.CLOUD_RIDGE:
 			return "Cloud"
+		BiomeType.Value.KU:
+			return "Ku"
 	return "Seed"
 
 
@@ -306,4 +308,6 @@ static func _color_for_biome(biome: int) -> Color:
 			return Color(0.80, 0.36, 0.22)
 		BiomeType.Value.CLOUD_RIDGE:
 			return Color(0.70, 0.74, 0.82)
+		BiomeType.Value.KU:
+			return Color(0.05, 0.02, 0.10)
 	return Color(0.502, 0.502, 0.502)

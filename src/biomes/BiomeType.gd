@@ -18,6 +18,7 @@ enum Value {
 	MOONLIT_POOL      = 11, # Sui + Ku
 	EMBER_SHRINE      = 12, # Ka + Ku
 	CLOUD_RIDGE       = 13, # Fu + Ku
+	KU                = 14, # Ku (standalone abyss — void separator)
 
 	# Legacy aliases — kept for backward compatibility with older call sites.
 	FOREST       = 0,

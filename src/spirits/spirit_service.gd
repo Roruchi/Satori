@@ -12,6 +12,8 @@ var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
 var _riddle_evaluator: SpiritRiddleEvaluator
 var _sky_whale_evaluator: SkyWhaleEvaluator
+## Keyed by compound key "island_{island_id}|spirit_{spirit_id}" when island_id
+## is known, or bare spirit_id for spirits without island scope (e.g. Sky Whale).
 var _active_instances: Dictionary = {}
 var _riddle_shown: Dictionary = {}
 var _spirit_patterns: Array[PatternDefinition] = []
@@ -61,7 +63,8 @@ func restore_from_persistence() -> void:
 		var instance: SpiritInstance = SpiritInstance.deserialize(data)
 		if instance.spirit_id.is_empty():
 			continue
-		_active_instances[instance.spirit_id] = instance
+		var key: String = _spirit_key(instance.spirit_id, instance.island_id)
+		_active_instances[key] = instance
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		var wanderer: Node = _spawner.spawn(instance, entry)
 		var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
@@ -73,17 +76,21 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 		return
 	if discovery_id == SkyWhaleEvaluator.SPIRIT_ID:
 		return  # Sky Whale is triggered by tile_placed balance check, not by PatternMatcher
-	if _active_instances.has(discovery_id):
+	var island_id: String = _island_for_coords(triggering_coords)
+	var key: String = _spirit_key(discovery_id, island_id)
+	if _active_instances.has(key):
 		return
-	_summon_spirit(discovery_id, triggering_coords)
+	_summon_spirit(discovery_id, triggering_coords, island_id)
 
-func _summon_spirit(spirit_id: String, coords: Array[Vector2i]) -> void:
+func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: String = "") -> void:
 	var entry: Dictionary = _catalog.lookup(spirit_id)
 	var wander_radius: int = int(entry.get("wander_radius", 4))
 	var bounds: Rect2i = SpiritWanderBounds.from_coords(coords, wander_radius)
 	var spawn: Vector2i = SpiritWanderBounds.centroid(coords)
 	var instance: SpiritInstance = SpiritInstance.create(spirit_id, spawn, bounds)
-	_active_instances[spirit_id] = instance
+	instance.island_id = island_id
+	var key: String = _spirit_key(spirit_id, island_id)
+	_active_instances[key] = instance
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	_SpiritGiftProcessorScript.process(spirit_id, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
@@ -114,7 +121,8 @@ func _evaluate_riddle_hints(grid: RefCounted) -> void:
 		registry.mark_discoveries(ids)
 	for pattern: PatternDefinition in _spirit_patterns:
 		var sid: String = pattern.discovery_id
-		if _active_instances.has(sid):
+		# Skip if spirit is already active on any island — riddle hint no longer relevant.
+		if _is_spirit_active_anywhere(sid):
 			continue
 		if _riddle_shown.has(sid):
 			continue
@@ -134,6 +142,8 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 		bounds.size + Vector2i(wander_radius * 2, wander_radius * 2)
 	)
 	var instance: SpiritInstance = SpiritInstance.create(SkyWhaleEvaluator.SPIRIT_ID, center, expanded_bounds)
+	# Sky Whale is global — no island scoping.
+	instance.island_id = ""
 	_active_instances[SkyWhaleEvaluator.SPIRIT_ID] = instance
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
@@ -150,3 +160,38 @@ func active_count() -> int:
 
 func get_catalog_entry(spirit_id: String) -> Dictionary:
 	return _catalog.lookup(spirit_id)
+
+## Return the compound active-instance key for a spirit on an island.
+## When island_id is empty the bare spirit_id is used (Sky Whale, legacy).
+func _spirit_key(spirit_id: String, island_id: String) -> String:
+	if island_id.is_empty():
+		return spirit_id
+	return "island_%s|spirit_%s" % [island_id, spirit_id]
+
+## Return true if the given spirit is active on any island.
+## Checks both bare keys (Sky Whale / empty island) and compound island-scoped keys.
+func _is_spirit_active_anywhere(spirit_id: String) -> bool:
+	if _active_instances.has(spirit_id):
+		return true
+	var suffix: String = "|spirit_%s" % spirit_id
+	for key: Variant in _active_instances:
+		if str(key).ends_with(suffix):
+			return true
+	return false
+
+## Look up the island_id for the first valid coord in a triggering-coords array.
+## Returns "" if the coord is not in the grid or has no island_id (e.g., Ku tile).
+## The has_method guard allows this to work in unit-test contexts where GameState
+## may have a mock grid that has not yet implemented get_island_id.
+func _island_for_coords(coords: Array[Vector2i]) -> String:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return ""
+	var grid: RefCounted = game_state.grid
+	if grid == null or not grid.has_method("get_island_id"):
+		return ""
+	for coord: Vector2i in coords:
+		var iid: String = grid.get_island_id(coord)
+		if not iid.is_empty():
+			return iid
+	return ""

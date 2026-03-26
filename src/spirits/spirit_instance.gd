@@ -6,6 +6,9 @@ var spawn_coord: Vector2i = Vector2i.ZERO
 var wander_bounds: Rect2i = Rect2i()
 var is_active: bool = false
 var summoned_at: int = 0
+## Island on which this spirit was summoned.  Empty string when island tracking
+## is not applicable (e.g., Sky Whale) or for legacy saved data.
+var island_id: String = ""
 
 static func create(sid: String, coord: Vector2i, bounds: Rect2i) -> SpiritInstance:
 	var inst := SpiritInstance.new()
@@ -27,7 +30,8 @@ func serialize() -> Dictionary:
 			"h": wander_bounds.size.y
 		},
 		"is_active": is_active,
-		"summoned_at": summoned_at
+		"summoned_at": summoned_at,
+		"island_id": island_id
 	}
 
 static func deserialize(data: Dictionary) -> SpiritInstance:
@@ -42,4 +46,5 @@ static func deserialize(data: Dictionary) -> SpiritInstance:
 	)
 	inst.is_active = bool(data.get("is_active", true))
 	inst.summoned_at = int(data.get("summoned_at", 0))
+	inst.island_id = str(data.get("island_id", ""))
 	return inst
