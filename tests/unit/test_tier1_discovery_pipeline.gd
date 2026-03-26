@@ -123,6 +123,7 @@ func test_notification_queue_processes_items_sequentially() -> void:
 func test_4_second_auto_dismiss_timing() -> void:
 	var queue := DiscoveryNotificationQueue.new()
 	add_child(queue)
+	queue.set_process(true)
 
 	var dismissed_count: int = 0
 	queue.notification_dismissed.connect(func() -> void:

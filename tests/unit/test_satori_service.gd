@@ -24,7 +24,7 @@ func test_trigger_debug_safe_call() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)
 	service.trigger_debug()
-	await get_tree().process_frame
+	service._complete_sequence()
 	assert_gt(growth_service.get_tracker().capacity, track_before)
 	service.queue_free()
 	growth_service.queue_free()

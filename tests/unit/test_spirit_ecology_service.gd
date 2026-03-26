@@ -14,6 +14,8 @@ func test_tension_fires_when_distance_within_threshold() -> void:
 func test_harmony_fires_once_after_accumulated_ticks() -> void:
 	var service: SpiritEcologyServiceNode = SpiritEcologyServiceNode.new()
 	add_child(service)
+	service._harmony_pairs_by_spirit["spirit_koi_fish"] = ["spirit_blue_kingfisher"]
+	service._harmony_pairs_by_spirit["spirit_blue_kingfisher"] = ["spirit_koi_fish"]
 	watch_signals(service)
 	for i in range(21):
 		service.on_spirit_moved("spirit_koi_fish", Vector2i(i, 0))

@@ -48,6 +48,10 @@ func test_set_mode_instant_promotes_growing_seeds() -> void:
 
 func test_ku_unlock_to_craft_flow_requires_mist_stag_gift() -> void:
 	var root: Node = get_tree().root
+	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
+	if existing_alchemy != null:
+		existing_alchemy.queue_free()
+		await get_tree().process_frame
 	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
 	alchemy.name = "SeedAlchemyService"
 	root.add_child(alchemy)
@@ -63,6 +67,10 @@ func test_ku_unlock_to_craft_flow_requires_mist_stag_gift() -> void:
 
 func test_repeated_ku_unlock_gift_is_idempotent() -> void:
 	var root: Node = get_tree().root
+	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
+	if existing_alchemy != null:
+		existing_alchemy.queue_free()
+		await get_tree().process_frame
 	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
 	alchemy.name = "SeedAlchemyService"
 	root.add_child(alchemy)

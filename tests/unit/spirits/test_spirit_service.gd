@@ -126,6 +126,10 @@ func test_summoned_instance_wander_bounds_contains_spawn_coord() -> void:
 
 func test_repeated_mist_stag_discovery_unlocks_ku_once() -> void:
 	var root: Node = get_tree().root
+	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
+	if existing_alchemy != null:
+		existing_alchemy.queue_free()
+		await get_tree().process_frame
 	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
 	alchemy.name = "SeedAlchemyService"
 	root.add_child(alchemy)
