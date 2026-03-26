@@ -8,7 +8,7 @@
 A KU tile acts like empty space (or the edge of the grid) for all island-connectivity purposes:
 
 - It carries **no** `island_id` — it is not part of any island.
-- It is **always available** to place; it requires no element unlock and no recipe in the seed pouch.
+- Placing a KU tile requires the **Ku element to be unlocked** first (same unlock gate as all other Ku-element seeds).
 - Once placed it is **permanent** — no other tile can be placed over a KU tile (`GridMap.is_placement_valid()` returns `false` for any occupied cell).
 - Spirits treat KU tiles the same as empty space: they never wander onto a KU tile.
 
