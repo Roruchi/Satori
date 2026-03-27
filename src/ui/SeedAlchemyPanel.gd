@@ -2,6 +2,7 @@ class_name SeedAlchemyPanel
 extends PanelContainer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 
 const _ELEMENT_COLORS: Dictionary = {
 	0: Color(0.62, 0.62, 0.62),      # CHI stone-grey
@@ -11,21 +12,30 @@ const _ELEMENT_COLORS: Dictionary = {
 	4: Color(0.55, 0.42, 0.78),      # KU  void-purple
 }
 
-const RECIPE_DISPLAY_NAMES: Dictionary = {
-	&"recipe_chi": "Stone Seed",
-	&"recipe_sui": "River Seed",
-	&"recipe_ka": "Ember Seed",
-	&"recipe_fu": "Meadow Seed",
-	&"recipe_chi_sui": "Clay Seed",
-	&"recipe_chi_ka": "Desert Seed",
-	&"recipe_chi_fu": "Dune Seed",
-	&"recipe_sui_ka": "Hot Spring Seed",
-	&"recipe_sui_fu": "Bog Seed",
-	&"recipe_ka_fu": "Cinder Heath Seed",
-	&"recipe_chi_ku": "Sacred Stone Seed",
-	&"recipe_sui_ku": "Veil Marsh Seed",
-	&"recipe_ka_ku": "Ember Shrine Seed",
-	&"recipe_fu_ku": "Cloud Ridge Seed",
+const _ELEMENT_BUTTON_TEXT: Dictionary = {
+	GodaiElementScript.Value.CHI: "Chi / Stone",
+	GodaiElementScript.Value.SUI: "Sui / River",
+	GodaiElementScript.Value.KA: "Ka / Ember",
+	GodaiElementScript.Value.FU: "Fu / Meadow",
+	GodaiElementScript.Value.KU: "Ku / Void",
+}
+
+const _BIOME_SEED_NAMES: Dictionary = {
+	BiomeTypeScript.Value.STONE: "Stone Seed",
+	BiomeTypeScript.Value.RIVER: "River Seed",
+	BiomeTypeScript.Value.EMBER_FIELD: "Ember Seed",
+	BiomeTypeScript.Value.MEADOW: "Meadow Seed",
+	BiomeTypeScript.Value.WETLANDS: "Wetlands Seed",
+	BiomeTypeScript.Value.BADLANDS: "Badlands Seed",
+	BiomeTypeScript.Value.WHISTLING_CANYONS: "Whistling Canyons Seed",
+	BiomeTypeScript.Value.PRISMATIC_TERRACES: "Prismatic Terraces Seed",
+	BiomeTypeScript.Value.FROSTLANDS: "Frostlands Seed",
+	BiomeTypeScript.Value.THE_ASHFALL: "Ashfall Seed",
+	BiomeTypeScript.Value.SACRED_STONE: "Sacred Stone Seed",
+	BiomeTypeScript.Value.MOONLIT_POOL: "Moonlit Pool Seed",
+	BiomeTypeScript.Value.EMBER_SHRINE: "Ember Shrine Seed",
+	BiomeTypeScript.Value.CLOUD_RIDGE: "Cloud Ridge Seed",
+	BiomeTypeScript.Value.KU: "Ku Seed",
 }
 
 @onready var _preview_label: Label = $VBox/Preview
@@ -59,9 +69,23 @@ func _ready() -> void:
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
+	_apply_element_button_labels()
 	_apply_panel_style()
 	_apply_button_styles()
 	_update_ui()
+
+func _apply_element_button_labels() -> void:
+	var btn_map: Dictionary = {
+		GodaiElementScript.Value.CHI: _chi_button,
+		GodaiElementScript.Value.SUI: _sui_button,
+		GodaiElementScript.Value.KA: _ka_button,
+		GodaiElementScript.Value.FU: _fu_button,
+		GodaiElementScript.Value.KU: _ku_button,
+	}
+	for element: int in btn_map:
+		var btn: Button = btn_map[element] as Button
+		if btn != null:
+			btn.text = str(_ELEMENT_BUTTON_TEXT.get(element, "?"))
 
 func _apply_panel_style() -> void:
 	var bg := StyleBoxFlat.new()
@@ -138,7 +162,7 @@ func _on_element_unlocked(_element_id: int) -> void:
 
 func _on_seed_added_to_pouch(recipe: SeedRecipe) -> void:
 	if recipe != null:
-		_last_feedback = "Added %s to pouch" % str(RECIPE_DISPLAY_NAMES.get(recipe.recipe_id, recipe.recipe_id))
+		_last_feedback = "Added %s to pouch" % _recipe_display_name(recipe)
 	_update_ui()
 
 func _on_pouch_updated() -> void:
@@ -195,9 +219,9 @@ func _update_ui() -> void:
 		_slots_label.text = " + ".join(labels)
 	var recipe: SeedRecipe = alchemy.lookup_recipe(_selected)
 	if recipe == null:
-		_preview_label.text = "→  …"
+		_preview_label.text = "\u2192  \u2026"
 	else:
-		_preview_label.text = "→  %s" % str(RECIPE_DISPLAY_NAMES.get(recipe.recipe_id, recipe.recipe_id))
+		_preview_label.text = "\u2192  %s" % _recipe_display_name(recipe)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	var pouch_full: bool = pouch != null and pouch.is_full()
 	if pouch == null:
@@ -238,3 +262,8 @@ func _shake_button_for_element(element_id: int) -> void:
 	tween.tween_property(target, "position", start_pos + Vector2(4.0, 0.0), 0.04)
 	tween.tween_property(target, "position", start_pos + Vector2(-4.0, 0.0), 0.04)
 	tween.tween_property(target, "position", start_pos, 0.04)
+
+func _recipe_display_name(recipe: SeedRecipe) -> String:
+	if recipe == null:
+		return ""
+	return str(_BIOME_SEED_NAMES.get(recipe.produces_biome, recipe.recipe_id))

@@ -23,6 +23,7 @@ Use this alongside the catalog data files to verify completeness at a glance.
 | 11 | `MOONLIT_POOL`       | Sui + Kū   | SUI + KU *(planned — spec 016)* |
 | 12 | `EMBER_SHRINE`       | Ka + Kū    | KA + KU *(planned — spec 016)*  |
 | 13 | `CLOUD_RIDGE`        | Fū + Kū    | FU + KU *(planned — spec 016)*  |
+| 14 | `KU`                 | Kū (空)    | KU alone                         |
 
 ---
 
@@ -39,6 +40,7 @@ Tier 3 recipes are hidden until a spirit grants a `TIER3_RECIPE` gift.
 | `recipe_sui`  | SUI (1)         | 1 — River           | River         | "It finds its own way through stone." |
 | `recipe_ka`   | KA (2)          | 2 — Ember Field     | Ember Field   | "Where heat remembers the shape of fire." |
 | `recipe_fu`   | FU (3)          | 3 — Meadow          | Meadow        | "Grass that bends but does not break." |
+| `recipe_ku`   | KU (4)          | 14 — Ku             | Ku            | "Void made tangible; silence with form." |
 
 ### Tier 2 — Two Elements (always available)
 
@@ -146,7 +148,7 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 | # | `spirit_id`             | Display Name       | Pattern Trigger (summary)                              | Gift                         | Harmony / Tension       |
 |---|-------------------------|--------------------|--------------------------------------------------------|------------------------------|-------------------------|
 | 1 | `spirit_red_fox`        | Red Fox            | Meadow triangle (3 tiles)                              | None                         | Tension: Hare           |
-| 2 | `spirit_mist_stag`      | Mist Stag          | ≥5 Frostlands + `disc_deep_stand` prereq               | **KU_UNLOCK** (1)            | —                       |
+| 2 | `spirit_mist_stag`      | Mist Stag          | ≥5 Wetlands + `disc_deep_stand` prereq                 | **KU_UNLOCK** (1)            | —                       |
 | 3 | `spirit_emerald_snake`  | Emerald Snake      | Stone 7-tile line                                      | None                         | —                       |
 | 4 | `spirit_owl_of_silence` | Owl of Silence     | Stone cluster with ≥1 Prismatic Terraces neighbour             | None                         | —                       |
 | 5 | `spirit_tree_frog`      | Tree Frog          | Stone cluster with ≥1 Wetlands neighbour                   | None                         | —                       |
@@ -192,6 +194,6 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 
 ## Notes
 
-- Biome IDs 10–13 (`SACRED_STONE`, `MOONLIT_POOL`, `EMBER_SHRINE`, `CLOUD_RIDGE`) are reserved in the enum but have no `.tres` recipe files yet — implementation is tracked in **spec 016**.
+- Biome IDs 10–13 (`SACRED_STONE`, `MOONLIT_POOL`, `EMBER_SHRINE`, `CLOUD_RIDGE`) are reserved in the enum; recipe implementation remains tracked in **spec 016**.
 - The Tier 3 recipes for Stone Serpent, Mist Stag, Ember Fox, Mountain Golem, and Sun-Lizard are specced but not yet implemented.
 - All catalog sources of truth: `src/seeds/recipes/*.tres`, `src/biomes/discovery_catalog_data.gd`, `src/spirits/spirit_catalog_data.gd`.

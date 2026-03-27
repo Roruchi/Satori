@@ -3,6 +3,8 @@
 ## Designed to live inside a CanvasLayer so all coordinates are screen pixels.
 extends Node2D
 
+const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+
 ## Emitted when the player clicks a biome hex.
 signal biome_selected(biome: int)
 
@@ -289,7 +291,7 @@ static func _color_for_biome(biome: int) -> Color:
 		BiomeType.Value.MEADOW:
 			return Color(0.298, 0.686, 0.314)
 		BiomeType.Value.WETLANDS:
-			return Color(0.757, 0.580, 0.376)
+			return Color(0.42, 0.56, 0.48)
 		BiomeType.Value.BADLANDS:
 			return Color(0.82, 0.68, 0.35)
 		BiomeType.Value.WHISTLING_CANYONS:
@@ -297,7 +299,7 @@ static func _color_for_biome(biome: int) -> Color:
 		BiomeType.Value.PRISMATIC_TERRACES:
 			return Color(0.56, 0.72, 0.86)
 		BiomeType.Value.FROSTLANDS:
-			return Color(0.75, 0.88, 0.96)
+			return Color(0.83, 0.94, 1.0)
 		BiomeType.Value.THE_ASHFALL:
 			return Color(0.46, 0.24, 0.18)
 		BiomeType.Value.SACRED_STONE:

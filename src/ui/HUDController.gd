@@ -1,7 +1,7 @@
 class_name HUDController
 extends CanvasLayer
 
-const GrowthMode = preload("res://src/seeds/GrowthMode.gd")
+const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 460.0
 const MIX_PANEL_SCREEN_MARGIN: float = 16.0
@@ -79,10 +79,10 @@ func _ready() -> void:
 		if current_mode_variant is int:
 			_on_growth_mode_changed(int(current_mode_variant))
 		else:
-			_on_growth_mode_changed(GrowthMode.Value.REAL_TIME)
+			_on_growth_mode_changed(GrowthModeScript.Value.REAL_TIME)
 	else:
 		push_warning("HUDController could not connect to GardenSettings.growth_mode_changed")
-		_on_growth_mode_changed(GrowthMode.Value.REAL_TIME)
+		_on_growth_mode_changed(GrowthModeScript.Value.REAL_TIME)
 	_set_mode(Mode.PLANT)
 
 func _layout_mix_panel() -> void:
@@ -106,7 +106,7 @@ func _layout_codex_panel() -> void:
 	_codex_panel.size = Vector2(panel_width, panel_height)
 
 func _on_growth_mode_changed(mode: int) -> void:
-	_instant_badge.visible = mode == GrowthMode.Value.INSTANT
+	_instant_badge.visible = mode == GrowthModeScript.Value.INSTANT
 
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode

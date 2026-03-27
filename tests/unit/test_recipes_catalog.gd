@@ -4,7 +4,7 @@
 ## specs/master/recipes.md.  Run via GUT (addons/gut).
 ##
 ## Coverage:
-##   - 10 seed recipes registered (4 tier‑1 + 6 tier‑2)
+##   - 15 seed recipes registered (5 tier‑1 + 10 tier‑2)
 ##   - Each recipe maps to the correct BiomeType
 ##   - 12 tier‑1 discovery IDs present in DiscoveryCatalogData
 ##   - 10 tier‑2 discovery IDs present in DiscoveryCatalogData
@@ -17,10 +17,10 @@ extends GutTest
 # Seed recipes
 # ---------------------------------------------------------------------------
 
-func test_registry_has_exactly_10_seed_recipes() -> void:
+func test_registry_has_exactly_15_seed_recipes() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
-	assert_eq(registry.all_known_recipes().size(), 14,
-		"recipes.md defines 14 total seed recipes")
+	assert_eq(registry.all_known_recipes().size(), 15,
+		"recipes.md defines 15 total seed recipes")
 
 
 func test_tier1_recipes_produce_correct_biomes() -> void:
@@ -41,6 +41,10 @@ func test_tier1_recipes_produce_correct_biomes() -> void:
 	var fu: SeedRecipe = registry.lookup([GodaiElement.Value.FU])
 	assert_not_null(fu, "Fu recipe must exist")
 	assert_eq(fu.produces_biome, BiomeType.Value.MEADOW, "Fu → Meadow")
+
+	var ku: SeedRecipe = registry.lookup([GodaiElement.Value.KU])
+	assert_not_null(ku, "Ku recipe must exist")
+	assert_eq(ku.produces_biome, BiomeType.Value.KU, "Ku → Ku")
 
 
 func test_tier2_recipes_produce_correct_biomes() -> void:
@@ -75,7 +79,7 @@ func test_tier2_recipes_produce_correct_biomes() -> void:
 func test_tier1_recipe_ids_match_reference_table() -> void:
 	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
 	var expected_ids: Array[String] = [
-		"recipe_chi", "recipe_sui", "recipe_ka", "recipe_fu",
+		"recipe_chi", "recipe_sui", "recipe_ka", "recipe_fu", "recipe_ku",
 	]
 	for recipe_id: String in expected_ids:
 		assert_true(registry.is_recipe_known(recipe_id),

@@ -25,7 +25,7 @@ func get_entries() -> Array[Dictionary]:
 			"pattern_id": "spirit_mist_stag",
 			"wander_radius": 6,
 			"wander_speed": 2.0,
-			"preferred_biomes": [3, 8],
+			"preferred_biomes": [3, 4],
 			"disliked_biomes": [],
 			"harmony_partner_id": "",
 			"tension_partner_id": "",

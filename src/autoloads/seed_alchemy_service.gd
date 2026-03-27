@@ -3,6 +3,7 @@ extends Node
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SeedRecipeRegistryScript = preload("res://src/seeds/SeedRecipeRegistry.gd")
+const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 
 signal element_unlocked(element_id: int)
 signal recipe_discovered(recipe_id: StringName)
@@ -16,7 +17,6 @@ var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.FU,
 ]
 var _discovered: Dictionary = {}
-const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
 
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
@@ -33,7 +33,7 @@ func unlock_element(element: int) -> void:
 	_unlocked_elements.append(element)
 	element_unlocked.emit(element)
 	if element == GodaiElementScript.Value.KU:
-		_register_discovery(KU_GUIDANCE_ENTRY_ID, false)
+		_register_discovery(SatoriIds.KU_GUIDANCE_ENTRY_ID, false)
 
 func lookup_recipe(elements: Array[int]) -> SeedRecipe:
 	for element: int in elements:

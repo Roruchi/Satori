@@ -6,7 +6,7 @@ signal entry_discovered(entry_id: StringName)
 const CodexEntryScript = preload("res://src/codex/CodexEntry.gd")
 const SpiritCatalogDataScript = preload("res://src/spirits/spirit_catalog_data.gd")
 const DiscoveryCatalogDataScript = preload("res://src/biomes/discovery_catalog_data.gd")
-const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
+const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 
 var _entries: Dictionary = {}
 var _discovered: Dictionary = {}
@@ -160,7 +160,7 @@ func is_entry_hinted(entry_id: StringName) -> bool:
 	return not is_discovered(entry_id)
 
 func get_ku_guidance_state() -> StringName:
-	return &"discovered" if is_discovered(KU_GUIDANCE_ENTRY_ID) else &"hinted"
+	return SatoriIds.STATE_DISCOVERED if is_discovered(SatoriIds.KU_GUIDANCE_ENTRY_ID) else SatoriIds.STATE_HINTED
 
 func force_reveal(entry_id: StringName) -> void:
 	mark_discovered(entry_id)

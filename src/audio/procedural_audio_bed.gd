@@ -169,7 +169,7 @@ func _process(_delta: float) -> void:
 		var s: float = _next_sample(beat_inc)
 		frames[i] = Vector2(s, s)
 		_time += time_inc
-	_playback.push_frames(frames)
+	_playback.push_buffer(frames)
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SeedRecipe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/seeds/SeedRecipe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+recipe_id = &"recipe_ku"
+elements = Array[int]([4])
+tier = 1
+produces_biome = 14
+spirit_unlock_id = &""
+codex_hint = "Void made tangible; silence with form."

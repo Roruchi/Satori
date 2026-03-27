@@ -1,9 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/ui/HUDController.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/UI/SeedAlchemyPanel.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/UI/CodexPanel.tscn" id="3"]
-[ext_resource type="Script" path="res://src/ui/GrowthModeToggleButton.gd" id="4"]
 [ext_resource type="Script" path="res://src/ui/SeedPouchDisplay.gd" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/UI/SettingsMenu.tscn" id="6"]
 
@@ -56,12 +55,6 @@ size_flags_horizontal = 3
 visible = false
 layout_mode = 2
 text = "⚡ INSTANT"
-
-[node name="GrowthModeToggle" type="Button" parent="Root/TopBar"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 2
-script = ExtResource("4")
-text = "RT"
 
 [node name="SettingsButton" type="Button" parent="Root/TopBar"]
 custom_minimum_size = Vector2(44, 44)

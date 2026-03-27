@@ -10,7 +10,7 @@ const COLOR_ACCENT := Color(0.58, 0.39, 0.19)
 const COLOR_SHADOW := Color(0.31, 0.22, 0.12, 0.60)
 const COLOR_TRIM := Color(0.69, 0.52, 0.28, 0.95)
 const COLOR_SCROLL_EDGE := Color(0.73, 0.61, 0.42, 0.92)
-const KU_GUIDANCE_ENTRY_ID: StringName = &"ku_unlock_guidance"
+const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 const LABEL_DISCOVERED: String = "Discovered"
 const LABEL_HINT: String = "Hint"
 const LABEL_HINTED_PATH: String = "Hinted Path"
@@ -161,8 +161,8 @@ func _build_entry_card(entry: CodexEntry, discovered: bool, category: int) -> Pa
 
 	var subtitle: Label = Label.new()
 	var guidance_state: String = LABEL_DISCOVERED if discovered and not entry.always_hidden else LABEL_HINT
-	if entry.entry_id == KU_GUIDANCE_ENTRY_ID and codex != null and codex.has_method("get_ku_guidance_state"):
-		guidance_state = LABEL_DISCOVERED if StringName(codex.get_ku_guidance_state()) == &"discovered" else LABEL_HINTED_PATH
+	if entry.entry_id == SatoriIds.KU_GUIDANCE_ENTRY_ID and codex != null and codex.has_method("get_ku_guidance_state"):
+		guidance_state = LABEL_DISCOVERED if StringName(codex.get_ku_guidance_state()) == SatoriIds.STATE_DISCOVERED else LABEL_HINTED_PATH
 	subtitle.text = guidance_state
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", COLOR_ACCENT)

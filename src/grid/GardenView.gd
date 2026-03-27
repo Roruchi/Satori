@@ -615,7 +615,8 @@ func _draw_cluster_overlay(biome: int, members: Array) -> void:
 		BiomeType.Value.RIVER:  _draw_river_overlay(members)
 		BiomeType.Value.EMBER_FIELD: _draw_obsidian_expanse_overlay(members)
 		BiomeType.Value.MEADOW: _draw_forest_overlay(members)
-		BiomeType.Value.WETLANDS:  _draw_barren_expanse_overlay(members)
+		BiomeType.Value.WETLANDS:  _draw_peat_bog_overlay(members)
+		BiomeType.Value.FROSTLANDS: _draw_frostlands_overlay(members)
 		BiomeType.Value.FOREST: _draw_forest_overlay(members)
 		BiomeType.Value.WATER:  _draw_river_overlay(members)
 		BiomeType.Value.EARTH:  _draw_barren_expanse_overlay(members)
@@ -796,6 +797,38 @@ func _draw_peat_bog_overlay(members: Array) -> void:
 			# Bulrush seed head
 			draw_circle(Vector2(cx + ox + lean, base_y - h + 3.5), 3.2, head)
 			draw_circle(Vector2(cx + ox + lean, base_y - h + 1.0), 1.8, Color(head.r * 1.15, head.g * 1.1, head.b * 1.0, 0.75))
+
+
+## Frostlands: pale snow haze with crystalline streaks and sparkle points.
+func _draw_frostlands_overlay(members: Array) -> void:
+	var frost_haze := Color(0.82, 0.93, 1.0, 0.28)
+	var ice_line := Color(0.86, 0.96, 1.0, 0.78)
+	var sparkle := Color(1.0, 1.0, 1.0, 0.85)
+	for m: Variant in members:
+		draw_colored_polygon(_hex_polygon(_HexUtils.axial_to_pixel(m as Vector2i, TILE_RADIUS), TILE_RADIUS), frost_haze)
+	var rng := RandomNumberGenerator.new()
+	for m: Variant in members:
+		var coord: Vector2i = m as Vector2i
+		rng.seed = hash(coord) ^ 0xF2057
+		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		var cx: float = tc.x
+		var cy: float = tc.y
+		for _i: int in range(3):
+			var angle: float = rng.randf_range(0.0, TAU)
+			var arm: float = rng.randf_range(5.0, 9.0)
+			draw_line(
+				Vector2(cx - cos(angle) * arm, cy - sin(angle) * arm),
+				Vector2(cx + cos(angle) * arm, cy + sin(angle) * arm),
+				ice_line,
+				1.2
+			)
+		var spark_count: int = rng.randi_range(2, 4)
+		for _s: int in range(spark_count):
+			draw_circle(
+				Vector2(cx + rng.randf_range(-TILE_RADIUS * 0.55, TILE_RADIUS * 0.55), cy + rng.randf_range(-TILE_RADIUS * 0.55, TILE_RADIUS * 0.55)),
+				rng.randf_range(0.8, 1.6),
+				sparkle
+			)
 
 
 # ---------------------------------------------------------------------------
@@ -1346,28 +1379,32 @@ func _draw_echoing_cavern_overlay(coords: Array[Vector2i]) -> void:
 			draw_colored_polygon(PackedVector2Array([Vector2(nx, ny), Vector2(nx + 2.0, ny + 5.0), Vector2(nx - 2.0, ny + 5.0)]), Color(0.30, 0.25, 0.35, 0.80))
 
 
-## Bamboo Chime: vertical bamboo stalks with node rings on each Savannah tile.
+## Bamboo Chime discovery marker: frosty wind-chime rods and ice pendants.
 func _draw_bamboo_chime_overlay(coords: Array[Vector2i]) -> void:
-	var stalk_col := Color(0.55, 0.72, 0.18, 0.92)
-	var node_col  := Color(0.30, 0.48, 0.10, 0.95)
+	var rod_col := Color(0.82, 0.92, 1.0, 0.92)
+	var thread_col  := Color(0.66, 0.80, 0.92, 0.90)
+	var pendant_col := Color(0.92, 0.98, 1.0, 0.82)
 	var rng := RandomNumberGenerator.new()
 	for coord: Vector2i in coords:
 		rng.seed = hash(coord) ^ 0xBAB0
 		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 		var cx: float = tc.x
 		var cy: float = tc.y
-		var count: int = rng.randi_range(2, 3)
+		var count: int = rng.randi_range(2, 4)
 		for _i: int in range(count):
 			var ox: float = rng.randf_range(-TILE_RADIUS * 0.5, TILE_RADIUS * 0.5)
-			var top_y: float = cy - rng.randf_range(12.0, 18.0)
-			draw_line(Vector2(cx + ox, cy + TILE_RADIUS * 0.4), Vector2(cx + ox, top_y), stalk_col, 2.5)
-			# 2 node rings along stalk
-			for n: int in range(2):
-				var ny: float = cy + TILE_RADIUS * 0.4 - (cy + TILE_RADIUS * 0.4 - top_y) * (float(n + 1) / 3.0)
-				draw_line(Vector2(cx + ox - 3.0, ny), Vector2(cx + ox + 3.0, ny), node_col, 1.5)
-			# Leafy tip
-			draw_line(Vector2(cx + ox, top_y), Vector2(cx + ox + rng.randf_range(4.0, 7.0), top_y - rng.randf_range(4.0, 7.0)), stalk_col, 1.5)
-			draw_line(Vector2(cx + ox, top_y), Vector2(cx + ox - rng.randf_range(4.0, 7.0), top_y - rng.randf_range(4.0, 7.0)), stalk_col, 1.5)
+			var rod_top_y: float = cy - rng.randf_range(14.0, 20.0)
+			var rod_bottom_y: float = rod_top_y + rng.randf_range(6.0, 10.0)
+			draw_line(Vector2(cx + ox, rod_top_y), Vector2(cx + ox, rod_bottom_y), rod_col, 2.2)
+			var thread_len: float = rng.randf_range(4.0, 7.0)
+			draw_line(Vector2(cx + ox, rod_bottom_y), Vector2(cx + ox, rod_bottom_y + thread_len), thread_col, 1.2)
+			var pendant_center: Vector2 = Vector2(cx + ox, rod_bottom_y + thread_len + 2.0)
+			draw_colored_polygon(PackedVector2Array([
+				pendant_center + Vector2(0.0, -2.2),
+				pendant_center + Vector2(2.2, 1.8),
+				pendant_center + Vector2(-2.2, 1.8),
+			]), pendant_col)
+			draw_circle(pendant_center + Vector2(0.0, -0.8), 0.9, Color(1.0, 1.0, 1.0, 0.75))
 
 
 ## Floating Pavilion: a small floating pavilion structure on the Swamp tile.
@@ -1417,11 +1454,11 @@ static func _biome_color(biome: int) -> Color:
 		BiomeType.Value.RIVER:      return Color(0.129, 0.588, 0.953)
 		BiomeType.Value.EMBER_FIELD:return Color(0.922, 0.42, 0.18)
 		BiomeType.Value.MEADOW:     return Color(0.298, 0.686, 0.314)
-		BiomeType.Value.WETLANDS:   return Color(0.757, 0.580, 0.376)
+		BiomeType.Value.WETLANDS:   return Color(0.42, 0.56, 0.48)
 		BiomeType.Value.BADLANDS:   return Color(0.78, 0.65, 0.25)
 		BiomeType.Value.WHISTLING_CANYONS: return Color(0.84, 0.76, 0.50)
 		BiomeType.Value.PRISMATIC_TERRACES: return Color(0.75, 0.88, 0.95)
-		BiomeType.Value.FROSTLANDS: return Color(0.72, 0.88, 0.97)
+		BiomeType.Value.FROSTLANDS: return Color(0.83, 0.94, 1.0)
 		BiomeType.Value.THE_ASHFALL: return Color(0.42, 0.28, 0.15)
 		BiomeType.Value.SACRED_STONE: return Color(0.72, 0.72, 0.62)
 		BiomeType.Value.MOONLIT_POOL: return Color(0.45, 0.52, 0.35)

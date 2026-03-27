@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"recipe_sui_fu"
 category = 0
-hint_text = "Water and wind, slow and heavy together."
-full_name = "Bog Seed"
-full_description = "Sui and Fū sunk into still, dark wetlands."
+hint_text = "Water frozen still by the piercing wind."
+full_name = "Frostlands Seed"
+full_description = "Sui and Fū lock into pale, wind-cut frostlands."
 always_hidden = false

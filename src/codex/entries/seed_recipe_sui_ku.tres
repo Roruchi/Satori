@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"recipe_sui_ku"
 category = 0
-hint_text = "A marsh hidden beneath mist and Kū."
-full_name = "Veil Marsh Seed"
-full_description = "Sui and Kū merge into a seed that blooms as Veil Marsh."
+hint_text = "Water and Kū reflecting silent moonlight."
+full_name = "Moonlit Pool Seed"
+full_description = "Sui and Kū merge into a seed that blooms as Moonlit Pool."
 always_hidden = false
