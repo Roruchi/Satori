@@ -63,11 +63,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] Add exported momentum parameters to `src/camera/CameraPanController.gd`: `friction: float = 8.0` (deceleration multiplier), `max_velocity: float = 2000.0`
-- [ ] T012 [P] [US2] Add `_pan_velocity: Vector2` field to `src/camera/CameraPanController.gd` and compute a rolling average drag velocity during active drags by sampling `event.relative / delta` each `InputEventScreenDrag` / `InputEventMouseMotion` frame
-- [ ] T013 [US2] On drag release in `src/camera/CameraPanController.gd`, assign the rolling average velocity to `_pan_velocity` (clamped to `max_velocity`)
-- [ ] T014 [US2] In `_process` in `src/camera/CameraPanController.gd`, apply `_pan_velocity` to `_camera.position` and decay `_pan_velocity` by `friction * delta` each frame; zero out when magnitude drops below 1.0
-- [ ] T015 [US2] Zero out `_pan_velocity` on new drag press in `src/camera/CameraPanController.gd`
+- [x] T011 [P] [US2] Add exported momentum parameters to `src/camera/CameraPanController.gd`: `friction: float = 8.0` (deceleration multiplier), `max_velocity: float = 2000.0`
+- [x] T012 [P] [US2] Add `_pan_velocity: Vector2` field to `src/camera/CameraPanController.gd` and compute a rolling average drag velocity during active drags by sampling `event.relative / delta` each `InputEventScreenDrag` / `InputEventMouseMotion` frame
+- [x] T013 [US2] On drag release in `src/camera/CameraPanController.gd`, assign the rolling average velocity to `_pan_velocity` (clamped to `max_velocity`)
+- [x] T014 [US2] In `_process` in `src/camera/CameraPanController.gd`, apply `_pan_velocity` to `_camera.position` and decay `_pan_velocity` by `friction * delta` each frame; zero out when magnitude drops below 1.0
+- [x] T015 [US2] Zero out `_pan_velocity` on new drag press in `src/camera/CameraPanController.gd`
 
 **Checkpoint**: Momentum panning feels fluid. Deceleration curve is tunable via exported parameters in the Godot inspector.
 
@@ -81,11 +81,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [P] [US3] Add exported zoom parameters to `src/camera/CameraPanController.gd`: `zoom_min: float = 0.5`, `zoom_max: float = 4.0`
-- [ ] T017 [P] [US3] Add pinch-state tracking fields (`_touch_points: Dictionary`, `_pinch_initial_distance: float`, `_pinch_initial_zoom: float`) to `src/camera/CameraPanController.gd`
-- [ ] T018 [US3] Handle second finger touch-down (`InputEventScreenTouch` with index > 0) in `src/camera/CameraPanController.gd`: record second touch point, store initial pinch distance, discard any active pan velocity
-- [ ] T019 [US3] Handle `InputEventScreenDrag` for the second finger in `src/camera/CameraPanController.gd`: compute current distance between two touch points, derive zoom scale factor, apply to `_camera.zoom` clamped to `[zoom_min, zoom_max]`
-- [ ] T020 [US3] Handle second finger touch-up in `src/camera/CameraPanController.gd`: exit pinch mode, re-enter single-finger pan mode with zero initial velocity
+- [x] T016 [P] [US3] Add exported zoom parameters to `src/camera/CameraPanController.gd`: `zoom_min: float = 0.5`, `zoom_max: float = 4.0`
+- [x] T017 [P] [US3] Add pinch-state tracking fields (`_touch_points: Dictionary`, `_pinch_initial_distance: float`, `_pinch_initial_zoom: float`) to `src/camera/CameraPanController.gd`
+- [x] T018 [US3] Handle second finger touch-down (`InputEventScreenTouch` with index > 0) in `src/camera/CameraPanController.gd`: record second touch point, store initial pinch distance, discard any active pan velocity
+- [x] T019 [US3] Handle `InputEventScreenDrag` for the second finger in `src/camera/CameraPanController.gd`: compute current distance between two touch points, derive zoom scale factor, apply to `_camera.zoom` clamped to `[zoom_min, zoom_max]`
+- [x] T020 [US3] Handle second finger touch-up in `src/camera/CameraPanController.gd`: exit pinch mode, re-enter single-finger pan mode with zero initial velocity
 
 **Checkpoint**: Pinch-to-zoom works reliably. Zoom never exceeds limits regardless of pinch speed.
 
@@ -99,9 +99,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T021 [P] [US4] Add double-tap state fields (`_last_tap_time: float`, `_last_tap_pos: Vector2`, `double_tap_threshold_ms: float = 300.0`, `double_tap_radius_px: float = 40.0`) to `src/camera/CameraPanController.gd`
-- [ ] T022 [US4] In the press handler in `src/camera/CameraPanController.gd`, check if current press is within `double_tap_threshold_ms` and `double_tap_radius_px` of the previous press; if so, snap `_camera.position` to `Vector2.ZERO`, zero out `_pan_velocity`, and consume the event
-- [ ] T023 [US4] Update `_last_tap_time` and `_last_tap_pos` on every press in `src/camera/CameraPanController.gd` (used by the double-tap check in T022)
+- [x] T021 [P] [US4] Add double-tap state fields (`_last_tap_time: float`, `_last_tap_pos: Vector2`, `double_tap_threshold_ms: float = 300.0`, `double_tap_radius_px: float = 40.0`) to `src/camera/CameraPanController.gd`
+- [x] T022 [US4] In the press handler in `src/camera/CameraPanController.gd`, check if current press is within `double_tap_threshold_ms` and `double_tap_radius_px` of the previous press; if so, snap `_camera.position` to `Vector2.ZERO`, zero out `_pan_velocity`, and consume the event
+- [x] T023 [US4] Update `_last_tap_time` and `_last_tap_pos` on every press in `src/camera/CameraPanController.gd` (used by the double-tap check in T022)
 
 **Checkpoint**: Double-tap re-centres reliably. Slow taps and tile-placement taps are not mis-identified.
 
