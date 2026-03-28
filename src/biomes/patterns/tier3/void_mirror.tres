@@ -1,12 +1,12 @@
 [gd_resource type="Resource" script_class="PatternDefinition" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_heavenwind_torii"]
+[ext_resource type="Script" path="res://src/biomes/pattern_definition.gd" id="1_void_mirror"]
 
 [resource]
-script = ExtResource("1_heavenwind_torii")
-discovery_id = "disc_heavenwind_torii"
+script = ExtResource("1_void_mirror")
+discovery_id = "disc_void_mirror"
 pattern_type = 0
-required_biomes = Array[int]([13])
+required_biomes = Array[int]([1])
 forbidden_biomes = Array[int]([])
 size_threshold = 4
 shape_recipe = Array[Dictionary]([])
@@ -16,5 +16,5 @@ tier = 3
 cap_increase = 1000
 is_unique = true
 housing_capacity = 0
-effect_type = "great_torii"
+effect_type = "void_mirror"
 effect_params = {}

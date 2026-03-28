@@ -74,3 +74,13 @@ func test_spirit_service_maps_fu_spirit_to_fu_and_fu_chi_spirit_to_both() -> voi
 	assert_true(fu_and_chi.has(GodaiElement.Value.CHI), "Fu+Chi spirit should include Chi gift charge")
 	assert_eq(fu_and_chi.size(), 2, "Fu+Chi spirit should map to exactly two unique gift charges")
 	service.queue_free()
+
+func test_unique_monument_attempt_is_blocked_when_already_built() -> void:
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	service.set_structures_for_testing([
+		{"discovery_id": "disc_great_torii", "is_unique": true}
+	])
+	assert_false(service.can_build_structure("disc_great_torii"))
+	assert_true(service.can_build_structure("disc_deep_stand"))
+	service.queue_free()

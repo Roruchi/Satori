@@ -37,6 +37,11 @@ var _mix_timer: float = 0.0
 var _reject_coord: Vector2i = Vector2i(-9999, -9999)
 var _reject_reason: String = ""
 var _reject_timer: float = 0.0
+var _unique_block_coords: Array[Vector2i] = []
+var _unique_block_timer: float = 0.0
+var _satori_amount: int = 0
+var _satori_cap: int = 250
+var _satori_era: StringName = &"stillness"
 
 ## Continuous time accumulator for background animations.
 var _anim_time: float = 0.0
@@ -96,6 +101,20 @@ func _ready() -> void:
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("discovery_triggered"):
 		scan_service.discovery_triggered.connect(_on_discovery_triggered)
+	if scan_service != null and scan_service.has_signal("discovery_blocked"):
+		scan_service.discovery_blocked.connect(_on_discovery_blocked)
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service != null:
+		if satori_service.has_signal("satori_changed"):
+			satori_service.satori_changed.connect(_on_satori_changed)
+		if satori_service.has_signal("era_changed"):
+			satori_service.era_changed.connect(_on_era_changed)
+		if satori_service.has_method("get_current_satori"):
+			_satori_amount = int(satori_service.get_current_satori())
+		if satori_service.has_method("get_current_cap"):
+			_satori_cap = int(satori_service.get_current_cap())
+		if satori_service.has_method("get_current_era"):
+			_satori_era = satori_service.get_current_era()
 
 	_init_background_data()
 	queue_redraw()
@@ -107,6 +126,8 @@ func _process(delta: float) -> void:
 		_mix_timer -= delta
 	if _reject_timer > 0.0:
 		_reject_timer -= delta
+	if _unique_block_timer > 0.0:
+		_unique_block_timer -= delta
 	queue_redraw()  # always redraw for background animation
 
 
@@ -143,6 +164,20 @@ func _on_discovery_triggered(discovery_id: String, coords: Array[Vector2i]) -> v
 			tile.metadata["shrine_buildable"] = true
 			tile.metadata["shrine_built"] = false
 			tile.metadata["build_discovery_id"] = discovery_id
+	queue_redraw()
+
+func _on_discovery_blocked(_discovery_id: String, coords: Array[Vector2i], _reason: String) -> void:
+	_unique_block_coords = coords.duplicate()
+	_unique_block_timer = 0.9
+	queue_redraw()
+
+func _on_satori_changed(current: int, cap: int) -> void:
+	_satori_amount = current
+	_satori_cap = cap
+	queue_redraw()
+
+func _on_era_changed(new_era: StringName) -> void:
+	_satori_era = new_era
 	queue_redraw()
 
 
@@ -218,6 +253,16 @@ func _draw() -> void:
 		var rpts: PackedVector2Array = _hex_polygon(rc, TILE_RADIUS)
 		draw_colored_polygon(rpts, Color(1.0, 1.0, 0.0, 0.5 * t) if _reject_reason == "same_type" else Color(1.0, 0.2, 0.2, 0.6 * t))
 
+	if _unique_block_timer > 0.0 and not _unique_block_coords.is_empty():
+		var pulse: float = _unique_block_timer / 0.9
+		for blocked_coord: Vector2i in _unique_block_coords:
+			var bc: Vector2 = _HexUtils.axial_to_pixel(blocked_coord, TILE_RADIUS)
+			var bpts: PackedVector2Array = _hex_polygon(bc, TILE_RADIUS + (1.0 - pulse) * 4.0)
+			draw_colored_polygon(bpts, Color(1.0, 0.15, 0.2, 0.22 * pulse))
+			var border: PackedVector2Array = PackedVector2Array(bpts)
+			border.append(bpts[0])
+			draw_polyline(border, Color(1.0, 0.2, 0.25, 0.95 * pulse), 2.4)
+
 	# 6. Hover
 	if _hover_valid:
 		var hc: Vector2 = _HexUtils.axial_to_pixel(_hover_coord, TILE_RADIUS)
@@ -234,6 +279,7 @@ func _draw() -> void:
 
 	# 7. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
+	_draw_satori_overlay()
 
 
 func _draw_pending_seed_previews() -> void:
@@ -293,6 +339,13 @@ func _draw_shrine_status_overlays() -> void:
 		var ring_center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 		draw_arc(ring_center, TILE_RADIUS * 0.55, 0.0, TAU, 24, Color(0.95, 0.92, 0.74, 0.95), 2.0)
 		_draw_seed_overlay_text(ring_center + Vector2(-14.0, -16.0), "Collect", 11, Color(0.95, 0.92, 0.74, 0.95))
+
+func _draw_satori_overlay() -> void:
+	var font: Font = ThemeDB.fallback_font
+	var label: String = "Satori %d/%d  •  Era %s" % [_satori_amount, _satori_cap, str(_satori_era).capitalize()]
+	var pos: Vector2 = Vector2(20.0, 28.0)
+	draw_string(font, pos + Vector2(1.0, 1.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.0, 0.0, 0.0, 0.7))
+	draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.94, 0.90, 0.78, 0.96))
 
 func _is_any_build_tile_built(coords: Array[Vector2i]) -> bool:
 	for coord: Vector2i in coords:

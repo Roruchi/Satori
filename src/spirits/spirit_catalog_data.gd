@@ -16,7 +16,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "spirit_hare",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 0.5, 0.0)
+			"color_hint": Color(1.0, 0.5, 0.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_mist_stag",
@@ -31,7 +33,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 1,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 1.0, 1.0)
+			"color_hint": Color(1.0, 1.0, 1.0),
+			"tier": 2,
+			"min_era": "awakening",
 		},
 		{
 			"spirit_id": "spirit_emerald_snake",
@@ -41,7 +45,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 5,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0],
-			"color_hint": Color(0.0, 0.7, 0.2)
+			"color_hint": Color(0.0, 0.7, 0.2),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_owl_of_silence",
@@ -51,7 +57,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0, 2, 7],
-			"color_hint": Color(0.5, 0.5, 0.5)
+			"color_hint": Color(0.5, 0.5, 0.5),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_tree_frog",
@@ -61,7 +69,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 2,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0, 1, 4],
-			"color_hint": Color(0.2, 0.8, 0.3)
+			"color_hint": Color(0.2, 0.8, 0.3),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_white_heron",
@@ -76,7 +86,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 1.0, 1.0)
+			"color_hint": Color(1.0, 1.0, 1.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_koi_fish",
@@ -91,7 +103,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 0.5, 0.0)
+			"color_hint": Color(1.0, 0.5, 0.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_river_otter",
@@ -106,7 +120,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 2,
 			"gift_payload": "recipe_chi_sui_fu",
-			"color_hint": Color(0.5, 0.3, 0.1)
+			"color_hint": Color(0.5, 0.3, 0.1),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_blue_kingfisher",
@@ -121,7 +137,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.0, 0.0, 1.0)
+			"color_hint": Color(0.0, 0.0, 1.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_dragonfly",
@@ -131,7 +149,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 2,
 			"wander_speed": 2.0,
 			"preferred_biomes": [1, 3, 4],
-			"color_hint": Color(0.2, 0.6, 0.9)
+			"color_hint": Color(0.2, 0.6, 0.9),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_mountain_goat",
@@ -146,7 +166,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.7, 0.7, 0.7)
+			"color_hint": Color(0.7, 0.7, 0.7),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_stone_golem",
@@ -156,7 +178,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 4,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0],
-			"color_hint": Color(0.5, 0.5, 0.5)
+			"color_hint": Color(0.5, 0.5, 0.5),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_granite_ram",
@@ -166,7 +190,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 6,
 			"wander_speed": 2.0,
 			"preferred_biomes": [2],
-			"color_hint": Color(0.4, 0.4, 0.4)
+			"color_hint": Color(0.4, 0.4, 0.4),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_sun_lizard",
@@ -176,7 +202,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [2, 5, 9],
-			"color_hint": Color(1.0, 1.0, 0.0)
+			"color_hint": Color(1.0, 1.0, 0.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_rock_badger",
@@ -186,7 +214,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [2, 7, 9],
-			"color_hint": Color(0.6, 0.5, 0.4)
+			"color_hint": Color(0.6, 0.5, 0.4),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_golden_bee",
@@ -201,7 +231,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 0.85, 0.0)
+			"color_hint": Color(1.0, 0.85, 0.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_jade_beetle",
@@ -211,7 +243,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 6,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0, 3],
-			"color_hint": Color(0.0, 0.6, 0.3)
+			"color_hint": Color(0.0, 0.6, 0.3),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_meadow_lark",
@@ -226,7 +260,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 4,
 			"gift_payload": "",
-			"color_hint": Color(1.0, 0.9, 0.3)
+			"color_hint": Color(1.0, 0.9, 0.3),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_field_mouse",
@@ -236,7 +272,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 2,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0, 1, 3, 4],
-			"color_hint": Color(0.7, 0.6, 0.5)
+			"color_hint": Color(0.7, 0.6, 0.5),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_hare",
@@ -246,7 +284,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 4,
 			"wander_speed": 2.0,
 			"preferred_biomes": [3, 0],
-			"color_hint": Color(0.9, 0.85, 0.8)
+			"color_hint": Color(0.9, 0.85, 0.8),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_marsh_frog",
@@ -256,7 +296,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [4, 1],
-			"color_hint": Color(0.1, 0.5, 0.2)
+			"color_hint": Color(0.1, 0.5, 0.2),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_peat_salamander",
@@ -266,7 +308,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [4, 1],
-			"color_hint": Color(0.3, 0.5, 0.3)
+			"color_hint": Color(0.3, 0.5, 0.3),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_swamp_crane",
@@ -276,7 +320,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 5,
 			"wander_speed": 2.0,
 			"preferred_biomes": [4, 1, 0],
-			"color_hint": Color(0.8, 0.9, 0.9)
+			"color_hint": Color(0.8, 0.9, 0.9),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_murk_crocodile",
@@ -286,7 +332,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 4,
 			"wander_speed": 2.0,
 			"preferred_biomes": [4, 1],
-			"color_hint": Color(0.2, 0.4, 0.2)
+			"color_hint": Color(0.2, 0.4, 0.2),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_mud_crab",
@@ -296,7 +344,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 2,
 			"wander_speed": 2.0,
 			"preferred_biomes": [4, 1],
-			"color_hint": Color(0.6, 0.5, 0.3)
+			"color_hint": Color(0.6, 0.5, 0.3),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_frost_owl",
@@ -306,7 +356,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 4,
 			"wander_speed": 2.0,
 			"preferred_biomes": [8, 0],
-			"color_hint": Color(0.9, 0.95, 1.0)
+			"color_hint": Color(0.9, 0.95, 1.0),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_boreal_wolf",
@@ -321,7 +373,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "spirit_tundra_lynx",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.7, 0.8, 0.9)
+			"color_hint": Color(0.7, 0.8, 0.9),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_tundra_lynx",
@@ -331,7 +385,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 5,
 			"wander_speed": 2.0,
 			"preferred_biomes": [8, 1],
-			"color_hint": Color(0.8, 0.75, 0.7)
+			"color_hint": Color(0.8, 0.75, 0.7),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_ice_cavern_bat",
@@ -341,7 +397,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 3,
 			"wander_speed": 2.0,
 			"preferred_biomes": [8, 0],
-			"color_hint": Color(0.6, 0.7, 0.9)
+			"color_hint": Color(0.6, 0.7, 0.9),
+			"tier": 1,
+			"min_era": "stillness",
 		},
 		{
 			"spirit_id": "spirit_sky_whale",
@@ -351,7 +409,9 @@ func get_entries() -> Array[Dictionary]:
 			"wander_radius": 50,
 			"wander_speed": 2.0,
 			"preferred_biomes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-			"color_hint": Color(0.4, 0.6, 1.0)
+			"color_hint": Color(0.4, 0.6, 1.0),
+			"tier": 4,
+			"min_era": "satori",
 		},
 		{
 			"spirit_id": "spirit_oyamatsumi",
@@ -366,7 +426,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.70, 0.70, 0.78)
+			"color_hint": Color(0.70, 0.70, 0.78),
+			"tier": 3,
+			"min_era": "flow",
 		},
 		{
 			"spirit_id": "spirit_suijin",
@@ -381,7 +443,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.30, 0.58, 0.78)
+			"color_hint": Color(0.30, 0.58, 0.78),
+			"tier": 3,
+			"min_era": "flow",
 		},
 		{
 			"spirit_id": "spirit_kagutsuchi",
@@ -396,7 +460,9 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.86, 0.42, 0.24)
+			"color_hint": Color(0.86, 0.42, 0.24),
+			"tier": 3,
+			"min_era": "flow",
 		},
 		{
 			"spirit_id": "spirit_fujin",
@@ -411,6 +477,8 @@ func get_entries() -> Array[Dictionary]:
 			"tension_partner_id": "",
 			"gift_type": 0,
 			"gift_payload": "",
-			"color_hint": Color(0.62, 0.74, 0.86)
+			"color_hint": Color(0.62, 0.74, 0.86),
+			"tier": 3,
+			"min_era": "flow",
 		},
 	]

@@ -2,6 +2,8 @@ class_name PatternMatcher
 extends RefCounted
 
 signal discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i])
+signal discovery_blocked(discovery_id: String, triggering_coords: Array[Vector2i], reason: String)
+const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
 
 var _loader: PatternLoader
 var _spatial_query: SpatialQuery
@@ -121,6 +123,13 @@ func scan_and_emit(grid: RefCounted) -> Array[DiscoverySignal]:
 			continue
 		if emitted_this_scan.has(payload.discovery_id):
 			continue
+		var satori_service: Node = Engine.get_main_loop().root.get_node_or_null("/root/SatoriService")
+		if satori_service != null and satori_service.has_method("can_build_structure"):
+			if not satori_service.can_build_structure(payload.discovery_id):
+				discovery_blocked.emit(payload.discovery_id, payload.triggering_coords, UNIQUE_ALREADY_BUILT_REASON)
+				if satori_service.has_method("block_structure_build"):
+					satori_service.block_structure_build(payload.discovery_id, UNIQUE_ALREADY_BUILT_REASON)
+				continue
 		discovery_triggered.emit(payload.discovery_id, payload.triggering_coords)
 		emitted_discoveries.append(payload)
 		newly_discovered_ids.append(payload.discovery_id)
@@ -130,4 +139,3 @@ func scan_and_emit(grid: RefCounted) -> Array[DiscoverySignal]:
 		_discovery_registry.mark_discoveries_atomically(newly_discovered_ids)
 
 	return emitted_discoveries
-

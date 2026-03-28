@@ -16,6 +16,12 @@ enum PatternType {
 @export var shape_recipe: Array[Dictionary] = []
 @export var neighbour_requirements: Dictionary = {}
 @export var prerequisite_ids: Array[String] = []
+@export var tier: int = 0
+@export var cap_increase: int = 0
+@export var is_unique: bool = false
+@export var housing_capacity: int = 0
+@export var effect_type: String = ""
+@export var effect_params: Dictionary = {}
 
 func is_valid_definition() -> bool:
 	if discovery_id.is_empty():

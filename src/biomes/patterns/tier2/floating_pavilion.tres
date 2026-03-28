@@ -15,3 +15,9 @@ shape_recipe = Array[Dictionary]([{
 }])
 neighbour_requirements = {}
 prerequisite_ids = Array[String]([])
+tier = 2
+cap_increase = 250
+is_unique = false
+housing_capacity = 0
+effect_type = "dropoff"
+effect_params = {}
