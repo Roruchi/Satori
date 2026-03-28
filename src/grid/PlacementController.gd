@@ -75,6 +75,10 @@ func _unhandled_input(event: InputEvent) -> void:
 							return
 						if not GameState.grid.is_placement_valid(coord):
 							return
+						var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+						if alchemy != null and alchemy.has_method("spend_for_biome_placement"):
+							if not alchemy.spend_for_biome_placement(selected_biome):
+								return
 						if growth_service.try_plant(coord, recipe):
 							pouch.consume_use_at(recipe_index)
 							if growth_service.has_method("notify_pouch_updated"):
@@ -82,6 +86,8 @@ func _unhandled_input(event: InputEvent) -> void:
 							if growth_service.has_method("get_mode") and int(growth_service.get_mode()) == GrowthModeScript.Value.INSTANT:
 								growth_service.try_bloom(coord)
 							return
+						if alchemy != null and alchemy.has_method("refund_for_biome_placement"):
+							alchemy.refund_for_biome_placement(selected_biome)
 				return
 
 func _on_long_press(coord: Vector2i) -> void:

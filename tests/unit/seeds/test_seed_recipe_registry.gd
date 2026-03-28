@@ -77,3 +77,36 @@ func test_existing_non_ku_pairing_compatibility_is_preserved() -> void:
 	var wetlands_recipe: SeedRecipe = registry.lookup([GodaiElement.Value.CHI, GodaiElement.Value.SUI])
 	assert_not_null(wetlands_recipe, "Chi+Sui must stay craftable")
 	assert_eq(wetlands_recipe.produces_biome, BiomeType.Value.WETLANDS, "Chi+Sui must produce Wetlands")
+
+
+func test_mix_consumes_element_charges_and_fails_when_depleted() -> void:
+	var root: Node = get_tree().root
+	var existing_growth: Node = root.get_node_or_null("/root/SeedGrowthService")
+	if existing_growth != null:
+		existing_growth.queue_free()
+		await get_tree().process_frame
+	var growth: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
+	growth.name = "SeedGrowthService"
+	root.add_child(growth)
+	growth._ready()
+
+	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
+	if existing_alchemy != null:
+		existing_alchemy.queue_free()
+		await get_tree().process_frame
+	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
+	alchemy.name = "SeedAlchemyService"
+	root.add_child(alchemy)
+	alchemy._ready()
+
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 1)
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.SUI, 1)
+
+	assert_true(alchemy.craft_seed([GodaiElement.Value.CHI, GodaiElement.Value.SUI]), "First craft should consume available charges")
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), 0, "Chi charge should be consumed")
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.SUI), 0, "Sui charge should be consumed")
+
+	assert_false(alchemy.craft_seed([GodaiElement.Value.CHI, GodaiElement.Value.SUI]), "Second craft should fail when charges are depleted")
+
+	alchemy.queue_free()
+	growth.queue_free()
