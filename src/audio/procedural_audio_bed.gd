@@ -89,6 +89,15 @@ var volume_db: float:
 	get:
 		return _volume_db
 
+var pitch_scale: float:
+	set(v):
+		if _player != null:
+			_player.pitch_scale = maxf(v, 0.01)
+	get:
+		if _player == null:
+			return 1.0
+		return _player.pitch_scale
+
 # ---------------------------------------------------------------------------
 # Internal synthesiser state
 # ---------------------------------------------------------------------------
@@ -124,6 +133,7 @@ func _ready() -> void:
 	_player.stream = gen
 	_player.bus = "Master"
 	_player.volume_db = _volume_db
+	_player.pitch_scale = 1.0
 	add_child(_player)
 	_player.play()
 	_playback = _player.get_stream_playback()
