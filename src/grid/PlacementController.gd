@@ -86,8 +86,9 @@ func _unhandled_input(event: InputEvent) -> void:
 							if growth_service.has_method("get_mode") and int(growth_service.get_mode()) == GrowthModeScript.Value.INSTANT:
 								growth_service.try_bloom(coord)
 							return
-						if alchemy != null and alchemy.has_method("refund_for_biome_placement"):
-							alchemy.refund_for_biome_placement(selected_biome)
+						else:
+							if alchemy != null and alchemy.has_method("refund_for_biome_placement"):
+								alchemy.refund_for_biome_placement(selected_biome)
 				return
 
 func _on_long_press(coord: Vector2i) -> void:

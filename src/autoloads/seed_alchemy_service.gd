@@ -25,7 +25,7 @@ var _discovered: Dictionary = {}
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
 	for element: int in _unlocked_elements:
-		_kusho_pool.set_charge(element, KushoPool.CAPACITY_PER_ELEMENT)
+		_kusho_pool.set_charge(element, KushoPoolScript.CAPACITY_PER_ELEMENT)
 	_kusho_pool.set_charge(GodaiElementScript.Value.KU, 0)
 
 func is_element_unlocked(element: int) -> bool:

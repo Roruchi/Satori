@@ -81,14 +81,13 @@ func test_existing_non_ku_pairing_compatibility_is_preserved() -> void:
 
 func test_mix_consumes_element_charges_and_fails_when_depleted() -> void:
 	var root: Node = get_tree().root
+	var created_growth: SeedGrowthServiceNode = null
 	var existing_growth: Node = root.get_node_or_null("/root/SeedGrowthService")
-	if existing_growth != null:
-		existing_growth.queue_free()
-		await get_tree().process_frame
-	var growth: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
-	growth.name = "SeedGrowthService"
-	root.add_child(growth)
-	growth._ready()
+	if existing_growth == null:
+		created_growth = SeedGrowthServiceNode.new()
+		created_growth.name = "SeedGrowthService"
+		root.add_child(created_growth)
+		created_growth._ready()
 
 	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
 	if existing_alchemy != null:
@@ -109,4 +108,5 @@ func test_mix_consumes_element_charges_and_fails_when_depleted() -> void:
 	assert_false(alchemy.craft_seed([GodaiElement.Value.CHI, GodaiElement.Value.SUI]), "Second craft should fail when charges are depleted")
 
 	alchemy.queue_free()
-	growth.queue_free()
+	if created_growth != null:
+		created_growth.queue_free()
