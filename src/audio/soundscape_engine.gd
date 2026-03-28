@@ -496,7 +496,8 @@ func _set_node_pitch(node: Node, pitch: float) -> void:
 func _tick_resonance(delta: float) -> void:
 	if _resonance_time_left > 0.0:
 		_resonance_time_left = maxf(0.0, _resonance_time_left - delta)
-	var ratio: float = _resonance_time_left / RESONANCE_DECAY_SECONDS
+	var safe_decay: float = maxf(RESONANCE_DECAY_SECONDS, 0.001)
+	var ratio: float = _resonance_time_left / safe_decay
 	_resonance_pitch_scale = 1.0 + (RESONANCE_MAX_PITCH_DELTA * ratio)
 	_apply_resonance_pitch()
 

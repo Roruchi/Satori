@@ -73,6 +73,7 @@ const MAX_FILL_FRAMES: int = 8192
 
 ## Volume threshold below which synthesis is skipped to save CPU.
 const SILENCE_THRESHOLD_DB: float = -74.0
+const MIN_PITCH_SCALE: float = 0.01
 
 # ---------------------------------------------------------------------------
 # Public properties
@@ -92,7 +93,7 @@ var volume_db: float:
 var pitch_scale: float:
 	set(v):
 		if _player != null:
-			_player.pitch_scale = maxf(v, 0.01)
+			_player.pitch_scale = maxf(v, MIN_PITCH_SCALE)
 	get:
 		if _player == null:
 			return 1.0

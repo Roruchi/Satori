@@ -246,5 +246,11 @@ func test_soundscape_engine_keisu_resonance_triggers_and_decays() -> void:
 	engine._process(2.5)
 	assert_gt(engine.get_resonance_pitch_scale(), 1.0, "Pitch should still be elevated mid-decay")
 
+	engine._process(2.49)
+	assert_gt(engine.get_resonance_pitch_scale(), 1.0, "Pitch should remain above neutral just before full decay")
+
+	engine._process(0.01)
+	assert_almost_eq(engine.get_resonance_pitch_scale(), 1.0, 0.001, "Pitch should reach neutral at 5-second boundary")
+
 	engine._process(3.0)
 	assert_almost_eq(engine.get_resonance_pitch_scale(), 1.0, 0.001, "Pitch should return to neutral after decay")
