@@ -159,3 +159,32 @@ func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 		svc._on_discovery_triggered(deity_id, coords)
 		assert_true(svc._active_instances.has(deity_id), "Expected active instance for %s" % deity_id)
 	svc.queue_free()
+
+func test_housing_snapshot_reports_housed_and_unhoused_counts() -> void:
+	var root: Node = get_tree().root
+	var satori_service: SatoriServiceNode = SatoriServiceNode.new()
+	satori_service.name = "SatoriService"
+	root.add_child(satori_service)
+	satori_service._structures = [
+		{"discovery_id": "disc_deep_stand", "housing_capacity": 1},
+		{"discovery_id": "disc_glade", "housing_capacity": 1},
+	]
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._active_instances["spirit_red_fox"] = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
+	svc._active_instances["spirit_mist_stag"] = SpiritInstance.create("spirit_mist_stag", Vector2i(1, 0), Rect2i())
+	svc._active_instances["spirit_hare"] = SpiritInstance.create("spirit_hare", Vector2i(2, 0), Rect2i())
+	var snapshot: Dictionary = svc.get_housing_snapshot()
+	assert_eq(int(snapshot.get("housed_count", -1)), 2)
+	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
+	svc.queue_free()
+	satori_service.queue_free()
+
+func test_era_drop_despawns_spirits_below_required_threshold() -> void:
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var stag: SpiritInstance = SpiritInstance.create("spirit_mist_stag", Vector2i.ZERO, Rect2i())
+	svc._active_instances["spirit_mist_stag"] = stag
+	svc._on_era_changed(SatoriIds.ERA_STILLNESS)
+	assert_false(svc._active_instances.has("spirit_mist_stag"), "Tier2 spirit should despawn in Stillness era")
+	svc.queue_free()

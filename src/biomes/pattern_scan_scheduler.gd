@@ -6,6 +6,7 @@ const PatternMatcherScript = preload("res://src/biomes/pattern_matcher.gd")
 signal scan_requested(scan_id: int, placement_coord: Vector2i)
 signal scan_completed(scan_id: int, duration_ms: float)
 signal discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i])
+signal discovery_blocked(discovery_id: String, triggering_coords: Array[Vector2i], reason: String)
 signal scan_metrics_updated(last_duration_ms: float, average_duration_ms: float, max_duration_ms: float, scan_count: int)
 
 var _queue: Array[Vector2i] = []
@@ -23,8 +24,12 @@ func _init() -> void:
 func _attach_matcher(matcher: RefCounted) -> void:
 	if _matcher != null and _matcher.has_signal("discovery_triggered") and _matcher.discovery_triggered.is_connected(_on_matcher_discovery_triggered):
 		_matcher.discovery_triggered.disconnect(_on_matcher_discovery_triggered)
+	if _matcher != null and _matcher.has_signal("discovery_blocked") and _matcher.discovery_blocked.is_connected(_on_matcher_discovery_blocked):
+		_matcher.discovery_blocked.disconnect(_on_matcher_discovery_blocked)
 	_matcher = matcher
 	_matcher.discovery_triggered.connect(_on_matcher_discovery_triggered)
+	if _matcher.has_signal("discovery_blocked"):
+		_matcher.discovery_blocked.connect(_on_matcher_discovery_blocked)
 
 func set_matcher_for_testing(matcher: RefCounted) -> void:
 	_attach_matcher(matcher)
@@ -87,6 +92,9 @@ func _default_grid_provider() -> RefCounted:
 
 func _on_matcher_discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i]) -> void:
 	discovery_triggered.emit(discovery_id, triggering_coords)
+
+func _on_matcher_discovery_blocked(discovery_id: String, triggering_coords: Array[Vector2i], reason: String) -> void:
+	discovery_blocked.emit(discovery_id, triggering_coords, reason)
 
 func _on_tile_placed(coord: Vector2i, _tile: GardenTile) -> void:
 	enqueue_scan(coord)

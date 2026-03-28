@@ -2,6 +2,7 @@ class_name SpiritService
 extends Node
 
 signal spirit_summoned(spirit_id: String, instance: SpiritInstance)
+signal spirit_despawned(spirit_id: String)
 signal riddle_hint_triggered(spirit_id: String, riddle_text: String)
 signal sky_whale_event_triggered()
 
@@ -10,6 +11,7 @@ const _SpiritGiftProcessorScript = preload("res://src/spirits/SpiritGiftProcesso
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SpiritGiftTypeScript = preload("res://src/spirits/SpiritGiftType.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
+const SatoriConditionEvaluatorScript = preload("res://src/satori/SatoriConditionEvaluator.gd")
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -18,8 +20,10 @@ var _sky_whale_evaluator: SkyWhaleEvaluator
 ## Keyed by compound key "island_{island_id}|spirit_{spirit_id}" when island_id
 ## is known, or bare spirit_id for spirits without island scope (e.g. Sky Whale).
 var _active_instances: Dictionary = {}
+var _active_wanderers: Dictionary = {}
 var _riddle_shown: Dictionary = {}
 var _spirit_patterns: Array[PatternDefinition] = []
+var _current_era: StringName = &"stillness"
 
 func _ready() -> void:
 	_catalog = SpiritCatalog.new()
@@ -38,6 +42,11 @@ func _ready() -> void:
 	call_deferred("_setup_spawner")
 	call_deferred("restore_from_persistence")
 	call_deferred("_connect_soundscape")
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service != null and satori_service.has_signal("era_changed"):
+		satori_service.era_changed.connect(_on_era_changed)
+		if satori_service.has_method("get_current_era"):
+			_current_era = satori_service.get_current_era()
 
 func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
@@ -70,6 +79,7 @@ func restore_from_persistence() -> void:
 		_active_instances[key] = instance
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		var wanderer: Node = _spawner.spawn(instance, entry)
+		_active_wanderers[key] = wanderer
 		var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 		if ecology != null and ecology.has_method("register_wanderer"):
 			ecology.register_wanderer(wanderer)
@@ -95,6 +105,7 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
 	var wanderer: Node = _spawner.spawn(instance, entry)
+	_active_wanderers[key] = wanderer
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state != null:
 		var grid: RefCounted = game_state.grid
@@ -170,6 +181,37 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 func active_count() -> int:
 	return _active_instances.size()
 
+func get_housing_snapshot() -> Dictionary:
+	var total_active: int = _active_instances.size()
+	var bonus_capacity: int = 0
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service != null and satori_service.has_method("get_spirit_housing_capacity_bonus"):
+		bonus_capacity = int(satori_service.get_spirit_housing_capacity_bonus())
+	var housed_count: int = mini(total_active, maxi(bonus_capacity, 0))
+	var unhoused_count: int = maxi(total_active - housed_count, 0)
+	var remaining_housed: int = housed_count
+
+	var housed_by_island: Dictionary = {}
+	if remaining_housed > 0:
+		for key_variant: Variant in _active_instances.keys():
+			var key: String = str(key_variant)
+			var instance: SpiritInstance = _active_instances[key]
+			if instance == null:
+				continue
+			if instance.island_id.is_empty():
+				continue
+			if remaining_housed <= 0:
+				break
+			housed_by_island[instance.island_id] = int(housed_by_island.get(instance.island_id, 0)) + 1
+			remaining_housed -= 1
+
+	var final_housed: int = housed_count
+	return {
+		"housed_count": final_housed,
+		"unhoused_count": unhoused_count,
+		"housed_by_island": housed_by_island,
+	}
+
 func get_catalog_entry(spirit_id: String) -> Dictionary:
 	return _catalog.lookup(spirit_id)
 
@@ -190,6 +232,36 @@ func _is_spirit_active_anywhere(spirit_id: String) -> bool:
 		if str(key).ends_with(suffix):
 			return true
 	return false
+
+func _on_era_changed(new_era: StringName) -> void:
+	_current_era = new_era
+	_apply_era_requirements()
+
+func _apply_era_requirements() -> void:
+	var keys_to_remove: Array[String] = []
+	for key_variant: Variant in _active_instances.keys():
+		var key: String = str(key_variant)
+		var instance: SpiritInstance = _active_instances[key]
+		if instance == null:
+			continue
+		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
+		var required_era: StringName = StringName(str(entry.get("min_era", "stillness")))
+		if SatoriConditionEvaluatorScript.era_meets_requirement(_current_era, required_era):
+			continue
+		keys_to_remove.append(key)
+	for key: String in keys_to_remove:
+		_despawn_by_key(key)
+
+func _despawn_by_key(key: String) -> void:
+	var instance: SpiritInstance = _active_instances.get(key)
+	if instance == null:
+		return
+	var wanderer: Node = _active_wanderers.get(key)
+	if wanderer != null:
+		wanderer.queue_free()
+	_active_wanderers.erase(key)
+	_active_instances.erase(key)
+	spirit_despawned.emit(instance.spirit_id)
 
 ## Look up the island_id for the first valid coord in a triggering-coords array.
 ## Returns "" if the coord is not in the grid or has no island_id (e.g., Ku tile).

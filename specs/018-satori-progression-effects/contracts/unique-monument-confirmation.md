@@ -38,3 +38,13 @@ Define mandatory pre-confirmation behavior for build-once Tier 3 monuments.
 1. First monument build succeeds.
 2. Second build attempt for same monument is blocked 100% of attempts.
 3. Non-unique structures remain unaffected.
+
+## Implementation sync notes
+
+- Unique metadata fields are present on structure definitions (`PatternDefinition.is_unique`) and tier3 resources.
+- Guard behavior is implemented in both:
+  - `src/biomes/pattern_matcher.gd` (scan/emit blocking via `discovery_blocked` signal)
+  - `src/grid/PlacementController.gd` (pre-confirmation build-path guard using `SatoriService.can_build_structure`)
+- Blocked feedback routing:
+  - `src/biomes/pattern_scan_scheduler.gd` forwards `discovery_blocked`
+  - `src/grid/GardenView.gd` renders blocked-state pulse/highlight for attempted duplicate unique monuments

@@ -122,9 +122,18 @@ func _try_build_shrine(coord: Vector2i) -> bool:
 		return false
 	tile.metadata["shrine_built"] = true
 	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if not discovery_id.is_empty() and satori_service != null and satori_service.has_method("can_build_structure"):
+		if not satori_service.can_build_structure(discovery_id):
+			if satori_service.has_method("block_structure_build"):
+				satori_service.block_structure_build(discovery_id, "unique_already_built")
+			tile.metadata["shrine_built"] = false
+			return false
 	if not discovery_id.is_empty():
 		var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
 		if persistence != null and persistence.has_method("record_discovery"):
 			var payload: DiscoveryPayload = DiscoveryPayload.create(discovery_id, [coord], {"display_name": discovery_id, "flavor_text": "", "audio_key": ""})
 			persistence.record_discovery(payload)
+		if satori_service != null and satori_service.has_method("apply_monument_on_build"):
+			satori_service.apply_monument_on_build(discovery_id)
 	return true

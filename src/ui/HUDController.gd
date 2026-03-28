@@ -52,6 +52,8 @@ enum Mode {
 @onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/SeedPouchDisplay
 @onready var _settings_button: Button = $Root/TopBar/SettingsButton
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
+@onready var _satori_label: Label = $Root/TopBar/SatoriLabel
+@onready var _era_label: Label = $Root/TopBar/EraLabel
 
 var _mode: int = Mode.PLANT
 var _tile_selector_hex: Node2D = null
@@ -92,6 +94,16 @@ func _ready() -> void:
 		push_warning("HUDController could not connect to GardenSettings.growth_mode_changed")
 		_on_growth_mode_changed(GrowthModeScript.Value.REAL_TIME)
 	_set_mode(Mode.PLANT)
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service != null:
+		if satori_service.has_signal("satori_changed"):
+			satori_service.satori_changed.connect(_on_satori_changed)
+		if satori_service.has_signal("era_changed"):
+			satori_service.era_changed.connect(_on_era_changed)
+		if satori_service.has_method("get_current_satori") and satori_service.has_method("get_current_cap"):
+			_on_satori_changed(int(satori_service.get_current_satori()), int(satori_service.get_current_cap()))
+		if satori_service.has_method("get_current_era"):
+			_on_era_changed(satori_service.get_current_era())
 
 func _layout_mix_panel() -> void:
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
@@ -115,6 +127,12 @@ func _layout_codex_panel() -> void:
 
 func _on_growth_mode_changed(mode: int) -> void:
 	_instant_badge.visible = mode == GrowthModeScript.Value.INSTANT
+
+func _on_satori_changed(current: int, cap: int) -> void:
+	_satori_label.text = "Satori: %d/%d" % [current, cap]
+
+func _on_era_changed(new_era: StringName) -> void:
+	_era_label.text = "Era: %s" % str(new_era).capitalize()
 
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode

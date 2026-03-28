@@ -50,3 +50,8 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	# Enqueue for UI notification
 	if _queue != null:
 		_queue.enqueue(payload)
+
+func get_catalog_entries() -> Dictionary:
+	if _catalog == null:
+		return {}
+	return _catalog.get_entries()

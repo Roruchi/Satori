@@ -51,3 +51,15 @@ On any Satori update:
 
 1. This contract does not define visual styling of era UI widgets.
 2. This contract does not alter unrelated discovery/spawn systems beyond era-based eligibility predicates.
+
+## Implementation sync notes
+
+- Era constants and threshold helpers are centralized in `src/satori/SatoriIds.gd` and `src/satori/SatoriConditionEvaluator.gd`.
+- Runtime progression authority is implemented in `src/autoloads/satori_service.gd`:
+  - `satori_changed(current, cap)`
+  - `satori_cap_changed(cap)`
+  - `era_changed(new_era)` only on actual threshold crossings
+- Spirit-tier gating/despawn hook is wired in `src/spirits/spirit_service.gd` via `SatoriService.era_changed`.
+- HUD/player-facing updates are wired in:
+  - `src/ui/HUDController.gd` (`SatoriLabel`, `EraLabel`)
+  - `src/grid/GardenView.gd` in-world text overlay fallback

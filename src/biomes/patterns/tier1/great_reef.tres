@@ -14,3 +14,9 @@ neighbour_requirements = {"radius": 5,
 "biomes": {1: 15,
 2: 3}}
 prerequisite_ids = Array[String]([])
+tier = 1
+cap_increase = 50
+is_unique = false
+housing_capacity = 1
+effect_type = "dwelling"
+effect_params = {}

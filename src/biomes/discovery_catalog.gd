@@ -9,6 +9,9 @@ func load_from_data(data: DiscoveryCatalogData) -> void:
 	for entry in data.get_tier2_entries():
 		_entries[entry["discovery_id"]] = entry
 
+func get_entries() -> Dictionary:
+	return _entries.duplicate(true)
+
 func lookup(discovery_id: String) -> Dictionary:
 	if not _entries.has(discovery_id):
 		return {}

@@ -13,3 +13,9 @@ shape_recipe = Array[Dictionary]([])
 neighbour_requirements = {"radius": 1,
 "biomes": {2: 1}}
 prerequisite_ids = Array[String](["disc_river", "disc_mountain_peak"])
+tier = 1
+cap_increase = 50
+is_unique = false
+housing_capacity = 1
+effect_type = "dwelling"
+effect_params = {}

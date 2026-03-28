@@ -13,3 +13,9 @@ shape_recipe = Array[Dictionary]([])
 neighbour_requirements = {"radius": 1,
 "biomes": {3: 5}}
 prerequisite_ids = Array[String]([])
+tier = 2
+cap_increase = 250
+is_unique = false
+housing_capacity = 0
+effect_type = "tending_boost"
+effect_params = {}

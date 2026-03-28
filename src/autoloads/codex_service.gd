@@ -77,14 +77,18 @@ func _register_discovery_entries() -> void:
 		)
 
 func _register_structure_entries() -> void:
-	var dir: DirAccess = DirAccess.open("res://src/biomes/patterns/tier2/")
+	_register_structure_entries_from_dir("res://src/biomes/patterns/tier2/")
+	_register_structure_entries_from_dir("res://src/biomes/patterns/tier3/")
+
+func _register_structure_entries_from_dir(dir_path: String) -> void:
+	var dir: DirAccess = DirAccess.open(dir_path)
 	if dir == null:
 		return
 	dir.list_dir_begin()
 	var filename: String = dir.get_next()
 	while filename != "":
 		if not dir.current_is_dir() and filename.ends_with(".tres"):
-			var path: String = "res://src/biomes/patterns/tier2/%s" % filename
+			var path: String = "%s%s" % [dir_path, filename]
 			var resource: Resource = load(path)
 			if resource != null:
 				var discovery_id: String = str(resource.get("discovery_id"))
