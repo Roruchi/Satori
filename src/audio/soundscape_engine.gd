@@ -45,6 +45,8 @@ const SAMPLE_INTERVAL: float = 0.1
 
 ## Global BPM for all rhythmic spirit layers.  Slow and calming.
 const GLOBAL_BPM: float = 72.0
+const RESONANCE_DECAY_SECONDS: float = 5.0
+const RESONANCE_MAX_PITCH_DELTA: float = 0.12
 
 # ---------------------------------------------------------------------------
 # Biome-bed optional .ogg paths  (BiomeType.Value → res:// path)
@@ -147,6 +149,8 @@ var _muted: bool = false
 
 ## Accumulator for viewport re-sample throttle.
 var _sample_timer: float = 0.0
+var _resonance_time_left: float = 0.0
+var _resonance_pitch_scale: float = 1.0
 
 # ---------------------------------------------------------------------------
 # Lifecycle
@@ -180,6 +184,7 @@ func _try_connect_spirit_service_in(node: Node) -> void:
 
 
 func _process(delta: float) -> void:
+	_tick_resonance(delta)
 	_sample_timer += delta
 	if _sample_timer >= SAMPLE_INTERVAL:
 		_sample_timer = 0.0
@@ -188,6 +193,13 @@ func _process(delta: float) -> void:
 	_lerp_biome_volumes(delta)
 	_lerp_spirit_volumes(delta)
 	_tick_stinger_queue()
+
+func trigger_keisu_resonance() -> void:
+	_resonance_time_left = RESONANCE_DECAY_SECONDS
+	_apply_resonance_pitch()
+
+func get_resonance_pitch_scale() -> float:
+	return _resonance_pitch_scale
 
 
 # ---------------------------------------------------------------------------
@@ -474,6 +486,31 @@ func _set_node_volume(node: Node, db: float) -> void:
 		(node as AudioStreamPlayer).volume_db = db
 	elif node is ProceduralAudioBed:
 		(node as ProceduralAudioBed).volume_db = db
+
+func _set_node_pitch(node: Node, pitch: float) -> void:
+	if node is AudioStreamPlayer:
+		(node as AudioStreamPlayer).pitch_scale = pitch
+	elif node is ProceduralAudioBed:
+		(node as ProceduralAudioBed).pitch_scale = pitch
+
+func _tick_resonance(delta: float) -> void:
+	if _resonance_time_left > 0.0:
+		_resonance_time_left = maxf(0.0, _resonance_time_left - delta)
+	var safe_decay: float = maxf(RESONANCE_DECAY_SECONDS, 0.001)
+	var ratio: float = _resonance_time_left / safe_decay
+	_resonance_pitch_scale = 1.0 + (RESONANCE_MAX_PITCH_DELTA * ratio)
+	_apply_resonance_pitch()
+
+func _apply_resonance_pitch() -> void:
+	var pitch: float = _resonance_pitch_scale
+	if _neutral_player != null:
+		_neutral_player.pitch_scale = pitch
+	if _stinger_player != null:
+		_stinger_player.pitch_scale = pitch
+	for biome: int in _biome_players.keys():
+		_set_node_pitch(_biome_players[biome] as Node, pitch)
+	for spirit_id: String in _spirit_players.keys():
+		_set_node_pitch(_spirit_players[spirit_id] as Node, pitch)
 
 
 ## Enable looping on a concrete AudioStream subtype (.ogg or .mp3).

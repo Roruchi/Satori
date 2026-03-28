@@ -8,11 +8,13 @@ const MIX_PANEL_SCREEN_MARGIN: float = 16.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
-const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "☷"]
-const MODE_TAB_TITLES: Array[String] = ["Plant", "Mix", "Codex"]
+const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "⌘", "✋", "☷"]
+const MODE_TAB_TITLES: Array[String] = ["Plant", "Mix", "Build", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
+	Color(0.72, 0.62, 0.84),
+	Color(0.71, 0.80, 0.90),
 	Color(0.58, 0.50, 0.32),
 ]
 const MODE_TAB_ACTIVE_BG := Color(0.95, 0.89, 0.73, 1.0)
@@ -30,11 +32,15 @@ const MODE_TAB_INDICATOR_INSET_Y := 8.0
 enum Mode {
 	PLANT,
 	MIX,
+	BUILD,
+	INTERACT,
 	CODEX,
 }
 
 @onready var _plant_button: Button = $Root/BottomBar/PlantButton
 @onready var _mix_button: Button = $Root/BottomBar/MixButton
+@onready var _build_button: Button = $Root/BottomBar/BuildButton
+@onready var _interact_button: Button = $Root/BottomBar/InteractButton
 @onready var _codex_button: Button = $Root/BottomBar/CodexButton
 @onready var _root: Control = $Root
 @onready var _bottom_bar: HBoxContainer = $Root/BottomBar
@@ -69,6 +75,8 @@ func _ready() -> void:
 	call_deferred("_layout_mode_tab_indicator")
 	_plant_button.pressed.connect(func() -> void: _set_mode(Mode.PLANT))
 	_mix_button.pressed.connect(func() -> void: _set_mode(Mode.MIX))
+	_build_button.pressed.connect(func() -> void: _set_mode(Mode.BUILD))
+	_interact_button.pressed.connect(func() -> void: _set_mode(Mode.INTERACT))
 	_codex_button.pressed.connect(func() -> void: _set_mode(Mode.CODEX))
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_tile_selector_hex = get_node_or_null("../TileSelector/TileSelectorHex")
@@ -118,12 +126,20 @@ func _set_mode(next_mode: int) -> void:
 	_pouch_display.visible = _mode != Mode.CODEX
 	_apply_mode_tab_state(_plant_button, _mode == Mode.PLANT, 0)
 	_apply_mode_tab_state(_mix_button, _mode == Mode.MIX, 1)
-	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 2)
+	_apply_mode_tab_state(_build_button, _mode == Mode.BUILD, 2)
+	_apply_mode_tab_state(_interact_button, _mode == Mode.INTERACT, 3)
+	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 4)
 	call_deferred("_refresh_mode_tab_motion", _mode_tabs_initialized)
 	_mode_tabs_initialized = true
 
 func is_plant_mode() -> bool:
 	return _mode == Mode.PLANT
+
+func is_build_mode() -> bool:
+	return _mode == Mode.BUILD
+
+func is_interact_mode() -> bool:
+	return _mode == Mode.INTERACT
 
 func _on_settings_pressed() -> void:
 	if _settings_menu != null:
@@ -157,8 +173,8 @@ func _style_mode_tabs() -> void:
 	indicator_style.corner_radius_bottom_right = 12
 	_active_tab_indicator.add_theme_stylebox_override("panel", indicator_style)
 	_bottom_bar.add_theme_constant_override("separation", 12)
-	for button_index: int in 3:
-		var button: Button = [_plant_button, _mix_button, _codex_button][button_index]
+	for button_index: int in 5:
+		var button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][button_index]
 		button.custom_minimum_size = Vector2(0, 72)
 		button.clip_text = false
 		button.add_theme_font_size_override("font_size", 18)
@@ -201,14 +217,14 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)
-	for button_index: int in 3:
-		var button: Button = [_plant_button, _mix_button, _codex_button][button_index]
+	for button_index: int in 5:
+		var button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][button_index]
 		var is_active: bool = button_index == _mode
 		button.z_index = 2 if is_active else 1
 		button.scale = Vector2.ONE
 
 func _layout_mode_tab_indicator(animated: bool = false) -> void:
-	var active_button: Button = [_plant_button, _mix_button, _codex_button][_mode]
+	var active_button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][_mode]
 	var local_origin: Vector2 = active_button.global_position - _bottom_tray.global_position
 	var indicator_position: Vector2 = Vector2(
 		local_origin.x + MODE_TAB_INDICATOR_INSET_X,

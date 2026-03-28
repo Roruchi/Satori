@@ -73,6 +73,7 @@ const MAX_FILL_FRAMES: int = 8192
 
 ## Volume threshold below which synthesis is skipped to save CPU.
 const SILENCE_THRESHOLD_DB: float = -74.0
+const MIN_PITCH_SCALE: float = 0.01
 
 # ---------------------------------------------------------------------------
 # Public properties
@@ -88,6 +89,15 @@ var volume_db: float:
 			_player.volume_db = v
 	get:
 		return _volume_db
+
+var pitch_scale: float:
+	set(v):
+		if _player != null:
+			_player.pitch_scale = maxf(v, MIN_PITCH_SCALE)
+	get:
+		if _player == null:
+			return 1.0
+		return _player.pitch_scale
 
 # ---------------------------------------------------------------------------
 # Internal synthesiser state
@@ -124,6 +134,7 @@ func _ready() -> void:
 	_player.stream = gen
 	_player.bus = "Master"
 	_player.volume_db = _volume_db
+	_player.pitch_scale = 1.0
 	add_child(_player)
 	_player.play()
 	_playback = _player.get_stream_playback()

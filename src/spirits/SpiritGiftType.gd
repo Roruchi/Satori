@@ -8,4 +8,5 @@ enum Value {
 	POUCH_EXPAND = 3,
 	GROWING_SLOT_EXPAND = 4,
 	CODEX_REVEAL = 5,
+	GODAI_CHARGE = 6,
 }

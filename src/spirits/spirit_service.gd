@@ -7,6 +7,9 @@ signal sky_whale_event_triggered()
 
 const _PatternLoaderScript = preload("res://src/biomes/pattern_loader.gd")
 const _SpiritGiftProcessorScript = preload("res://src/spirits/SpiritGiftProcessor.gd")
+const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const SpiritGiftTypeScript = preload("res://src/spirits/SpiritGiftType.gd")
+const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -92,6 +95,13 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
 	var wanderer: Node = _spawner.spawn(instance, entry)
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state != null:
+		var grid: RefCounted = game_state.grid
+		if grid != null and grid.has_method("get_tile"):
+			var spawn_tile: GardenTile = grid.get_tile(spawn)
+			if spawn_tile != null:
+				spawn_tile.metadata["spirit_id"] = spirit_id
 	_SpiritGiftProcessorScript.process(spirit_id, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 	if ecology != null and ecology.has_method("register_wanderer"):
@@ -103,6 +113,8 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
 	if persistence != null and persistence.has_method("record_instance"):
 		persistence.record_instance(instance)
+	_maybe_mark_shrine_buildable(instance)
+	_maybe_queue_godai_charge_drop(spirit_id, entry)
 
 func _on_tile_placed(_coord: Vector2i, _tile: GardenTile) -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
@@ -195,3 +207,84 @@ func _island_for_coords(coords: Array[Vector2i]) -> String:
 		if not iid.is_empty():
 			return iid
 	return ""
+
+func _maybe_mark_shrine_buildable(instance: SpiritInstance) -> void:
+	if instance == null:
+		return
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	var grid: RefCounted = game_state.grid
+	if grid == null or not grid.has_method("get_tile"):
+		return
+	var tile: GardenTile = grid.get_tile(instance.spawn_coord)
+	if tile == null:
+		return
+	tile.metadata["shrine_buildable"] = true
+	tile.metadata["shrine_built"] = false
+	tile.metadata["shrine_spirit_id"] = instance.spirit_id
+
+func _maybe_queue_godai_charge_drop(spirit_id: String, entry: Dictionary) -> void:
+	var elements: Array[int] = _elements_for_spirit_charge(entry)
+	if elements.is_empty():
+		return
+	var element_parts: PackedStringArray = []
+	for element: int in elements:
+		element_parts.append(str(element))
+	_SpiritGiftProcessorScript.process_gift(
+		SpiritGiftTypeScript.Value.GODAI_CHARGE,
+		StringName("%s:%s" % [spirit_id, ",".join(element_parts)])
+	)
+
+func _elements_for_spirit_charge(entry: Dictionary) -> Array[int]:
+	var elements: Array[int] = []
+	var seen: Dictionary = {}
+	var preferred_variant: Variant = entry.get("preferred_biomes", [])
+	if preferred_variant is Array:
+		var preferred_biomes: Array = preferred_variant as Array
+		for biome_variant: Variant in preferred_biomes:
+			var biome: int = int(biome_variant)
+			var mapped: Array[int] = _elements_for_biome(biome)
+			for element: int in mapped:
+				if seen.has(element):
+					continue
+				seen[element] = true
+				elements.append(element)
+	if elements.is_empty():
+		elements.append(GodaiElementScript.Value.CHI)
+	return elements
+
+func _elements_for_biome(biome: int) -> Array[int]:
+	match biome:
+		BiomeTypeScript.Value.STONE:
+			return [GodaiElementScript.Value.CHI]
+		BiomeTypeScript.Value.RIVER:
+			return [GodaiElementScript.Value.SUI]
+		BiomeTypeScript.Value.EMBER_FIELD:
+			return [GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.MEADOW:
+			return [GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.WETLANDS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.SUI]
+		BiomeTypeScript.Value.BADLANDS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.WHISTLING_CANYONS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.PRISMATIC_TERRACES:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.FROSTLANDS:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.THE_ASHFALL:
+			return [GodaiElementScript.Value.KA, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.SACRED_STONE:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.MOONLIT_POOL:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.EMBER_SHRINE:
+			return [GodaiElementScript.Value.KA, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.CLOUD_RIDGE:
+			return [GodaiElementScript.Value.FU, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.KU:
+			return [GodaiElementScript.Value.KU]
+		_:
+			return []

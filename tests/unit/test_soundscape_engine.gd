@@ -232,3 +232,25 @@ func test_soundscape_engine_unknown_spirit_not_added() -> void:
 		engine._spirit_order.has("spirit_unknown_creature"),
 		"Unknown spirit should not be added to spirit order (no rhythm entry)"
 	)
+
+
+func test_soundscape_engine_keisu_resonance_triggers_and_decays() -> void:
+	var engine := Node.new()
+	engine.set_script(load("res://src/audio/soundscape_engine.gd"))
+	add_child(engine)
+
+	assert_almost_eq(engine.get_resonance_pitch_scale(), 1.0, 0.001, "Pitch should start neutral")
+	engine.trigger_keisu_resonance()
+	assert_gt(engine.get_resonance_pitch_scale(), 1.0, "Pitch should rise above neutral after trigger")
+
+	engine._process(2.5)
+	assert_gt(engine.get_resonance_pitch_scale(), 1.0, "Pitch should still be elevated mid-decay")
+
+	engine._process(2.49)
+	assert_gt(engine.get_resonance_pitch_scale(), 1.0, "Pitch should remain above neutral just before full decay")
+
+	engine._process(0.01)
+	assert_almost_eq(engine.get_resonance_pitch_scale(), 1.0, 0.001, "Pitch should reach neutral at 5-second boundary")
+
+	engine._process(3.0)
+	assert_almost_eq(engine.get_resonance_pitch_scale(), 1.0, 0.001, "Pitch should return to neutral after decay")
