@@ -225,28 +225,66 @@ func _maybe_mark_shrine_buildable(instance: SpiritInstance) -> void:
 	tile.metadata["shrine_spirit_id"] = instance.spirit_id
 
 func _maybe_queue_godai_charge_drop(spirit_id: String, entry: Dictionary) -> void:
-	var element: int = _element_for_spirit_charge(spirit_id, entry)
-	if element < GodaiElementScript.Value.CHI or element > GodaiElementScript.Value.KU:
+	var elements: Array[int] = _elements_for_spirit_charge(entry)
+	if elements.is_empty():
 		return
-	_SpiritGiftProcessorScript.process_gift(SpiritGiftTypeScript.Value.GODAI_CHARGE, StringName("%s:%d" % [spirit_id, element]))
+	var element_parts: PackedStringArray = []
+	for element: int in elements:
+		element_parts.append(str(element))
+	_SpiritGiftProcessorScript.process_gift(
+		SpiritGiftTypeScript.Value.GODAI_CHARGE,
+		StringName("%s:%s" % [spirit_id, ",".join(element_parts)])
+	)
 
-func _element_for_spirit_charge(spirit_id: String, entry: Dictionary) -> int:
-	if spirit_id == "spirit_mist_stag":
-		return GodaiElementScript.Value.KU
+func _elements_for_spirit_charge(entry: Dictionary) -> Array[int]:
+	var elements: Array[int] = []
+	var seen: Dictionary = {}
 	var preferred_variant: Variant = entry.get("preferred_biomes", [])
 	if preferred_variant is Array:
 		var preferred_biomes: Array = preferred_variant as Array
 		for biome_variant: Variant in preferred_biomes:
 			var biome: int = int(biome_variant)
-			match biome:
-				BiomeTypeScript.Value.STONE, BiomeTypeScript.Value.SACRED_STONE:
-					return GodaiElementScript.Value.CHI
-				BiomeTypeScript.Value.RIVER, BiomeTypeScript.Value.MOONLIT_POOL:
-					return GodaiElementScript.Value.SUI
-				BiomeTypeScript.Value.EMBER_FIELD, BiomeTypeScript.Value.EMBER_SHRINE:
-					return GodaiElementScript.Value.KA
-				BiomeTypeScript.Value.MEADOW, BiomeTypeScript.Value.CLOUD_RIDGE:
-					return GodaiElementScript.Value.FU
-				BiomeTypeScript.Value.KU:
-					return GodaiElementScript.Value.KU
-	return GodaiElementScript.Value.CHI
+			var mapped: Array[int] = _elements_for_biome(biome)
+			for element: int in mapped:
+				if seen.has(element):
+					continue
+				seen[element] = true
+				elements.append(element)
+	if elements.is_empty():
+		elements.append(GodaiElementScript.Value.CHI)
+	return elements
+
+func _elements_for_biome(biome: int) -> Array[int]:
+	match biome:
+		BiomeTypeScript.Value.STONE:
+			return [GodaiElementScript.Value.CHI]
+		BiomeTypeScript.Value.RIVER:
+			return [GodaiElementScript.Value.SUI]
+		BiomeTypeScript.Value.EMBER_FIELD:
+			return [GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.MEADOW:
+			return [GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.WETLANDS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.SUI]
+		BiomeTypeScript.Value.BADLANDS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.WHISTLING_CANYONS:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.PRISMATIC_TERRACES:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.KA]
+		BiomeTypeScript.Value.FROSTLANDS:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.THE_ASHFALL:
+			return [GodaiElementScript.Value.KA, GodaiElementScript.Value.FU]
+		BiomeTypeScript.Value.SACRED_STONE:
+			return [GodaiElementScript.Value.CHI, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.MOONLIT_POOL:
+			return [GodaiElementScript.Value.SUI, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.EMBER_SHRINE:
+			return [GodaiElementScript.Value.KA, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.CLOUD_RIDGE:
+			return [GodaiElementScript.Value.FU, GodaiElementScript.Value.KU]
+		BiomeTypeScript.Value.KU:
+			return [GodaiElementScript.Value.KU]
+		_:
+			return []

@@ -52,10 +52,10 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 			if game_state == null:
 				return
 			var key_parts: PackedStringArray = String(gift_payload).split(":")
-			if key_parts.size() != 2:
+			if key_parts.size() < 2:
 				return
 			var spirit_id: String = String(key_parts[0])
-			var element: int = int(key_parts[1])
+			var elements_part: PackedStringArray = key_parts[1].split(",")
 			var grid_variant: Variant = game_state.get("grid")
 			if not (grid_variant is RefCounted):
 				return
@@ -69,7 +69,12 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 					continue
 				if str(tile.metadata.get("spirit_id", "")) != spirit_id:
 					continue
-				alchemy_for_charge.store_shrine_charge(coord, element, 1)
+				for element_str: String in elements_part:
+					var trimmed: String = element_str.strip_edges()
+					if trimmed.is_empty():
+						continue
+					var element: int = int(trimmed)
+					alchemy_for_charge.store_shrine_charge(coord, element, 1)
 				return
 		_:
 			pass

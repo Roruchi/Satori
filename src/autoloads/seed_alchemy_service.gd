@@ -99,45 +99,55 @@ func store_shrine_charge(coord: Vector2i, element: int, amount: int = 1) -> bool
 	if element < GodaiElementScript.Value.CHI or element > GodaiElementScript.Value.KU:
 		return false
 	var coord_key: String = _coord_key(coord)
-	var entry_variant: Variant = _pending_shrine_charges.get(coord_key, null)
-	var entry: Dictionary = {}
-	if entry_variant is Dictionary:
-		entry = entry_variant as Dictionary
-	var stored_element: int = int(entry.get("element", element))
-	if not entry.is_empty() and stored_element != element:
-		return false
-	var current_amount: int = int(entry.get("amount", 0))
+	var counts_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	var counts: Dictionary = {}
+	if counts_variant is Dictionary:
+		counts = (counts_variant as Dictionary).duplicate()
+	var current_amount: int = int(counts.get(element, 0))
 	var next_amount: int = mini(KushoPoolScript.CAPACITY_PER_ELEMENT, current_amount + amount)
 	if next_amount <= current_amount:
 		return false
-	_pending_shrine_charges[coord_key] = {"element": element, "amount": next_amount}
+	counts[element] = next_amount
+	_pending_shrine_charges[coord_key] = counts
 	shrine_charge_ready.emit(coord, element)
 	return true
 
 func collect_shrine_charge(coord: Vector2i) -> bool:
 	var coord_key: String = _coord_key(coord)
-	var entry_variant: Variant = _pending_shrine_charges.get(coord_key, null)
-	if not (entry_variant is Dictionary):
+	var counts_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	if not (counts_variant is Dictionary):
 		return false
-	var entry: Dictionary = entry_variant as Dictionary
-	var element: int = int(entry.get("element", INVALID_ELEMENT))
-	var amount: int = int(entry.get("amount", 0))
-	if element == INVALID_ELEMENT or amount <= 0:
+	var counts: Dictionary = counts_variant as Dictionary
+	var remaining: Dictionary = {}
+	var collected_any: bool = false
+	for key_variant: Variant in counts.keys():
+		var element: int = int(key_variant)
+		var amount: int = int(counts.get(key_variant, 0))
+		if element == INVALID_ELEMENT or amount <= 0:
+			continue
+		var overflow: int = _kusho_pool.add_charge(element, amount)
+		var collected: int = amount - overflow
+		if collected > 0:
+			collected_any = true
+			shrine_charge_collected.emit(coord, element, collected)
+		if overflow > 0:
+			remaining[element] = overflow
+	if not collected_any:
 		return false
-	var overflow: int = _kusho_pool.add_charge(element, amount)
-	var collected: int = amount - overflow
-	if collected <= 0:
-		return false
-	if overflow > 0:
-		_pending_shrine_charges[coord_key] = {"element": element, "amount": overflow}
-	else:
+	if remaining.is_empty():
 		_pending_shrine_charges.erase(coord_key)
-	shrine_charge_collected.emit(coord, element, collected)
+	else:
+		_pending_shrine_charges[coord_key] = remaining
 	return true
 
 func has_shrine_charge(coord: Vector2i) -> bool:
 	var coord_key: String = _coord_key(coord)
-	return _pending_shrine_charges.has(coord_key)
+	if not _pending_shrine_charges.has(coord_key):
+		return false
+	var counts_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	if not (counts_variant is Dictionary):
+		return false
+	return not (counts_variant as Dictionary).is_empty()
 
 func _coord_key(coord: Vector2i) -> String:
 	return "%d,%d" % [coord.x, coord.y]
