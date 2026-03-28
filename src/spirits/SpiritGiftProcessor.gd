@@ -44,5 +44,32 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 			var codex: Node = root.get_node_or_null("/root/CodexService")
 			if codex != null and codex.has_method("force_reveal"):
 				codex.force_reveal(gift_payload)
+		SpiritGiftTypeScript.Value.GODAI_CHARGE:
+			var alchemy_for_charge: Node = root.get_node_or_null("/root/SeedAlchemyService")
+			if alchemy_for_charge == null or not alchemy_for_charge.has_method("store_shrine_charge"):
+				return
+			var game_state: Node = root.get_node_or_null("/root/GameState")
+			if game_state == null:
+				return
+			var key_parts: PackedStringArray = String(gift_payload).split(":")
+			if key_parts.size() != 2:
+				return
+			var spirit_id: String = String(key_parts[0])
+			var element: int = int(key_parts[1])
+			var grid_variant: Variant = game_state.get("grid")
+			if not (grid_variant is RefCounted):
+				return
+			var grid: RefCounted = grid_variant as RefCounted
+			if grid == null or not grid.has_method("get_tile"):
+				return
+			for coord_variant: Variant in grid.tiles.keys():
+				var coord: Vector2i = coord_variant as Vector2i
+				var tile: GardenTile = grid.get_tile(coord)
+				if tile == null:
+					continue
+				if str(tile.metadata.get("spirit_id", "")) != spirit_id:
+					continue
+				alchemy_for_charge.store_shrine_charge(coord, element, 1)
+				return
 		_:
 			pass

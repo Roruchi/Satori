@@ -61,7 +61,17 @@ func _unhandled_input(event: InputEvent) -> void:
 							growth_service.try_bloom(coord)
 							return
 				var hud: Node = get_node_or_null("../HUD")
-				if hud != null and hud.has_method("is_plant_mode") and not hud.is_plant_mode():
+				var is_plant_or_build_mode: bool = true
+				var is_build_mode: bool = false
+				if hud != null:
+					var is_plant_mode: bool = hud.has_method("is_plant_mode") and hud.is_plant_mode()
+					is_build_mode = hud.has_method("is_build_mode") and hud.is_build_mode()
+					is_plant_or_build_mode = is_plant_mode or is_build_mode
+				if not is_plant_or_build_mode:
+					if hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode():
+						_collect_spirit_charge(coord)
+					return
+				if is_build_mode and _try_build_shrine(coord):
 					return
 				if growth_service != null and growth_service.has_method("get_pouch"):
 					var pouch: SeedPouch = growth_service.get_pouch()
@@ -93,3 +103,28 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_long_press(coord: Vector2i) -> void:
 	GameState.try_mix_tile(coord)
+
+func _collect_spirit_charge(coord: Vector2i) -> void:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("collect_shrine_charge"):
+		return
+	alchemy.collect_shrine_charge(coord)
+
+func _try_build_shrine(coord: Vector2i) -> bool:
+	if not GameState.grid.has_tile(coord):
+		return false
+	var tile: GardenTile = GameState.grid.get_tile(coord)
+	if tile == null:
+		return false
+	if not bool(tile.metadata.get("shrine_buildable", false)):
+		return false
+	if bool(tile.metadata.get("shrine_built", false)):
+		return false
+	tile.metadata["shrine_built"] = true
+	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
+	if not discovery_id.is_empty():
+		var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
+		if persistence != null and persistence.has_method("record_discovery"):
+			var payload: DiscoveryPayload = DiscoveryPayload.create(discovery_id, [coord], {"display_name": discovery_id, "flavor_text": "", "audio_key": ""})
+			persistence.record_discovery(payload)
+	return true

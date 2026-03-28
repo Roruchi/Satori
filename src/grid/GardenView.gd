@@ -70,6 +70,18 @@ const _CLUSTER_THRESHOLDS: Dictionary = {
 # ---------------------------------------------------------------------------
 
 var _discovery_overlays: Dictionary = {}
+const _BUILD_GATED_DISCOVERY_IDS: Dictionary = {
+	"disc_origin_shrine": true,
+	"disc_bridge_of_sighs": true,
+	"disc_lotus_pagoda": true,
+	"disc_monks_rest": true,
+	"disc_star_gazing_deck": true,
+	"disc_sun_dial": true,
+	"disc_whale_bone_arch": true,
+	"disc_echoing_cavern": true,
+	"disc_bamboo_chime": true,
+	"disc_floating_pavilion": true,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -123,6 +135,14 @@ func _on_mix_rejected(coord: Vector2i, reason: String) -> void:
 
 func _on_discovery_triggered(discovery_id: String, coords: Array[Vector2i]) -> void:
 	_discovery_overlays[discovery_id] = coords
+	if _BUILD_GATED_DISCOVERY_IDS.has(discovery_id):
+		for coord: Vector2i in coords:
+			var tile: GardenTile = GameState.grid.get_tile(coord)
+			if tile == null:
+				continue
+			tile.metadata["shrine_buildable"] = true
+			tile.metadata["shrine_built"] = false
+			tile.metadata["build_discovery_id"] = discovery_id
 	queue_redraw()
 
 
@@ -177,11 +197,16 @@ func _draw() -> void:
 	# 3. Named-discovery overlays (shape / proximity / compound patterns)
 	for discovery_id: String in _discovery_overlays:
 		var disc_coords: Array[Vector2i] = _discovery_overlays[discovery_id]
+		if _BUILD_GATED_DISCOVERY_IDS.has(discovery_id) and not _is_any_build_tile_built(disc_coords):
+			continue
 		_draw_discovery_overlay(discovery_id, disc_coords)
+
+	# 4. Shrine build/interact status overlays.
+	_draw_shrine_status_overlays()
 
 	draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
 
-	# 4. Animations
+	# 5. Animations
 	if _mix_timer > 0.0:
 		var t: float = _mix_timer / 0.4
 		var mc: Vector2 = _HexUtils.axial_to_pixel(_mix_coord, TILE_RADIUS)
@@ -193,7 +218,7 @@ func _draw() -> void:
 		var rpts: PackedVector2Array = _hex_polygon(rc, TILE_RADIUS)
 		draw_colored_polygon(rpts, Color(1.0, 1.0, 0.0, 0.5 * t) if _reject_reason == "same_type" else Color(1.0, 0.2, 0.2, 0.6 * t))
 
-	# 5. Hover
+	# 6. Hover
 	if _hover_valid:
 		var hc: Vector2 = _HexUtils.axial_to_pixel(_hover_coord, TILE_RADIUS)
 		var hpts: PackedVector2Array = _hex_polygon(hc, TILE_RADIUS)
@@ -207,7 +232,7 @@ func _draw() -> void:
 		border.append(border[0])
 		draw_polyline(border, Color(1.0, 0.6, 0.1, 0.9), 2.5)
 
-	# 6. Screen-edge mist vignette (drawn last so it overlays everything)
+	# 7. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
 
 
@@ -246,6 +271,37 @@ func _draw_seed_overlay_text(center: Vector2, text: String, font_size: int, colo
 	var pos: Vector2 = Vector2(center.x - text_size.x * 0.5, center.y + 4.0)
 	draw_string(font, pos + Vector2(1.0, 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.0, 0.0, 0.0, 0.6))
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+
+func _draw_shrine_status_overlays() -> void:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	var hud: Node = get_node_or_null("../HUD")
+	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
+	for coord: Vector2i in GameState.grid.tiles:
+		var tile: GardenTile = GameState.grid.tiles[coord]
+		if bool(tile.metadata.get("shrine_buildable", false)) and not bool(tile.metadata.get("shrine_built", false)):
+			var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+			_draw_seed_overlay_text(center + Vector2(-10.0, -10.0), "Build", 11, Color(0.94, 0.90, 0.65, 0.90))
+		if not interact_mode:
+			continue
+		if alchemy == null or not alchemy.has_method("has_shrine_charge"):
+			continue
+		if not bool(tile.metadata.get("shrine_built", false)):
+			continue
+		if not alchemy.has_shrine_charge(coord):
+			continue
+		var ring_center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		draw_arc(ring_center, TILE_RADIUS * 0.55, 0.0, TAU, 24, Color(0.95, 0.92, 0.74, 0.95), 2.0)
+		_draw_seed_overlay_text(ring_center + Vector2(-14.0, -16.0), "Collect", 11, Color(0.95, 0.92, 0.74, 0.95))
+
+func _is_any_build_tile_built(coords: Array[Vector2i]) -> bool:
+	for coord: Vector2i in coords:
+		var tile: GardenTile = GameState.grid.get_tile(coord)
+		if tile == null:
+			continue
+		if bool(tile.metadata.get("shrine_built", false)):
+			return true
+	return false
 
 
 # ---------------------------------------------------------------------------

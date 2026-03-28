@@ -11,6 +11,8 @@ const INVALID_ELEMENT: int = -1
 signal element_unlocked(element_id: int)
 signal recipe_discovered(recipe_id: StringName)
 signal seed_added_to_pouch(recipe: SeedRecipe)
+signal shrine_charge_ready(coord: Vector2i, element_id: int)
+signal shrine_charge_collected(coord: Vector2i, element_id: int, amount: int)
 
 var _registry: SeedRecipeRegistry
 var _kusho_pool: KushoPool = KushoPoolScript.new()
@@ -21,6 +23,7 @@ var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.FU,
 ]
 var _discovered: Dictionary = {}
+var _pending_shrine_charges: Dictionary = {}
 
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
@@ -89,6 +92,55 @@ func refund_for_biome_placement(biome: int) -> void:
 
 func set_element_charge_for_testing(element: int, charge: int) -> void:
 	_kusho_pool.set_charge(element, charge)
+
+func store_shrine_charge(coord: Vector2i, element: int, amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
+	if element < GodaiElementScript.Value.CHI or element > GodaiElementScript.Value.KU:
+		return false
+	var coord_key: String = _coord_key(coord)
+	var entry_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	var entry: Dictionary = {}
+	if entry_variant is Dictionary:
+		entry = entry_variant as Dictionary
+	var stored_element: int = int(entry.get("element", element))
+	if not entry.is_empty() and stored_element != element:
+		return false
+	var current_amount: int = int(entry.get("amount", 0))
+	var next_amount: int = mini(KushoPoolScript.CAPACITY_PER_ELEMENT, current_amount + amount)
+	if next_amount <= current_amount:
+		return false
+	_pending_shrine_charges[coord_key] = {"element": element, "amount": next_amount}
+	shrine_charge_ready.emit(coord, element)
+	return true
+
+func collect_shrine_charge(coord: Vector2i) -> bool:
+	var coord_key: String = _coord_key(coord)
+	var entry_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	if not (entry_variant is Dictionary):
+		return false
+	var entry: Dictionary = entry_variant as Dictionary
+	var element: int = int(entry.get("element", INVALID_ELEMENT))
+	var amount: int = int(entry.get("amount", 0))
+	if element == INVALID_ELEMENT or amount <= 0:
+		return false
+	var overflow: int = _kusho_pool.add_charge(element, amount)
+	var collected: int = amount - overflow
+	if collected <= 0:
+		return false
+	if overflow > 0:
+		_pending_shrine_charges[coord_key] = {"element": element, "amount": overflow}
+	else:
+		_pending_shrine_charges.erase(coord_key)
+	shrine_charge_collected.emit(coord, element, collected)
+	return true
+
+func has_shrine_charge(coord: Vector2i) -> bool:
+	var coord_key: String = _coord_key(coord)
+	return _pending_shrine_charges.has(coord_key)
+
+func _coord_key(coord: Vector2i) -> String:
+	return "%d,%d" % [coord.x, coord.y]
 
 func _consume_mix_elements(elements: Array[int]) -> void:
 	for element: int in elements:
