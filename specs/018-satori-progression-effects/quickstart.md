@@ -4,7 +4,7 @@
 
 ## Goal
 
-Validate the Satori cap/generation loop, era gating transitions, structure effects, and unique monument confirmation behavior.
+Validate the Satori cap/generation loop, era-driven spirit-tier transitions, runtime Satori UI visibility, structure effects, and unique monument confirmation behavior.
 
 ## Prerequisites
 
@@ -41,15 +41,27 @@ Expected:
 - Formula matches `housed - (unhoused*2)` before modifiers.
 - Final Satori never drops below 0 or exceeds cap.
 
-### 2) Era transitions and gate state
+### 2) Era transitions and spirit-tier behavior
 
 1. Move Satori across each threshold upward: 499→500, 1499→1500, 4999→5000.
 2. Move downward across thresholds: 500→499, 1500→1499, 5000→4999.
-3. Observe era and gate indicators.
+3. Observe era indicators, spirit appearance checks on upward crossing, and spirit disappearance on downward crossing.
 
 Expected:
 - Era changes only at boundary crossings.
-- Kami gates open/close immediately according to era.
+- Tier 2/Tier 3/Tier 4 spirit eligibility updates immediately according to era.
+- Spirits requiring a higher era disappear when the era falls below their threshold.
+
+### 2.5) Satori HUD visibility
+
+1. Trigger Satori changes through housed/unhoused state.
+2. Trigger cap changes through structure builds.
+3. Observe player HUD element for Satori and era.
+
+Expected:
+- HUD always shows current Satori amount and current cap.
+- HUD era label/value updates immediately with era transitions.
+- HUD values match authoritative progression state.
 
 ### 3) Structure cap growth
 
@@ -84,8 +96,9 @@ Expected:
 ## Verification checklist
 
 - [ ] Tick delta/clamp cases pass (including edge cases).
-- [ ] Era boundary transitions pass in both directions.
+- [ ] Era boundary transitions pass in both directions with correct summon/despawn behavior.
 - [ ] Tier cap contributions are correct.
+- [ ] Satori HUD shows amount/cap/era and updates immediately.
 - [ ] Unique monument second-attempt rejection works.
 - [ ] Monument special effects behave as specified.
 - [ ] Focused GUT suites and full suite pass.

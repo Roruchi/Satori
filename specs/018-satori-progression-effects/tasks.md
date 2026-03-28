@@ -3,7 +3,7 @@
 **Input**: Design documents from `/specs/018-satori-progression-effects/`  
 **Prerequisites**: `plan.md` (required), `spec.md` (required), `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Tests**: Validation tasks are required for this feature. Deterministic progression logic, threshold gates, and unique monument guard behavior must include GUT coverage; scene/UI confirmation behavior requires manual in-editor validation notes.
+**Tests**: Validation tasks are required for this feature. Deterministic progression logic, era-driven spirit-tier behavior, and unique monument guard behavior must include GUT coverage; scene/UI confirmation behavior requires manual in-editor validation notes.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -40,7 +40,7 @@
 
 - [ ] T004 Extend progression constants/enums for eras and thresholds in `/home/runner/work/Satori/Satori/src/satori/SatoriIds.gd`
 - [ ] T005 Add structure metadata fields (`tier`, `cap_increase`, `is_unique`, effect descriptors) in `/home/runner/work/Satori/Satori/src/biomes/pattern_definition.gd`
-- [ ] T006 Implement reusable era-derivation helpers and gate predicates in `/home/runner/work/Satori/Satori/src/satori/SatoriConditionEvaluator.gd`
+- [ ] T006 Implement reusable era-derivation helpers and spirit-tier predicates in `/home/runner/work/Satori/Satori/src/satori/SatoriConditionEvaluator.gd`
 - [ ] T007 [P] Add baseline data coverage for new structure metadata parsing in `/home/runner/work/Satori/Satori/tests/unit/patterns/test_pattern_loader.gd`
 - [ ] T008 Wire baseline progression state fields and signals in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
 
@@ -64,7 +64,8 @@
 - [ ] T011 [US1] Implement 60-second tick processing and base delta computation in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
 - [ ] T012 [US1] Expose housed/unhoused snapshot query methods for tick input in `/home/runner/work/Satori/Satori/src/spirits/spirit_service.gd`
 - [ ] T013 [US1] Apply clamp-to-range update path for Satori value updates in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
-- [ ] T014 [US1] Record manual tick/clamp verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T014 [US1] Ensure Tier 1 dwellings are buildable and can assign spirits to housing slots in `/home/runner/work/Satori/Satori/src/grid/PlacementController.gd` and `/home/runner/work/Satori/Satori/src/spirits/spirit_service.gd`
+- [ ] T015 [US1] Record manual tick/clamp and dwelling-build verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
 
 **Checkpoint**: Satori generation loop is functional and independently testable.
 
@@ -78,17 +79,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Add tier cap-contribution tests in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
-- [ ] T016 [US2] Add structure metadata-to-cap mapping tests in `/home/runner/work/Satori/Satori/tests/unit/patterns/test_pattern_loader.gd`
+- [ ] T016 [P] [US2] Add tier cap-contribution tests in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
+- [ ] T017 [US2] Add structure metadata-to-cap mapping tests in `/home/runner/work/Satori/Satori/tests/unit/patterns/test_pattern_loader.gd`
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] Add/update Tier 1 structure resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier1/`
-- [ ] T018 [P] [US2] Add/update Tier 2 structure resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier2/`
-- [ ] T019 [P] [US2] Add/update Tier 3 monument resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier3/`
-- [ ] T020 [US2] Implement cap recomputation from active structures in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
-- [ ] T021 [US2] Integrate structure cap metadata exposure in `/home/runner/work/Satori/Satori/src/biomes/discovery_catalog_data.gd`
-- [ ] T022 [US2] Record manual cap-growth verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T018 [P] [US2] Add/update Tier 1 structure resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier1/`
+- [ ] T019 [P] [US2] Add/update Tier 2 structure resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier2/`
+- [ ] T020 [P] [US2] Add/update Tier 3 monument resources with cap metadata in `/home/runner/work/Satori/Satori/src/biomes/patterns/tier3/`
+- [ ] T021 [US2] Implement cap recomputation from active structures in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
+- [ ] T022 [US2] Integrate structure cap metadata exposure in `/home/runner/work/Satori/Satori/src/biomes/discovery_catalog_data.gd`
+- [ ] T023 [US2] Record manual cap-growth verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
 
 **Checkpoint**: Cap progression through architecture is complete and independently testable.
 
@@ -96,21 +97,23 @@
 
 ## Phase 5: User Story 3 - Unlock and Lose Era-Based Progression Gates (Priority: P2)
 
-**Goal**: Implement era transitions, `era_changed` signaling, and gate open/close behavior at thresholds.
+**Goal**: Implement era transitions, `era_changed` signaling, and spirit summon/despawn behavior at thresholds.
 
-**Independent Test**: GUT validates all threshold crossings in both directions and gate state correctness.
+**Independent Test**: GUT validates all threshold crossings in both directions with correct spirit-tier eligibility and summon/despawn behavior.
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] Add era boundary transition tests (up/down) in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
-- [ ] T024 [P] [US3] Add gate predicate tests for lesser/major/prestige access in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
+- [ ] T024 [P] [US3] Add era boundary transition tests (up/down) in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
+- [ ] T025 [P] [US3] Add spirit-tier availability tests (Tier 2/Tier 3/Tier 4) in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
+- [ ] T026 [US3] Add summon-on-rise and despawn-on-fall era-transition tests in `/home/runner/work/Satori/Satori/tests/unit/spirits/test_spirit_service.gd`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement era recomputation and change-only signal emission in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
-- [ ] T026 [US3] Wire era gate consumers for spawn logic hooks in `/home/runner/work/Satori/Satori/src/spirits/spirit_service.gd`
-- [ ] T027 [US3] Add era/gate visual state plumbing for player-facing feedback in `/home/runner/work/Satori/Satori/src/grid/GardenView.gd`
-- [ ] T028 [US3] Record manual era transition and gate closure verification in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T027 [US3] Implement era recomputation and change-only signal emission in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
+- [ ] T028 [US3] Update spirit tier assignments (Mist Stag Tier 2, all Kami/deities Tier 3, Sky Whale Tier 4) in `/home/runner/work/Satori/Satori/src/spirits/spirit_catalog_data.gd`
+- [ ] T029 [US3] Wire era-transition summon/despawn checks in `/home/runner/work/Satori/Satori/src/spirits/spirit_service.gd`
+- [ ] T030 [US3] Add era and Satori amount/cap HUD update plumbing for player-facing feedback in `/home/runner/work/Satori/Satori/src/grid/GardenView.gd` and `/home/runner/work/Satori/Satori/src/ui/`
+- [ ] T031 [US3] Record manual era transition, summon/despawn, and HUD verification in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
 
 **Checkpoint**: Era-based progression gating is complete and independently testable.
 
@@ -124,18 +127,18 @@
 
 ### Tests for User Story 4
 
-- [ ] T029 [P] [US4] Add unique-monument rejection tests in `/home/runner/work/Satori/Satori/tests/unit/spirits/test_shrine_interact_flow.gd`
-- [ ] T030 [P] [US4] Add structure-effect behavior tests (Guidance Lantern, Pagoda, Void Mirror, Great Torii) in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
-- [ ] T031 [US4] Add matcher-level guard tests for `is_unique` blocking in `/home/runner/work/Satori/Satori/tests/unit/patterns/test_pattern_loader.gd`
+- [ ] T032 [P] [US4] Add unique-monument rejection tests in `/home/runner/work/Satori/Satori/tests/unit/spirits/test_shrine_interact_flow.gd`
+- [ ] T033 [P] [US4] Add structure-effect behavior tests (Guidance Lantern, Pagoda, Void Mirror, Great Torii) in `/home/runner/work/Satori/Satori/tests/unit/test_satori_service.gd`
+- [ ] T034 [US4] Add matcher-level guard tests for `is_unique` blocking in `/home/runner/work/Satori/Satori/tests/unit/patterns/test_pattern_loader.gd`
 
 ### Implementation for User Story 4
 
-- [ ] T032 [US4] Enforce unique structure guard in scan/emit confirmation path in `/home/runner/work/Satori/Satori/src/biomes/pattern_matcher.gd`
-- [ ] T033 [US4] Enforce pre-confirmation Bell blocking and feedback in `/home/runner/work/Satori/Satori/src/grid/PlacementController.gd`
-- [ ] T034 [US4] Implement Tier 2 local effects (storage/swiftness/drop-off/tending/pacification) in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
-- [ ] T035 [US4] Implement Tier 3 monument effects (Great Torii burst, Pagoda passive+housing, Void Mirror multiplier) in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
-- [ ] T036 [US4] Add visual blocked-state feedback for unique monument attempts in `/home/runner/work/Satori/Satori/src/grid/GardenView.gd`
-- [ ] T037 [US4] Record manual unique-monument and structure-effect verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T035 [US4] Enforce unique structure guard in scan/emit confirmation path in `/home/runner/work/Satori/Satori/src/biomes/pattern_matcher.gd`
+- [ ] T036 [US4] Enforce pre-confirmation Bell blocking and feedback in `/home/runner/work/Satori/Satori/src/grid/PlacementController.gd`
+- [ ] T037 [US4] Implement Tier 2 local effects (storage/swiftness/drop-off/tending/pacification) in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
+- [ ] T038 [US4] Implement Tier 3 monument effects (Great Torii burst, Pagoda passive+housing, Void Mirror multiplier) in `/home/runner/work/Satori/Satori/src/autoloads/satori_service.gd`
+- [ ] T039 [US4] Add visual blocked-state feedback for unique monument attempts in `/home/runner/work/Satori/Satori/src/grid/GardenView.gd`
+- [ ] T040 [US4] Record manual unique-monument and structure-effect verification outcomes in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
 
 **Checkpoint**: Structure effects and uniqueness enforcement are complete and independently testable.
 
@@ -145,10 +148,10 @@
 
 **Purpose**: Finalize docs/contracts, execute regression validation, and collect verification artifacts.
 
-- [ ] T038 [P] Sync implementation notes with contracts in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/contracts/progression-signals-and-thresholds.md` and `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/contracts/unique-monument-confirmation.md`
-- [ ] T039 [P] Run targeted progression test suites and log results in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
-- [ ] T040 Run full GUT suite and record final pass/fail evidence in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
-- [ ] T041 Capture and attach UI verification screenshot(s) for progression/unique-block feedback in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T041 [P] Sync implementation notes with contracts in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/contracts/progression-signals-and-thresholds.md` and `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/contracts/unique-monument-confirmation.md`
+- [ ] T042 [P] Run targeted progression test suites and log results in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T043 Run full GUT suite and record final pass/fail evidence in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
+- [ ] T044 Capture and attach UI verification screenshot(s) for progression/unique-block feedback in `/home/runner/work/Satori/Satori/specs/018-satori-progression-effects/quickstart.md`
 
 ---
 

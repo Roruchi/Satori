@@ -33,13 +33,13 @@ Validation:
 
 ## EraDefinition
 
-Static threshold model for gate transitions.
+Static threshold model for spirit-tier transitions.
 
 Fields:
 - `era_id: int|string`
 - `min_satori: int`
 - `max_satori: int|INF`
-- `kami_gate_flags: Dictionary` (e.g., lesser, major, prestige)
+- `spirit_tier_flags: Dictionary` (e.g., tier2, tier3, tier4)
 
 Required ranges:
 - Stillness: `0..499`
@@ -101,19 +101,52 @@ Validation:
 
 ## GateState
 
-Kami gate availability derived from era.
+Era-based spirit availability state derived from era.
 
 Fields:
-- `lesser_kami_open: bool` (Awakening+)
-- `major_kami_open: bool` (Flow+)
-- `prestige_ready: bool` (Satori era)
+- `tier2_spirits_allowed: bool` (Awakening+)
+- `tier3_spirits_allowed: bool` (Flow+)
+- `tier4_spirits_allowed: bool` (Satori era; Sky Whale)
 
 Validation:
-- Gate booleans are functionally derived from current era and update immediately on era change.
+- Availability booleans are functionally derived from current era and update immediately on era change.
+
+## SpiritTierDefinition
+
+Tier mapping model for progression-controlled spirit visibility/summoning.
+
+Fields:
+- `spirit_id: String`
+- `spirit_tier: int` (1, 2, 3, 4)
+- `min_era: int|string`
+- `despawn_below_required_era: bool`
+
+Required tier assignments:
+- Tier 1: baseline regular spirits (available in Stillness).
+- Tier 2: higher regular spirits including Mist Stag (available in Awakening+).
+- Tier 3: all Kami/deity spirits (available in Flow+).
+- Tier 4: Sky Whale only (available in Satori era).
+
+Validation:
+- When current era drops below `min_era`, spawned spirits with `despawn_below_required_era=true` are removed from the world.
+- Tier assignments are explicit and deterministic for spawn/despawn evaluation.
+
+## SatoriHUDState
+
+Player-facing runtime UI state for progression visibility.
+
+Fields:
+- `current_satori: int`
+- `current_cap: int`
+- `display_era: int|string`
+
+Validation:
+- HUD updates immediately after Satori/cap/era changes.
+- HUD values match authoritative progression state.
 
 ## State transitions
 
 1. **Tick transition**: `SatoriProgressState + SpiritHousingSnapshot + StructureInstances -> ProgressionTickResult -> updated SatoriProgressState`
-2. **Era transition**: On Satori change, derive era; if changed, emit `era_changed(new_era)` and recompute `GateState`.
+2. **Era transition**: On Satori change, derive era; if changed, emit `era_changed(new_era)`, recompute spirit availability state, evaluate required summon/despawn updates, and refresh HUD state.
 3. **Structure build transition**: On successful build, create `StructureInstance`, update cap, and apply one-time effects where applicable (Great Torii +500 up to cap).
 4. **Unique reject transition**: On attempted confirmation of unique structure with existing active instance, reject confirmation and emit/UI-route blocked feedback.

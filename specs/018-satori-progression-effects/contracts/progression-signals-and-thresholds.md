@@ -32,18 +32,22 @@ Era derivation is purely value-based:
 On any Satori update:
 1. Recompute era from thresholds.
 2. Emit `era_changed(new_era)` only if derived era differs from previous era.
-3. Update Kami gates immediately:
-   - Lesser Kami open in Awakening+
-   - Major Kami open in Flow+
-   - Prestige/Sky Whale readiness in Satori era
+3. Update spirit-tier eligibility immediately:
+   - Tier 2 spirits eligible in Awakening+
+   - Tier 3 spirits (all Kami/deities) eligible in Flow+
+   - Tier 4 spirit (Sky Whale) eligible in Satori era
+4. Trigger summon checks when crossing upward into a newly eligible era.
+5. Remove active spirits that require a higher era when crossing downward below their requirement.
 
 ## Signal behavior contract
 
 1. Progression listeners must receive deterministic ordering: value update, era derivation, then era signal when changed.
 2. No duplicate era-changed signal may be emitted when Satori changes within the same era range.
-3. Falling below a threshold immediately closes dependent gate states.
+3. Falling below a threshold immediately enforces spirit despawn for spirits that no longer meet era requirements.
+4. A player-visible UI element must display current Satori amount and cap at runtime, and update immediately after Satori or cap changes.
+5. Era display state in UI must stay synchronized with the currently derived era.
 
 ## Non-goals
 
 1. This contract does not define visual styling of era UI widgets.
-2. This contract does not alter unrelated discovery/spawn systems beyond era-gate predicates.
+2. This contract does not alter unrelated discovery/spawn systems beyond era-based eligibility predicates.

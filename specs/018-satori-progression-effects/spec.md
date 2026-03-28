@@ -49,9 +49,9 @@ As a player, I need Era thresholds tied to Satori so that higher-tier spirit opp
 
 **Acceptance Scenarios**:
 
-1. **Given** Satori rises from 499 to 500, **When** the value updates, **Then** Era changes from Stillness to Awakening and Lesser Kami gate opens.
-2. **Given** Satori drops from 1510 to 1490, **When** the value updates, **Then** Era changes from Flow to Awakening and Major Kami gate closes.
-3. **Given** Satori reaches 5000 or higher, **When** the value updates, **Then** Era changes to Satori and the prestige-era trigger conditions are met.
+1. **Given** Satori rises from 499 to 500, **When** the value updates, **Then** Era changes from Stillness to Awakening and Tier 2 spirits become eligible for summon checks.
+2. **Given** Satori drops from 1510 to 1490, **When** the value updates, **Then** Era changes from Flow to Awakening and active Tier 3 spirits disappear.
+3. **Given** Satori reaches 5000 or higher, **When** the value updates, **Then** Era changes to Satori and Tier 4 spirit conditions (Sky Whale) become eligible.
 
 ---
 
@@ -73,11 +73,12 @@ As a player, I need each structure to apply its cataloged effect and unique monu
 
 ### Edge Cases
 
-- Multiple cap-changing structures are created or removed in short succession; cap and current Satori remain consistent and correctly clamped after each change.
+- Multiple cap-changing structures are created in short succession; cap and current Satori remain consistent and correctly clamped after each change.
 - Era thresholds are crossed multiple times in either direction during consecutive minute ticks; era change notifications fire only when the era value actually changes.
 - Restless spirit penalties would reduce Satori below zero while monument bonus generation also applies in the same tick; final Satori is deterministic and clamped.
 - Monument instant grant (+500) is attempted when current Satori is near cap; only up to cap is applied.
 - Unique monument blueprint is valid in shape but rejected due to existing instance; rejection feedback is visible before final confirmation.
+- A spirit remains present when era-qualified, then disappears when era falls below its required tier threshold.
 
 ## Requirements *(mandatory)*
 
@@ -95,23 +96,25 @@ As a player, I need each structure to apply its cataloged effect and unique monu
 - **FR-010**: System MUST increase Satori cap by +1000 for each Tier 3 monument created.
 - **FR-011**: System MUST classify Satori into Eras using these ranges: Stillness (0-499), Awakening (500-1499), Flow (1500-4999), Satori (5000+).
 - **FR-012**: System MUST evaluate era transitions whenever Satori changes and emit an era-changed event only when the era value changes.
-- **FR-013**: System MUST open or close Kami spawn gates based on whether current Satori is at or above the relevant era threshold.
-- **FR-014**: System MUST treat dropping below an era threshold as immediate loss of that era’s Kami gate access.
+- **FR-013**: System MUST evaluate spirit tier eligibility from current era (rather than a separate spawn-gate object) whenever Satori changes.
+- **FR-014**: System MUST trigger summon checks when crossing upward into an era that newly allows higher-tier spirits, and MUST remove spawned spirits when Satori drops below their required era threshold.
 - **FR-015**: System MUST support all Tier 1 dwellings from the catalog, each housing exactly one qualifying spirit and contributing the Tier 1 cap increase.
-- **FR-016**: System MUST support all Tier 2 structures from the catalog with their defined effects (storage increase, island movement speed increase, secondary drop-off behavior, tending boost improvement, and localized penalty pacification).
-- **FR-017**: System MUST support all Tier 3 monuments from the catalog with their defined effects (instant Satori grant, passive generation and universal housing, island generation multiplier).
-- **FR-018**: System MUST mark monument definitions with a uniqueness property that enforces maximum one instance per game for each unique monument definition.
-- **FR-019**: System MUST prevent confirmation of a unique structure pattern when an instance of that structure already exists.
-- **FR-020**: System MUST provide clear pre-confirmation rejection feedback for blocked unique monument attempts.
-- **FR-021**: System MUST apply Great Torii instant +500 Satori grant only up to current cap.
-- **FR-022**: System MUST apply Pagoda of the Five passive +5 Satori per minute regardless of housed spirit count, while respecting global cap clamping.
-- **FR-023**: System MUST apply Void Mirror island multiplier to housed-spirit Satori generation on its island.
-- **FR-024**: System MUST preserve baseline game behavior for non-progression systems not described by this RFC.
+- **FR-016**: System MUST allow players to build dwellings through standard structure-building flow so housed-spirit generation is playable in normal gameplay.
+- **FR-017**: System MUST support all Tier 2 structures from the catalog with their defined effects (storage increase, island movement speed increase, secondary drop-off behavior, tending boost improvement, and localized penalty pacification).
+- **FR-018**: System MUST support all Tier 3 monuments from the catalog with their defined effects (instant Satori grant, passive generation and universal housing, island generation multiplier).
+- **FR-019**: System MUST mark monument definitions with a uniqueness property that enforces maximum one instance per game for each unique monument definition.
+- **FR-020**: System MUST prevent confirmation of a unique structure pattern when an instance of that structure already exists.
+- **FR-021**: System MUST provide clear pre-confirmation rejection feedback for blocked unique monument attempts.
+- **FR-022**: System MUST apply Great Torii instant +500 Satori grant only up to current cap.
+- **FR-023**: System MUST apply Pagoda of the Five passive +5 Satori per minute regardless of housed spirit count, while respecting global cap clamping.
+- **FR-024**: System MUST apply Void Mirror island multiplier to housed-spirit Satori generation on its island.
+- **FR-025**: System MUST provide a player-visible runtime UI display of current Satori amount, current cap, and active era.
+- **FR-026**: System MUST preserve baseline game behavior for non-progression systems not described by this RFC.
 
 ### Experience & Runtime Constraints *(mandatory when applicable)*
 
 - **EX-001**: Feature MUST preserve the permanent-emergence rule set, with no debug-only bypass in standard gameplay flow.
-- **EX-002**: Feature MUST expose progression and gate changes in a way that is understandable without requiring hidden developer diagnostics.
+- **EX-002**: Feature MUST expose progression and spirit-tier availability changes in a way that is understandable without requiring hidden developer diagnostics.
 - **EX-003**: Feature MUST keep minute-tick progression deterministic so repeated runs with the same state produce the same Satori outcomes.
 - **EX-004**: Feature MUST keep progression-state transitions responsive enough that players can perceive era and cap updates immediately after relevant events.
 
@@ -119,10 +122,12 @@ As a player, I need each structure to apply its cataloged effect and unique monu
 
 - **Satori State**: Global progression state containing current Satori, current cap, and derived current era.
 - **Spirit Housing State**: Per-spirit housed/unhoused status and local context used to compute generation and penalties.
-- **Era Definition**: Named progression band with minimum/maximum threshold and associated gate/unlock behavior.
+- **Era Definition**: Named progression band with minimum/maximum threshold and associated spirit-tier eligibility behavior.
 - **Structure Definition**: Buildable catalog entry with tier, recipe/shape identity, cap contribution, unique flag, and effect definition.
 - **Structure Instance**: In-world manifested structure record used for uniqueness checks and active effect application.
-- **Kami Gate State**: Availability state for Lesser and Major Kami spawn eligibility tied to current era.
+- **Spirit Tier Availability State**: Availability state for Tier 2/Tier 3/Tier 4 spirit eligibility tied to current era.
+- **Spirit Tier Assignment**: Tier classification for spirits (Tier 1 baseline, Tier 2 includes Mist Stag, Tier 3 all Kami/deities, Tier 4 Sky Whale) and their minimum required era.
+- **Satori HUD State**: Player-visible presentation of Satori amount, cap, and active era.
 
 ### Assumptions
 
@@ -135,7 +140,7 @@ As a player, I need each structure to apply its cataloged effect and unique monu
 ### Measurable Outcomes
 
 - **SC-001**: In validation runs, Satori minute-tick outcomes exactly match expected results for at least 20 distinct housed/unhoused/cap scenarios including floor and ceiling boundaries.
-- **SC-002**: Era transitions are detected correctly at all six boundary crossings (upward and downward at 500, 1500, and 5000) with 100% correct gate state updates.
+- **SC-002**: Era transitions are detected correctly at all six boundary crossings (upward and downward at 500, 1500, and 5000) with 100% correct spirit-tier eligibility updates and required summon/despawn actions.
 - **SC-003**: Each listed structure effect in the RFC is demonstrably active in at least one acceptance test scenario, with expected quantitative impact.
 - **SC-004**: Attempting to build a second instance of any unique monument is blocked in 100% of attempts and provides visible rejection feedback.
 - **SC-005**: Players can progress from base cap (250) to at least Era III thresholds through structure-driven cap growth and spirit management without manual debugging controls.

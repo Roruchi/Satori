@@ -5,7 +5,7 @@
 
 ## Summary
 
-Implement a deterministic Satori progression layer that adds a hard Satori cap, per-minute housed/unhoused spirit delta processing, four era thresholds with gate transitions, and structure-tier cap expansion/effects including unique monument enforcement at pattern-confirmation time. The approach reuses current Godot data-driven pattern/discovery pipelines by extending structure definitions and progression services instead of introducing parallel systems.
+Implement a deterministic Satori progression layer that adds a hard Satori cap, per-minute housed/unhoused spirit delta processing, four era thresholds with spirit-tier transitions, a runtime UI display for Satori amount/cap/era, and structure-tier cap expansion/effects including buildable dwellings plus unique monument enforcement at pattern-confirmation time. The approach reuses current Godot data-driven pattern/discovery pipelines by extending structure definitions and progression services instead of introducing parallel systems.
 
 ## Technical Context
 
@@ -121,9 +121,12 @@ Ordered workstreams for `/speckit.tasks` generation:
 2. **Era State and Gate Signaling**
    - Implement Stillness/Awakening/Flow/Satori thresholds.
    - Emit `era_changed(new_era)` only on crossing boundaries.
+   - Apply spirit-tier policy: Tier 2 above required era, Tier 3 (all Kami/deities) at higher era, Tier 4 (Sky Whale) at Satori era, and despawn when era drops below threshold.
+   - Replace gate-style language in implementation with era-driven spirit summon/despawn checks.
 3. **Structure Data and Cap Contributions**
    - Represent tier-specific cap contributions (+50/+250/+1000).
    - Author/verify structure catalog entries for all RFC-listed dwellings, pavilions, and monuments.
+   - Ensure dwellings are explicitly buildable so spirit housing can function in gameplay.
 4. **Unique Monument Enforcement in Confirmation Flow**
    - Add `is_unique` metadata to structure definitions.
    - Query active structure state before Bell confirmation; reject and highlight blocked blueprint.
@@ -132,6 +135,8 @@ Ordered workstreams for `/speckit.tasks` generation:
 6. **Validation and Documentation Sync**
    - Add/extend GUT coverage for progression math, threshold crossing, uniqueness guards, and catalog effects.
    - Record manual checks and any UI evidence path in quickstart.
+   - Validate runtime UI for Satori amount/cap/era visibility and update timing.
+   - Validate spirit tier mapping updates (Mist Stag Tier 2, all Kami/deities Tier 3, Sky Whale Tier 4).
 
 ## Post-Phase 1 Constitution Re-check
 
