@@ -7,7 +7,7 @@ This document lists the newly added Ku pair recipes for feature **016-add-ku-aet
 | Recipe ID | Elements | Resulting Biome | Seed Display Name |
 |---|---|---|---|
 | `recipe_chi_ku` | Chi + Ku | `SACRED_STONE` | Sacred Stone Seed |
-| `recipe_sui_ku` | Sui + Ku | `VEIL_MARSH` | Veil Marsh Seed |
+| `recipe_sui_ku` | Sui + Ku | `MOONLIT_POOL` | Moonlit Pool Seed |
 | `recipe_ka_ku` | Ka + Ku | `EMBER_SHRINE` | Ember Shrine Seed |
 | `recipe_fu_ku` | Fu + Ku | `CLOUD_RIDGE` | Cloud Ridge Seed |
 

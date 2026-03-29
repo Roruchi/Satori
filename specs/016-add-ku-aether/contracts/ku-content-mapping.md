@@ -9,7 +9,7 @@ Defines one-to-one mapping requirements for Ku recipes, biomes, deity spirits, a
 | Ku Recipe ID | Biome ID | Deity Spirit ID (direct reference) | Structure Discovery ID |
 |---|---|---|---|
 | `recipe_chi_ku` | `SACRED_STONE` | `spirit_oyamatsumi` | `disc_iwakura_sanctum` |
-| `recipe_sui_ku` | `VEIL_MARSH` | `spirit_suijin` | `disc_misogi_spring_shrine` |
+| `recipe_sui_ku` | `MOONLIT_POOL` | `spirit_suijin` | `disc_misogi_spring_shrine` |
 | `recipe_ka_ku` | `EMBER_SHRINE` | `spirit_kagutsuchi` | `disc_eternal_kagura_hall` |
 | `recipe_fu_ku` | `CLOUD_RIDGE` | `spirit_fujin` | `disc_heavenwind_torii` |
 

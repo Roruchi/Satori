@@ -19,10 +19,10 @@ Use this alongside the catalog data files to verify completeness at a glance.
 | 7  | `PRISMATIC_TERRACES` | —          | SUI + KA   |
 | 8  | `FROSTLANDS`         | —          | SUI + FU   |
 | 9  | `THE_ASHFALL`        | —          | KA + FU    |
-| 10 | `SACRED_STONE`       | Chi + Kū   | CHI + KU *(planned — spec 016)* |
-| 11 | `MOONLIT_POOL`       | Sui + Kū   | SUI + KU *(planned — spec 016)* |
-| 12 | `EMBER_SHRINE`       | Ka + Kū    | KA + KU *(planned — spec 016)*  |
-| 13 | `CLOUD_RIDGE`        | Fū + Kū    | FU + KU *(planned — spec 016)*  |
+| 10 | `SACRED_STONE`       | Chi + Kū   | CHI + KU |
+| 11 | `MOONLIT_POOL`       | Sui + Kū   | SUI + KU |
+| 12 | `EMBER_SHRINE`       | Ka + Kū    | KA + KU  |
+| 13 | `CLOUD_RIDGE`        | Fū + Kū    | FU + KU  |
 | 14 | `KU`                 | Kū (空)    | KU alone                         |
 
 ---
@@ -53,7 +53,7 @@ Tier 3 recipes are hidden until a spirit grants a `TIER3_RECIPE` gift.
 | `recipe_sui_fu`  | SUI (1) + FU (3)   | 8 — Frostlands      | Frostlands    | "Water frozen still by the piercing wind." |
 | `recipe_ka_fu`   | KA (2) + FU (3)    | 9 — The Ashfall     | The Ashfall   | "Where wind carries the glowing bones of fire." |
 
-### Tier 2 (+Kū) — Unlocked after Mist Stag is summoned *(planned — spec 016)*
+### Tier 2 (+Kū) — Unlocked after Mist Stag is summoned *(spec 016)*
 
 Kū (element 4) becomes selectable only after the Mist Stag grants `KU_UNLOCK`.
 
@@ -123,8 +123,28 @@ Discovered by the `PatternMatcher` when tile arrangements match a `PatternDefini
 | `disc_echoing_cavern`     | Echoing Cavern        | SHAPE              | 6 Ember Field tiles around an empty centre cell                        |
 | `disc_bamboo_chime`       | Bamboo Chime          | SHAPE              | 5 Frostlands tiles in a straight line                                  |
 | `disc_floating_pavilion`  | Floating Pavilion     | SHAPE              | Single Wetlands tile with no adjacent land biomes                      |
+| `disc_iwakura_sanctum`    | Iwakura Sanctum       | CLUSTER            | ≥4 Sacred Stone tiles *(spec 016)*                                     |
+| `disc_misogi_spring_shrine` | Misogi Spring Shrine | CLUSTER           | ≥4 Moonlit Pool tiles *(spec 016)*                                     |
+| `disc_eternal_kagura_hall` | Eternal Kagura Hall  | CLUSTER            | ≥4 Ember Shrine tiles *(spec 016)*                                     |
 
 **Audio keys** follow the pattern `stinger_<suffix>` (e.g. `stinger_origin_shrine`).
+
+---
+
+## Tier 3 Monument Discoveries
+
+Tier 3 monuments are unique (one per garden) and grant Satori cap +1000.
+
+| `discovery_id`            | Display Name          | Pattern Type | Key Trigger                      | Effect            |
+|---------------------------|-----------------------|--------------|----------------------------------|-------------------|
+| `disc_heavenwind_torii`   | Heavenwind Torii      | CLUSTER      | ≥4 Cloud Ridge tiles *(spec 016)*| Great Torii burst |
+| `disc_pagoda_of_the_five` | Pagoda of the Five    | CLUSTER      | ≥4 Moonlit Pool tiles            | Pagoda passive +5/min, 4 spirit slots |
+| `disc_void_mirror`        | Void Mirror           | CLUSTER      | ≥4 River tiles                   | Void Mirror multiplier ×1.5 |
+| `disc_great_torii`        | Great Torii           | CLUSTER      | ≥4 Cloud Ridge tiles *(⚠ trigger shared with Heavenwind Torii — see note)* | Great Torii burst |
+
+**Note**: `disc_heavenwind_torii` and `disc_great_torii` currently share the same trigger condition (≥4 Cloud Ridge). This is a known gap to be resolved in a future spec.
+
+**Audio keys** follow the pattern `stinger_<suffix>` (e.g. `stinger_heavenwind_torii`).
 
 ---
 
@@ -143,40 +163,44 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 | 4     | `GROWING_SLOT_EXPAND` | +1 Growing Slot capacity                      |
 | 5     | `CODEX_REVEAL`        | Force-reveals a Codex entry (`gift_payload`)  |
 
-### Spirit Catalog (30 spirits)
+### Spirit Catalog (34 spirits)
 
-| # | `spirit_id`             | Display Name       | Pattern Trigger (summary)                              | Gift                         | Harmony / Tension       |
-|---|-------------------------|--------------------|--------------------------------------------------------|------------------------------|-------------------------|
-| 1 | `spirit_red_fox`        | Red Fox            | Meadow triangle (3 tiles)                              | None                         | Tension: Hare           |
-| 2 | `spirit_mist_stag`      | Mist Stag          | ≥5 Wetlands + `disc_deep_stand` prereq                 | **KU_UNLOCK** (1)            | —                       |
-| 3 | `spirit_emerald_snake`  | Emerald Snake      | Stone 7-tile line                                      | None                         | —                       |
-| 4 | `spirit_owl_of_silence` | Owl of Silence     | Stone cluster with ≥1 Prismatic Terraces neighbour             | None                         | —                       |
-| 5 | `spirit_tree_frog`      | Tree Frog          | Stone cluster with ≥1 Wetlands neighbour                   | None                         | —                       |
-| 6 | `spirit_white_heron`    | White Heron        | River 5-tile line                                      | None                         | —                       |
-| 7 | `spirit_koi_fish`       | Koi Fish           | River 2×2 square                                       | None                         | Harmony: Blue Kingfisher|
-| 8 | `spirit_river_otter`    | River Otter        | ≥10 River tiles                                        | **TIER3_RECIPE** → `recipe_chi_sui_fu` | —          |
-| 9 | `spirit_blue_kingfisher`| Blue Kingfisher    | ≥3 River tiles                                         | None                         | Harmony: Koi Fish       |
-|10 | `spirit_dragonfly`      | Dragonfly          | River with ≥4 Meadow neighbours                        | None                         | —                       |
-|11 | `spirit_mountain_goat`  | Mountain Goat      | ≥5 Stone + `disc_mountain_peak` prereq                 | None                         | —                       |
-|12 | `spirit_stone_golem`    | Stone Golem        | ≥9 Stone tiles                                         | None                         | —                       |
-|13 | `spirit_granite_ram`    | Granite Ram        | ≥20 Ember Field tiles                                  | None                         | —                       |
-|14 | `spirit_sun_lizard`     | Sun Lizard         | Ember Field with ≥4 Meadow neighbours                  | None                         | —                       |
-|15 | `spirit_rock_badger`    | Rock Badger        | ≥3 The Ashfall tiles                                  | None                         | —                       |
-|16 | `spirit_golden_bee`     | Golden Bee         | ≥10 Meadow tiles                                       | None                         | —                       |
-|17 | `spirit_jade_beetle`    | Jade Beetle        | ≥15 Stone tiles                                        | None                         | —                       |
-|18 | `spirit_meadow_lark`    | Meadow Lark        | ≥3 Meadow + `disc_glade` prereq                        | **GROWING_SLOT_EXPAND** (4)  | —                       |
-|19 | `spirit_field_mouse`    | Field Mouse        | Meadow adjacent to ≥1 Stone, ≥1 River, ≥1 Ember Field | None                         | —                       |
-|20 | `spirit_hare`           | Hare               | Meadow 4-tile line                                        | None                         | Tension: Red Fox        |
-|21 | `spirit_marsh_frog`     | Marsh Frog         | Wetlands 7-tile line                                       | None                         | —                       |
-|22 | `spirit_peat_salamander`| Peat Salamander    | ≥5 Wetlands + `disc_peat_bog` prereq                       | None                         | —                       |
-|23 | `spirit_swamp_crane`    | Swamp Crane        | Wetlands with ≥1 River + ≥1 Stone within radius 2          | None                         | —                       |
-|24 | `spirit_murk_crocodile` | Murk Crocodile     | River with ≥4 Wetlands neighbours                          | None                         | —                       |
-|25 | `spirit_mud_crab`       | Mud Crab           | ≥3 Wetlands + `disc_great_reef` prereq                     | None                         | —                       |
-|26 | `spirit_frost_owl`      | Frost Owl          | ≥3 Frostlands + `disc_boreal_forest` prereq                 | None                         | —                       |
-|27 | `spirit_boreal_wolf`    | Boreal Wolf        | ≥10 Frostlands + `disc_boreal_forest` prereq                  | None                         | Tension: Tundra Lynx    |
-|28 | `spirit_tundra_lynx`    | Tundra Lynx        | ≥5 Frostlands + `disc_river` prereq                        | None                         | —                       |
-|29 | `spirit_ice_cavern_bat` | Ice Cavern Bat     | ≥5 Frostlands + `disc_great_reef` prereq                   | None                         | —                       |
-|30 | `spirit_sky_whale`      | Sky Whale          | ≥1 000 total tiles, all 4 macro-groups within ±15 % of 25 % each | None        | —                       |
+| # | `spirit_id`             | Display Name       | Pattern Trigger (summary)                              | Gift                         | Tier | Harmony / Tension       |
+|---|-------------------------|--------------------|--------------------------------------------------------|------------------------------|------|-------------------------|
+| 1 | `spirit_red_fox`        | Red Fox            | Meadow triangle (3 tiles)                              | None                         | 1    | Tension: Hare           |
+| 2 | `spirit_mist_stag`      | Mist Stag          | ≥5 Wetlands + `disc_deep_stand` prereq                 | **KU_UNLOCK** (1)            | 2    | —                       |
+| 3 | `spirit_emerald_snake`  | Emerald Snake      | Stone 7-tile line                                      | None                         | 1    | —                       |
+| 4 | `spirit_owl_of_silence` | Owl of Silence     | Stone cluster with ≥1 Prismatic Terraces neighbour | None                         | 1    | —                       |
+| 5 | `spirit_tree_frog`      | Tree Frog          | Stone cluster with ≥1 Wetlands neighbour           | None                         | 1    | —                       |
+| 6 | `spirit_white_heron`    | White Heron        | River 5-tile line                                      | None                         | 1    | —                       |
+| 7 | `spirit_koi_fish`       | Koi Fish           | River 2×2 square                                       | None                         | 1    | Harmony: Blue Kingfisher|
+| 8 | `spirit_river_otter`    | River Otter        | ≥10 River tiles                                        | **TIER3_RECIPE** → `recipe_chi_sui_fu` | 1 | —         |
+| 9 | `spirit_blue_kingfisher`| Blue Kingfisher    | ≥3 River tiles                                         | None                         | 1    | Harmony: Koi Fish       |
+|10 | `spirit_dragonfly`      | Dragonfly          | River with ≥4 Meadow neighbours                        | None                         | 1    | —                       |
+|11 | `spirit_mountain_goat`  | Mountain Goat      | ≥5 Stone + `disc_mountain_peak` prereq                 | None                         | 1    | —                       |
+|12 | `spirit_stone_golem`    | Stone Golem        | ≥9 Stone tiles                                         | None                         | 1    | —                       |
+|13 | `spirit_granite_ram`    | Granite Ram        | ≥20 Ember Field tiles                                  | None                         | 1    | —                       |
+|14 | `spirit_sun_lizard`     | Sun Lizard         | Ember Field with ≥4 Meadow neighbours                  | None                         | 1    | —                       |
+|15 | `spirit_rock_badger`    | Rock Badger        | ≥3 The Ashfall tiles                                   | None                         | 1    | —                       |
+|16 | `spirit_golden_bee`     | Golden Bee         | ≥10 Meadow tiles                                       | None                         | 1    | —                       |
+|17 | `spirit_jade_beetle`    | Jade Beetle        | ≥15 Stone tiles                                        | None                         | 1    | —                       |
+|18 | `spirit_meadow_lark`    | Meadow Lark        | ≥3 Meadow + `disc_glade` prereq                        | **GROWING_SLOT_EXPAND** (4)  | 1    | —                       |
+|19 | `spirit_field_mouse`    | Field Mouse        | Meadow adjacent to ≥1 Stone, ≥1 River, ≥1 Ember Field | None                         | 1    | —                       |
+|20 | `spirit_hare`           | Hare               | Meadow 4-tile line                                     | None                         | 1    | Tension: Red Fox        |
+|21 | `spirit_marsh_frog`     | Marsh Frog         | Wetlands 7-tile line                                   | None                         | 1    | —                       |
+|22 | `spirit_peat_salamander`| Peat Salamander    | ≥5 Wetlands + `disc_peat_bog` prereq                   | None                         | 1    | —                       |
+|23 | `spirit_swamp_crane`    | Swamp Crane        | Wetlands with ≥1 River + ≥1 Stone within radius 2      | None                         | 1    | —                       |
+|24 | `spirit_murk_crocodile` | Murk Crocodile     | River with ≥4 Wetlands neighbours                      | None                         | 1    | —                       |
+|25 | `spirit_mud_crab`       | Mud Crab           | ≥3 Wetlands + `disc_great_reef` prereq                 | None                         | 1    | —                       |
+|26 | `spirit_frost_owl`      | Frost Owl          | ≥3 Frostlands + `disc_boreal_forest` prereq            | None                         | 1    | —                       |
+|27 | `spirit_boreal_wolf`    | Boreal Wolf        | ≥10 Frostlands + `disc_boreal_forest` prereq           | None                         | 1    | Tension: Tundra Lynx    |
+|28 | `spirit_tundra_lynx`    | Tundra Lynx        | ≥5 Frostlands + `disc_river` prereq                    | None                         | 1    | —                       |
+|29 | `spirit_ice_cavern_bat` | Ice Cavern Bat     | ≥5 Frostlands + `disc_great_reef` prereq               | None                         | 1    | —                       |
+|30 | `spirit_sky_whale`      | Sky Whale          | ≥1 000 total tiles, all 4 macro-groups within ±15 % of 25 % each | None | 4 | —                  |
+|31 | `spirit_oyamatsumi`     | Ōyamatsumi         | ≥5 Sacred Stone + `disc_iwakura_sanctum` prereq        | None                         | 3    | — *(spec 016)*          |
+|32 | `spirit_suijin`         | Suijin             | ≥5 Moonlit Pool + `disc_misogi_spring_shrine` prereq   | None                         | 3    | — *(spec 016)*          |
+|33 | `spirit_kagutsuchi`     | Kagutsuchi         | ≥5 Ember Shrine + `disc_eternal_kagura_hall` prereq    | None                         | 3    | — *(spec 016)*          |
+|34 | `spirit_fujin`          | Fūjin              | ≥5 Cloud Ridge + `disc_heavenwind_torii` prereq        | None                         | 3    | — *(spec 016)*          |
 
 ---
 
@@ -194,6 +218,7 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 
 ## Notes
 
-- Biome IDs 10–13 (`SACRED_STONE`, `MOONLIT_POOL`, `EMBER_SHRINE`, `CLOUD_RIDGE`) are reserved in the enum; recipe implementation remains tracked in **spec 016**.
-- The Tier 3 recipes for Stone Serpent, Mist Stag, Ember Fox, Mountain Golem, and Sun-Lizard are specced but not yet implemented.
+- Biome IDs 10–13 (`SACRED_STONE`, `MOONLIT_POOL`, `EMBER_SHRINE`, `CLOUD_RIDGE`) and their recipes are fully implemented as part of **spec 016**.
+- The Tier 3 recipes (`recipe_chi_sui_fu` and others) are specced but the `.tres` resource files do not yet exist; tier-3 biome IDs (Mossy Delta, Obsidian Shore, etc.) are not yet defined in `BiomeType.gd`.
+- `disc_heavenwind_torii` and `disc_great_torii` both trigger on ≥4 Cloud Ridge tiles; their trigger conditions need differentiation in a future spec.
 - All catalog sources of truth: `src/seeds/recipes/*.tres`, `src/biomes/discovery_catalog_data.gd`, `src/spirits/spirit_catalog_data.gd`.

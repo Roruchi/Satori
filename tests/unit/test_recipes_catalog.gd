@@ -144,10 +144,10 @@ func test_all_tier1_entries_have_tier_value_1() -> void:
 # Tier 2 discoveries
 # ---------------------------------------------------------------------------
 
-func test_tier2_catalog_has_exactly_10_entries() -> void:
+func test_tier2_catalog_has_exactly_13_entries() -> void:
 	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
-	assert_eq(data.get_tier2_entries().size(), 14,
-		"recipes.md lists 14 Tier 2 structural landmarks")
+	assert_eq(data.get_tier2_entries().size(), 13,
+		"recipes.md lists 13 Tier 2 structural landmarks (10 original + 3 Ku structures)")
 
 
 func test_all_tier2_discovery_ids_present() -> void:
@@ -168,6 +168,9 @@ func test_all_tier2_discovery_ids_present() -> void:
 		"disc_echoing_cavern",
 		"disc_bamboo_chime",
 		"disc_floating_pavilion",
+		"disc_iwakura_sanctum",
+		"disc_misogi_spring_shrine",
+		"disc_eternal_kagura_hall",
 	]
 	for expected_id: String in expected_ids:
 		assert_true(actual_ids.has(expected_id),
@@ -181,14 +184,45 @@ func test_all_tier2_entries_have_tier_value_2() -> void:
 			"Expected tier=2 for: %s" % str(entry.get("discovery_id", "")))
 
 
+func test_tier3_catalog_has_exactly_4_entries() -> void:
+	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
+	assert_eq(data.get_tier3_entries().size(), 4,
+		"recipes.md lists 4 Tier 3 monument discoveries")
+
+
+func test_all_tier3_discovery_ids_present() -> void:
+	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
+	var entries: Array[Dictionary] = data.get_tier3_entries()
+	var actual_ids: Array[String] = []
+	for entry: Dictionary in entries:
+		actual_ids.append(str(entry.get("discovery_id", "")))
+
+	var expected_ids: Array[String] = [
+		"disc_heavenwind_torii",
+		"disc_pagoda_of_the_five",
+		"disc_void_mirror",
+		"disc_great_torii",
+	]
+	for expected_id: String in expected_ids:
+		assert_true(actual_ids.has(expected_id),
+			"Tier 3 discovery missing from catalog: %s" % expected_id)
+
+
+func test_all_tier3_entries_have_tier_value_3() -> void:
+	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
+	for entry: Dictionary in data.get_tier3_entries():
+		assert_eq(int(entry.get("tier", 0)), 3,
+			"Expected tier=3 for: %s" % str(entry.get("discovery_id", "")))
+
+
 # ---------------------------------------------------------------------------
 # Spirit catalog
 # ---------------------------------------------------------------------------
 
-func test_spirit_catalog_has_exactly_30_entries() -> void:
+func test_spirit_catalog_has_exactly_34_entries() -> void:
 	var data: SpiritCatalogData = SpiritCatalogData.new()
 	assert_eq(data.get_entries().size(), 34,
-		"recipes.md lists 34 spirit animals")
+		"recipes.md lists 34 spirit animals (30 base + 4 Ku deity spirits)")
 
 
 func test_all_spirit_ids_present() -> void:
@@ -209,6 +243,8 @@ func test_all_spirit_ids_present() -> void:
 		"spirit_peat_salamander","spirit_swamp_crane",       "spirit_murk_crocodile",
 		"spirit_mud_crab",       "spirit_frost_owl",         "spirit_boreal_wolf",
 		"spirit_tundra_lynx",    "spirit_ice_cavern_bat",    "spirit_sky_whale",
+		"spirit_oyamatsumi",     "spirit_suijin",            "spirit_kagutsuchi",
+		"spirit_fujin",
 	]
 	for expected_id: String in expected_ids:
 		assert_true(actual_ids.has(expected_id),
@@ -283,3 +319,26 @@ func test_boreal_wolf_tension_with_tundra_lynx() -> void:
 	var entry: Dictionary = _find_spirit("spirit_boreal_wolf")
 	assert_eq(str(entry.get("tension_partner_id", "")), "spirit_tundra_lynx",
 		"Boreal Wolf tension partner must be Tundra Lynx")
+
+
+func test_ku_deity_spirits_are_tier3() -> void:
+	var tier3_spirit_ids: Array[String] = [
+		"spirit_oyamatsumi", "spirit_suijin", "spirit_kagutsuchi", "spirit_fujin",
+	]
+	for spirit_id: String in tier3_spirit_ids:
+		var entry: Dictionary = _find_spirit(spirit_id)
+		assert_false(entry.is_empty(), "Ku deity spirit missing: %s" % spirit_id)
+		assert_eq(int(entry.get("tier", -1)), 3,
+			"%s must have tier=3" % spirit_id)
+
+
+func test_sky_whale_is_tier4() -> void:
+	var entry: Dictionary = _find_spirit("spirit_sky_whale")
+	assert_false(entry.is_empty(), "Sky Whale must exist in catalog")
+	assert_eq(int(entry.get("tier", -1)), 4, "Sky Whale must have tier=4")
+
+
+func test_mist_stag_is_tier2() -> void:
+	var entry: Dictionary = _find_spirit("spirit_mist_stag")
+	assert_false(entry.is_empty(), "Mist Stag must exist in catalog")
+	assert_eq(int(entry.get("tier", -1)), 2, "Mist Stag must have tier=2")

@@ -8,6 +8,8 @@ func load_from_data(data: DiscoveryCatalogData) -> void:
 		_entries[entry["discovery_id"]] = entry
 	for entry in data.get_tier2_entries():
 		_entries[entry["discovery_id"]] = entry
+	for entry in data.get_tier3_entries():
+		_entries[entry["discovery_id"]] = entry
 
 func get_entries() -> Dictionary:
 	return _entries.duplicate(true)

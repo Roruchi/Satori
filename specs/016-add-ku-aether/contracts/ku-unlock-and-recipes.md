@@ -18,7 +18,7 @@ Defines non-negotiable behavior between spirit unlock flow, alchemy service, and
 These conditions are part of progression design and must remain true unless a future spec changes them:
 1. `disc_deep_stand` discovery must be obtainable first.
 2. Mist Stag summon depends on:
-   - `required_biomes = [8]` (BOG)
+   - `required_biomes = [4]` (WETLANDS)
    - `size_threshold = 5`
    - `prerequisite_ids = ["disc_deep_stand"]`
 
