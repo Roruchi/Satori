@@ -3,6 +3,8 @@ extends RefCounted
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SpiritGiftTypeScript = preload("res://src/spirits/SpiritGiftType.gd")
+const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
+const _INVALID_COORD: Vector2i = Vector2i(2147483647, 2147483647)
 
 static func process(spirit_id: String, definition: Dictionary) -> void:
 	if spirit_id.is_empty():
@@ -62,19 +64,93 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 			var grid: RefCounted = grid_variant as RefCounted
 			if grid == null or not grid.has_method("get_tile"):
 				return
-			for coord_variant: Variant in grid.tiles.keys():
-				var coord: Vector2i = coord_variant as Vector2i
-				var tile: GardenTile = grid.get_tile(coord)
-				if tile == null:
-					continue
-				if str(tile.metadata.get("spirit_id", "")) != spirit_id:
-					continue
-				for element_str: String in elements_part:
-					var trimmed: String = element_str.strip_edges()
-					if trimmed.is_empty():
-						continue
-					var element: int = int(trimmed)
-					alchemy_for_charge.store_shrine_charge(coord, element, 1)
+			var dropoff_coord: Vector2i = _find_origin_dropoff_coord(grid)
+			if dropoff_coord == _INVALID_COORD:
 				return
+			var spirit_coord: Vector2i = _find_spirit_anchor_coord(grid, spirit_id)
+			if _is_water_spirit(spirit_id) and spirit_coord != _INVALID_COORD and not _same_island(grid, spirit_coord, dropoff_coord):
+				var fallback_coord: Vector2i = _find_completed_water_building_dropoff(grid, _island_id_for_coord(grid, spirit_coord))
+				if fallback_coord != _INVALID_COORD:
+					dropoff_coord = fallback_coord
+					var fallback_tile: GardenTile = grid.get_tile(dropoff_coord)
+					if fallback_tile != null:
+						fallback_tile.metadata["is_water_dropoff"] = true
+			for element_str: String in elements_part:
+				var trimmed: String = element_str.strip_edges()
+				if trimmed.is_empty():
+					continue
+				var element: int = int(trimmed)
+				alchemy_for_charge.store_shrine_charge(dropoff_coord, element, 1)
+			return
 		_:
 			pass
+
+static func _find_origin_dropoff_coord(grid: RefCounted) -> Vector2i:
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if bool(tile.metadata.get("is_origin_shrine", false)):
+			return coord
+	if grid.has_method("has_tile") and grid.has_tile(Vector2i.ZERO):
+		return Vector2i.ZERO
+	return _INVALID_COORD
+
+static func _find_spirit_anchor_coord(grid: RefCounted, spirit_id: String) -> Vector2i:
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if str(tile.metadata.get("spirit_id", "")) == spirit_id:
+			return coord
+	return _INVALID_COORD
+
+static func _find_completed_water_building_dropoff(grid: RefCounted, preferred_island: String) -> Vector2i:
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if not bool(tile.metadata.get("is_building_complete", false)):
+			continue
+		if not _is_water_biome(tile.biome):
+			continue
+		if not preferred_island.is_empty():
+			var tile_island: String = str(tile.metadata.get("island_id", ""))
+			if tile_island != preferred_island:
+				continue
+		return coord
+	return _INVALID_COORD
+
+static func _is_water_spirit(spirit_id: String) -> bool:
+	for entry_variant: Variant in SpiritCatalogData.new().get_entries():
+		if not (entry_variant is Dictionary):
+			continue
+		var entry: Dictionary = entry_variant as Dictionary
+		if str(entry.get("spirit_id", "")) != spirit_id:
+			continue
+		var preferred_variant: Variant = entry.get("preferred_biomes", [])
+		if not (preferred_variant is Array):
+			return false
+		for biome_variant: Variant in (preferred_variant as Array):
+			if _is_water_biome(int(biome_variant)):
+				return true
+		return false
+	return false
+
+static func _is_water_biome(biome: int) -> bool:
+	return biome == BiomeTypeScript.Value.RIVER or biome == BiomeTypeScript.Value.WETLANDS or biome == BiomeTypeScript.Value.MOONLIT_POOL
+
+static func _same_island(grid: RefCounted, a: Vector2i, b: Vector2i) -> bool:
+	var a_island: String = _island_id_for_coord(grid, a)
+	var b_island: String = _island_id_for_coord(grid, b)
+	if a_island.is_empty() or b_island.is_empty():
+		return true
+	return a_island == b_island
+
+static func _island_id_for_coord(grid: RefCounted, coord: Vector2i) -> String:
+	if grid == null or not grid.has_method("get_island_id"):
+		return ""
+	return str(grid.get_island_id(coord))

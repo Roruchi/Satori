@@ -73,6 +73,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					return
 				if is_build_mode and _try_build_shrine(coord):
 					return
+				if is_build_mode and _toggle_build_block(coord):
+					return
+				if is_build_mode and _place_build_block_on_empty(coord):
+					return
 				if growth_service != null and growth_service.has_method("get_pouch"):
 					var pouch: SeedPouch = growth_service.get_pouch()
 					if pouch != null:
@@ -85,21 +89,104 @@ func _unhandled_input(event: InputEvent) -> void:
 							return
 						if not GameState.grid.is_placement_valid(coord):
 							return
-						var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
-						if alchemy != null and alchemy.has_method("spend_for_biome_placement"):
-							if not alchemy.spend_for_biome_placement(selected_biome):
-								return
-						if growth_service.try_plant(coord, recipe):
+						if growth_service.try_plant(coord, recipe, is_build_mode):
 							pouch.consume_use_at(recipe_index)
 							if growth_service.has_method("notify_pouch_updated"):
 								growth_service.notify_pouch_updated()
 							if growth_service.has_method("get_mode") and int(growth_service.get_mode()) == GrowthModeScript.Value.INSTANT:
 								growth_service.try_bloom(coord)
 							return
-						else:
-							if alchemy != null and alchemy.has_method("refund_for_biome_placement"):
-								alchemy.refund_for_biome_placement(selected_biome)
 				return
+
+func _place_build_block_on_empty(coord: Vector2i) -> bool:
+	if GameState.grid.has_tile(coord):
+		return false
+	if not GameState.grid.is_placement_valid(coord):
+		return false
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service == null or not growth_service.has_method("get_pouch"):
+		return false
+	var pouch: SeedPouch = growth_service.get_pouch()
+	if pouch == null:
+		return false
+	var selected_biome: int = int(GameState.selected_biome)
+	var recipe_index: int = pouch.find_index_by_biome(selected_biome)
+	if recipe_index < 0:
+		return false
+	var recipe: SeedRecipe = pouch.get_at(recipe_index)
+	if recipe == null:
+		return false
+	pouch.consume_use_at(recipe_index)
+	GameState.place_tile_from_seed(coord, recipe.produces_biome, true)
+	if growth_service.has_method("notify_pouch_updated"):
+		growth_service.notify_pouch_updated()
+	return true
+
+func _toggle_build_block(coord: Vector2i) -> bool:
+	if not GameState.grid.has_tile(coord):
+		return false
+	var tile: GardenTile = GameState.grid.get_tile(coord)
+	if tile == null:
+		return false
+	# Shrine anchors are handled separately by _try_build_shrine.
+	if bool(tile.metadata.get("shrine_buildable", false)) or bool(tile.metadata.get("shrine_built", false)):
+		return false
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service == null or not growth_service.has_method("get_pouch"):
+		return false
+	var pouch: SeedPouch = growth_service.get_pouch()
+	if pouch == null:
+		return false
+	var target_biome: int = tile.biome
+	var recipe_index: int = pouch.find_index_by_biome(target_biome)
+	var is_build_block: bool = bool(tile.metadata.get("is_build_block", false))
+	if is_build_block:
+		var refund_recipe: SeedRecipe = null
+		if recipe_index >= 0:
+			refund_recipe = pouch.get_at(recipe_index)
+		if refund_recipe == null:
+			refund_recipe = _find_recipe_for_biome(target_biome)
+		if refund_recipe == null:
+			return false
+		if not pouch.add(refund_recipe, 1):
+			return false
+		tile.locked = false
+		tile.metadata["is_build_block"] = false
+		tile.metadata.erase("build_started_at")
+		tile.metadata.erase("build_duration")
+		tile.metadata.erase("is_building_complete")
+		tile.metadata.erase("building_completed_at")
+		tile.metadata.erase("build_completion_pending")
+		if growth_service.has_method("notify_pouch_updated"):
+			growth_service.notify_pouch_updated()
+		return true
+	if recipe_index < 0:
+		return false
+	var recipe: SeedRecipe = pouch.get_at(recipe_index)
+	if recipe == null:
+		return false
+	pouch.consume_use_at(recipe_index)
+	tile.locked = true
+	tile.metadata["is_build_block"] = true
+	tile.metadata["is_building_complete"] = false
+	tile.metadata["build_started_at"] = Time.get_unix_time_from_system()
+	tile.metadata["build_duration"] = 10.0
+	tile.metadata["build_completion_pending"] = true
+	if growth_service.has_method("notify_pouch_updated"):
+		growth_service.notify_pouch_updated()
+	return true
+
+func _find_recipe_for_biome(target_biome: int) -> SeedRecipe:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("get_registry"):
+		return null
+	var registry: SeedRecipeRegistry = alchemy.get_registry()
+	if registry == null or not registry.has_method("all_known_recipes"):
+		return null
+	for recipe: SeedRecipe in registry.all_known_recipes():
+		if recipe != null and int(recipe.produces_biome) == target_biome:
+			return recipe
+	return null
 
 func _on_long_press(coord: Vector2i) -> void:
 	GameState.try_mix_tile(coord)

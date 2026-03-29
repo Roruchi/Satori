@@ -47,6 +47,30 @@ layout_mode = 2
 script = ExtResource("5")
 text = "Pouch: 0"
 
+[node name="ElementMeterRow" type="HBoxContainer" parent="Root/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ChiMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Chi: 3/3"
+
+[node name="SuiMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Sui: 3/3"
+
+[node name="KaMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Ka: 3/3"
+
+[node name="FuMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Fu: 3/3"
+
+[node name="KuMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Ku: --"
+
 [node name="Spacer" type="Control" parent="Root/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -115,7 +139,7 @@ text = "⬢\nPlant"
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "✦\nMix"
+text = "✦\nCraft"
 
 [node name="BuildButton" type="Button" parent="Root/BottomBar"]
 custom_minimum_size = Vector2(0, 72)

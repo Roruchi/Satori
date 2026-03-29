@@ -3,6 +3,7 @@ extends PanelContainer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
+const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 
 const _ELEMENT_COLORS: Dictionary = {
 	0: Color(0.62, 0.62, 0.62),      # CHI stone-grey
@@ -64,6 +65,8 @@ func _ready() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy != null and alchemy.has_signal("element_unlocked"):
 		alchemy.element_unlocked.connect(_on_element_unlocked)
+	if alchemy != null and alchemy.has_signal("element_charge_changed"):
+		alchemy.element_charge_changed.connect(_on_element_charge_changed)
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(_on_seed_added_to_pouch)
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
@@ -165,6 +168,9 @@ func _on_seed_added_to_pouch(recipe: SeedRecipe) -> void:
 		_last_feedback = "Added %s to pouch" % _recipe_display_name(recipe)
 	_update_ui()
 
+func _on_element_charge_changed(_element_id: int, _charge: int) -> void:
+	_update_ui()
+
 func _on_pouch_updated() -> void:
 	_last_feedback = ""
 	_update_ui()
@@ -209,7 +215,13 @@ func _update_ui() -> void:
 		GodaiElementScript.Value.KU: _ku_button,
 	}
 	for element: int in btn_map:
-		_style_element_button(btn_map[element] as Button, element, _selected.has(element))
+		var btn: Button = btn_map[element] as Button
+		var unlocked: bool = alchemy.is_element_unlocked(element)
+		var charge: int = alchemy.get_element_charge(element) if unlocked else 0
+		if btn != null:
+			btn.disabled = not unlocked or charge <= 0
+			btn.text = _format_element_button_text(element, charge, unlocked)
+		_style_element_button(btn, element, _selected.has(element))
 	if _selected.is_empty():
 		_slots_label.text = "Select 1 or 2 elements"
 	else:
@@ -218,6 +230,7 @@ func _update_ui() -> void:
 			labels.append(str(GodaiElementScript.DISPLAY_NAMES.get(value, "?")))
 		_slots_label.text = " + ".join(labels)
 	var recipe: SeedRecipe = alchemy.lookup_recipe(_selected)
+	var can_afford_selected: bool = _selected.is_empty() or alchemy.can_afford_mix(_selected)
 	if recipe == null:
 		_preview_label.text = "\u2192  \u2026"
 	else:
@@ -230,6 +243,8 @@ func _update_ui() -> void:
 		_pouch_status_label.text = "Pouch: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, pouch.total_uses()]
 	if pouch_full:
 		_feedback_label.text = "Pouch full"
+	elif not can_afford_selected and not _selected.is_empty():
+		_feedback_label.text = "Insufficient essence"
 	elif not _last_feedback.is_empty():
 		_feedback_label.text = _last_feedback
 	elif recipe != null:
@@ -240,7 +255,13 @@ func _update_ui() -> void:
 		_feedback_label.text = "Select one more element"
 	else:
 		_feedback_label.text = ""
-	_confirm_button.disabled = recipe == null or pouch_full
+	_confirm_button.disabled = recipe == null or pouch_full or not can_afford_selected
+
+func _format_element_button_text(element: int, charge: int, unlocked: bool) -> String:
+	var base: String = str(_ELEMENT_BUTTON_TEXT.get(element, "?"))
+	if not unlocked:
+		return "%s\nLocked" % base
+	return "%s\n%d/%d" % [base, charge, KushoPoolScript.CAPACITY_PER_ELEMENT]
 
 func _shake_button_for_element(element_id: int) -> void:
 	var target: Button = null

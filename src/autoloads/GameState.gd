@@ -15,6 +15,10 @@ signal mix_rejected(coord: Vector2i, reason: String)
 func _ready() -> void:
 	grid = _GardenGridScript.new()
 	var origin_tile: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.STONE)
+	origin_tile.metadata["is_origin_shrine"] = true
+	origin_tile.metadata["shrine_buildable"] = false
+	origin_tile.metadata["shrine_built"] = true
+	origin_tile.metadata["build_discovery_id"] = "disc_origin_shrine"
 	tile_placed.emit(Vector2i.ZERO, origin_tile)
 
 ## Attempt to place the selected biome at coord.
@@ -34,7 +38,14 @@ func try_mix_tile(coord: Vector2i) -> bool:
 	return false
 
 
-func place_tile_from_seed(coord: Vector2i, biome: int) -> void:
+func place_tile_from_seed(coord: Vector2i, biome: int, as_build_block: bool = false) -> void:
 	var tile: GardenTile = grid.place_tile(coord, biome)
+	tile.locked = as_build_block
+	tile.metadata["is_build_block"] = as_build_block
+	if as_build_block:
+		tile.metadata["is_building_complete"] = false
+		tile.metadata["build_started_at"] = Time.get_unix_time_from_system()
+		tile.metadata["build_duration"] = 10.0
+		tile.metadata["build_completion_pending"] = true
 	tile_placed.emit(coord, tile)
 	bloom_confirmed.emit(coord, biome)

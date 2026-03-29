@@ -13,6 +13,7 @@ signal recipe_discovered(recipe_id: StringName)
 signal seed_added_to_pouch(recipe: SeedRecipe)
 signal shrine_charge_ready(coord: Vector2i, element_id: int)
 signal shrine_charge_collected(coord: Vector2i, element_id: int, amount: int)
+signal element_charge_changed(element_id: int, charge: int)
 
 var _registry: SeedRecipeRegistry
 var _kusho_pool: KushoPool = KushoPoolScript.new()
@@ -82,16 +83,41 @@ func spend_for_biome_placement(biome: int) -> bool:
 	var element: int = _element_for_biome_placement(biome)
 	if element == INVALID_ELEMENT:
 		return false
-	return _kusho_pool.consume(element, 1)
+	if not _kusho_pool.consume(element, 1):
+		return false
+	element_charge_changed.emit(element, _kusho_pool.get_charge(element))
+	return true
+
+func spend_for_recipe_placement(recipe: SeedRecipe) -> bool:
+	if recipe == null:
+		return false
+	var spent_elements: Array[int] = []
+	for element: int in recipe.elements:
+		if not is_element_unlocked(element):
+			_refund_elements(spent_elements)
+			return false
+		if not _kusho_pool.consume(element, 1):
+			_refund_elements(spent_elements)
+			return false
+		spent_elements.append(element)
+		element_charge_changed.emit(element, _kusho_pool.get_charge(element))
+	return true
 
 func refund_for_biome_placement(biome: int) -> void:
 	var element: int = _element_for_biome_placement(biome)
 	if element == INVALID_ELEMENT:
 		return
 	_kusho_pool.add_charge(element, 1)
+	element_charge_changed.emit(element, _kusho_pool.get_charge(element))
+
+func refund_for_recipe_placement(recipe: SeedRecipe) -> void:
+	if recipe == null:
+		return
+	_refund_elements(recipe.elements)
 
 func set_element_charge_for_testing(element: int, charge: int) -> void:
 	_kusho_pool.set_charge(element, charge)
+	element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
 func store_shrine_charge(coord: Vector2i, element: int, amount: int = 1) -> bool:
 	if amount <= 0:
@@ -118,26 +144,22 @@ func collect_shrine_charge(coord: Vector2i) -> bool:
 	if not (counts_variant is Dictionary):
 		return false
 	var counts: Dictionary = counts_variant as Dictionary
-	var remaining: Dictionary = {}
-	var collected_any: bool = false
+	var had_any: bool = false
 	for key_variant: Variant in counts.keys():
 		var element: int = int(key_variant)
 		var amount: int = int(counts.get(key_variant, 0))
 		if element == INVALID_ELEMENT or amount <= 0:
 			continue
+		had_any = true
 		var overflow: int = _kusho_pool.add_charge(element, amount)
 		var collected: int = amount - overflow
 		if collected > 0:
-			collected_any = true
+			element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 			shrine_charge_collected.emit(coord, element, collected)
-		if overflow > 0:
-			remaining[element] = overflow
-	if not collected_any:
+	if not had_any:
 		return false
-	if remaining.is_empty():
-		_pending_shrine_charges.erase(coord_key)
-	else:
-		_pending_shrine_charges[coord_key] = remaining
+	# A collect action consumes the pending shrine gift, even if the pool is full.
+	_pending_shrine_charges.erase(coord_key)
 	return true
 
 func has_shrine_charge(coord: Vector2i) -> bool:
@@ -154,11 +176,16 @@ func _coord_key(coord: Vector2i) -> String:
 
 func _consume_mix_elements(elements: Array[int]) -> void:
 	for element: int in elements:
-		_kusho_pool.consume(element, 1)
+		if _kusho_pool.consume(element, 1):
+			element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
 func _refund_mix_elements(elements: Array[int]) -> void:
+	_refund_elements(elements)
+
+func _refund_elements(elements: Array[int]) -> void:
 	for element: int in elements:
 		_kusho_pool.add_charge(element, 1)
+		element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
 func _element_for_biome_placement(biome: int) -> int:
 	match biome:

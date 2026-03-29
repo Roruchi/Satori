@@ -46,11 +46,9 @@ func _duration_for_tier(tier: int) -> float:
 func _should_grow_instantly() -> bool:
 	return _mode == GrowthModeScript.Value.INSTANT
 
-func try_plant(coord: Vector2i, recipe: SeedRecipe) -> bool:
-	if _tracker.is_full():
-		return false
+func try_plant(coord: Vector2i, recipe: SeedRecipe, as_build_block: bool = false) -> bool:
 	var duration: float = _duration_for_tier(recipe.tier)
-	var seed: SeedInstance = SeedInstanceScript.create(recipe.recipe_id, coord, duration, recipe.produces_biome)
+	var seed: SeedInstance = SeedInstanceScript.create(recipe.recipe_id, coord, duration, recipe.produces_biome, as_build_block)
 	_tracker.add(seed)
 	seed_planted.emit(seed)
 	if seed.evaluate_growth():
@@ -69,7 +67,7 @@ func try_bloom(coord: Vector2i) -> bool:
 	_tracker.remove_bloomed(coord)
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state != null and game_state.has_method("place_tile_from_seed"):
-		game_state.place_tile_from_seed(coord, seed.produces_biome)
+		game_state.place_tile_from_seed(coord, seed.produces_biome, seed.as_build_block)
 	bloom_confirmed.emit(coord, seed.produces_biome)
 	return true
 

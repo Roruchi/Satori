@@ -5,6 +5,7 @@ signal spirit_summoned(spirit_id: String, instance: SpiritInstance)
 signal spirit_despawned(spirit_id: String)
 signal riddle_hint_triggered(spirit_id: String, riddle_text: String)
 signal sky_whale_event_triggered()
+signal building_completed(coord: Vector2i, biome: int)
 
 const _PatternLoaderScript = preload("res://src/biomes/pattern_loader.gd")
 const _SpiritGiftProcessorScript = preload("res://src/spirits/SpiritGiftProcessor.gd")
@@ -12,6 +13,8 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SpiritGiftTypeScript = preload("res://src/spirits/SpiritGiftType.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const SatoriConditionEvaluatorScript = preload("res://src/satori/SatoriConditionEvaluator.gd")
+const BUILD_COMPLETION_SECONDS: float = 10.0
+const ESSENCE_CHARGE_SECONDS: float = 60.0
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -21,11 +24,13 @@ var _sky_whale_evaluator: SkyWhaleEvaluator
 ## is known, or bare spirit_id for spirits without island scope (e.g. Sky Whale).
 var _active_instances: Dictionary = {}
 var _active_wanderers: Dictionary = {}
+var _next_essence_drop_at: Dictionary = {}
 var _riddle_shown: Dictionary = {}
 var _spirit_patterns: Array[PatternDefinition] = []
 var _current_era: StringName = &"stillness"
 
 func _ready() -> void:
+	set_process(true)
 	_catalog = SpiritCatalog.new()
 	_catalog.load_from_data(SpiritCatalogData.new())
 	_riddle_evaluator = SpiritRiddleEvaluator.new()
@@ -47,6 +52,10 @@ func _ready() -> void:
 		satori_service.era_changed.connect(_on_era_changed)
 		if satori_service.has_method("get_current_era"):
 			_current_era = satori_service.get_current_era()
+
+func _process(_delta: float) -> void:
+	_finalize_pending_buildings()
+	_process_essence_charge_timers()
 
 func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
@@ -80,6 +89,7 @@ func restore_from_persistence() -> void:
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		var wanderer: Node = _spawner.spawn(instance, entry)
 		_active_wanderers[key] = wanderer
+		_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
 		var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 		if ecology != null and ecology.has_method("register_wanderer"):
 			ecology.register_wanderer(wanderer)
@@ -104,6 +114,7 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	instance.island_id = island_id
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
+	_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	_active_wanderers[key] = wanderer
 	var game_state: Node = get_node_or_null("/root/GameState")
@@ -124,8 +135,6 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
 	if persistence != null and persistence.has_method("record_instance"):
 		persistence.record_instance(instance)
-	_maybe_mark_shrine_buildable(instance)
-	_maybe_queue_godai_charge_drop(spirit_id, entry)
 
 func _on_tile_placed(_coord: Vector2i, _tile: GardenTile) -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
@@ -168,6 +177,7 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 	# Sky Whale is global — no island scoping.
 	instance.island_id = ""
 	_active_instances[SkyWhaleEvaluator.SPIRIT_ID] = instance
+	_next_essence_drop_at[SkyWhaleEvaluator.SPIRIT_ID] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 	if ecology != null and ecology.has_method("register_wanderer"):
@@ -182,32 +192,27 @@ func active_count() -> int:
 	return _active_instances.size()
 
 func get_housing_snapshot() -> Dictionary:
-	var total_active: int = _active_instances.size()
-	var bonus_capacity: int = 0
-	var satori_service: Node = get_node_or_null("/root/SatoriService")
-	if satori_service != null and satori_service.has_method("get_spirit_housing_capacity_bonus"):
-		bonus_capacity = int(satori_service.get_spirit_housing_capacity_bonus())
-	var housed_count: int = mini(total_active, maxi(bonus_capacity, 0))
-	var unhoused_count: int = maxi(total_active - housed_count, 0)
-	var remaining_housed: int = housed_count
-
+	var housed_count: int = 0
+	var unhoused_count: int = 0
 	var housed_by_island: Dictionary = {}
-	if remaining_housed > 0:
-		for key_variant: Variant in _active_instances.keys():
-			var key: String = str(key_variant)
-			var instance: SpiritInstance = _active_instances[key]
-			if instance == null:
-				continue
-			if instance.island_id.is_empty():
-				continue
-			if remaining_housed <= 0:
-				break
-			housed_by_island[instance.island_id] = int(housed_by_island.get(instance.island_id, 0)) + 1
-			remaining_housed -= 1
-
-	var final_housed: int = housed_count
+	var houses_by_island: Dictionary = _collect_available_houses_by_island()
+	for key_variant: Variant in _active_instances.keys():
+		var key: String = str(key_variant)
+		var instance: SpiritInstance = _active_instances.get(key, null)
+		if instance == null:
+			continue
+		if instance.spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+			continue
+		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
+		var preferred: Array[int] = _preferred_biomes(entry)
+		var assigned_island: String = _assign_house_for_spirit(houses_by_island, instance.island_id, preferred)
+		if assigned_island.is_empty():
+			unhoused_count += 1
+			continue
+		housed_count += 1
+		housed_by_island[assigned_island] = int(housed_by_island.get(assigned_island, 0)) + 1
 	return {
-		"housed_count": final_housed,
+		"housed_count": housed_count,
 		"unhoused_count": unhoused_count,
 		"housed_by_island": housed_by_island,
 	}
@@ -260,6 +265,7 @@ func _despawn_by_key(key: String) -> void:
 	if wanderer != null:
 		wanderer.queue_free()
 	_active_wanderers.erase(key)
+	_next_essence_drop_at.erase(key)
 	_active_instances.erase(key)
 	spirit_despawned.emit(instance.spirit_id)
 
@@ -360,3 +366,133 @@ func _elements_for_biome(biome: int) -> Array[int]:
 			return [GodaiElementScript.Value.KU]
 		_:
 			return []
+
+func _process_essence_charge_timers() -> void:
+	if _active_instances.is_empty():
+		return
+	var now: float = Time.get_unix_time_from_system()
+	for key_variant: Variant in _active_instances.keys():
+		var key: String = str(key_variant)
+		var instance: SpiritInstance = _active_instances.get(key, null)
+		if instance == null:
+			continue
+		if instance.spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+			continue
+		var next_drop_at: float = float(_next_essence_drop_at.get(key, now + ESSENCE_CHARGE_SECONDS))
+		if now < next_drop_at:
+			continue
+		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
+		_maybe_queue_godai_charge_drop(instance.spirit_id, entry)
+		_next_essence_drop_at[key] = now + ESSENCE_CHARGE_SECONDS
+
+func _collect_available_houses_by_island() -> Dictionary:
+	var houses_by_island: Dictionary = {}
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return houses_by_island
+	var grid: RefCounted = game_state.get("grid") as RefCounted
+	if grid == null or not grid.has_method("get_tile"):
+		return houses_by_island
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if not bool(tile.metadata.get("is_building_complete", false)):
+			continue
+		var island_id: String = ""
+		if grid.has_method("get_island_id"):
+			island_id = str(grid.get_island_id(coord))
+		if island_id.is_empty():
+			island_id = str(tile.metadata.get("island_id", ""))
+		var arr_variant: Variant = houses_by_island.get(island_id, null)
+		var arr: Array[int] = []
+		if arr_variant is Array:
+			arr = (arr_variant as Array).duplicate()
+		arr.append(tile.biome)
+		houses_by_island[island_id] = arr
+	return houses_by_island
+
+func _preferred_biomes(entry: Dictionary) -> Array[int]:
+	var preferred: Array[int] = []
+	var preferred_variant: Variant = entry.get("preferred_biomes", [])
+	if preferred_variant is Array:
+		for biome_variant: Variant in (preferred_variant as Array):
+			preferred.append(int(biome_variant))
+	return preferred
+
+func _assign_house_for_spirit(houses_by_island: Dictionary, preferred_island: String, preferred_biomes: Array[int]) -> String:
+	if not preferred_island.is_empty():
+		if _consume_matching_house(houses_by_island, preferred_island, preferred_biomes):
+			return preferred_island
+	for island_variant: Variant in houses_by_island.keys():
+		var island_id: String = str(island_variant)
+		if island_id == preferred_island:
+			continue
+		if _consume_matching_house(houses_by_island, island_id, preferred_biomes):
+			return island_id
+	return ""
+
+func _consume_matching_house(houses_by_island: Dictionary, island_id: String, preferred_biomes: Array[int]) -> bool:
+	var arr_variant: Variant = houses_by_island.get(island_id, null)
+	if not (arr_variant is Array):
+		return false
+	var houses: Array[int] = (arr_variant as Array)
+	if houses.is_empty():
+		return false
+	for i: int in range(houses.size()):
+		var biome: int = int(houses[i])
+		if not preferred_biomes.is_empty() and not preferred_biomes.has(biome):
+			continue
+		houses.remove_at(i)
+		houses_by_island[island_id] = houses
+		return true
+	return false
+
+func _finalize_pending_buildings() -> void:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	var grid: RefCounted = game_state.get("grid") as RefCounted
+	if grid == null or not grid.has_method("get_tile"):
+		return
+	if _active_instances.is_empty():
+		return
+	var now: float = Time.get_unix_time_from_system()
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if not bool(tile.metadata.get("is_build_block", false)):
+			continue
+		if bool(tile.metadata.get("is_building_complete", false)):
+			continue
+		if not _has_builder_spirit_for_tile(tile):
+			continue
+		var started_at: float = float(tile.metadata.get("build_started_at", now))
+		var duration: float = float(tile.metadata.get("build_duration", BUILD_COMPLETION_SECONDS))
+		if now - started_at < maxf(0.1, duration):
+			continue
+		tile.metadata["is_build_block"] = false
+		tile.metadata["is_building_complete"] = true
+		tile.metadata["building_completed_at"] = now
+		tile.metadata["build_completion_pending"] = false
+		building_completed.emit(coord, tile.biome)
+
+func _has_builder_spirit_for_tile(tile: GardenTile) -> bool:
+	if tile == null:
+		return false
+	var tile_island: String = str(tile.metadata.get("island_id", ""))
+	for key_variant: Variant in _active_instances.keys():
+		var key: String = str(key_variant)
+		var instance: SpiritInstance = _active_instances.get(key, null)
+		if instance == null:
+			continue
+		if instance.spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+			continue
+		if tile_island.is_empty() or instance.island_id.is_empty():
+			return true
+		if instance.island_id == tile_island:
+			return true
+	return false

@@ -169,7 +169,7 @@ func _draw() -> void:
 
 	if _seed_biomes.is_empty():
 		var font: Font = ThemeDB.fallback_font
-		var empty_text: String = "Mix to craft seeds"
+		var empty_text: String = "Craft seeds"
 		var text_size: Vector2 = font.get_string_size(empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
 		var text_pos: Vector2 = Vector2(_centers[0].x - text_size.x * 0.5, _centers[0].y + 5.0)
 		draw_string(font, text_pos, empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.86, 0.86, 0.90))

@@ -7,8 +7,9 @@ var planted_at: float = 0.0
 var growth_duration: float = 0.0
 var state: int = SeedState.Value.GROWING
 var produces_biome: int = BiomeType.Value.NONE
+var as_build_block: bool = false
 
-static func create(rid: StringName, coord: Vector2i, duration: float, target_biome: int) -> SeedInstance:
+static func create(rid: StringName, coord: Vector2i, duration: float, target_biome: int, build_block: bool = false) -> SeedInstance:
 	var instance: SeedInstance = SeedInstance.new()
 	instance.recipe_id = rid
 	instance.hex_coord = coord
@@ -16,6 +17,7 @@ static func create(rid: StringName, coord: Vector2i, duration: float, target_bio
 	instance.growth_duration = duration
 	instance.state = SeedState.Value.GROWING
 	instance.produces_biome = target_biome
+	instance.as_build_block = build_block
 	return instance
 
 func is_ready() -> bool:
@@ -41,6 +43,7 @@ func serialize() -> Dictionary:
 		"growth_duration": growth_duration,
 		"state": state,
 		"produces_biome": produces_biome,
+		"as_build_block": as_build_block,
 	}
 
 static func deserialize(data: Dictionary) -> SeedInstance:
@@ -53,4 +56,5 @@ static func deserialize(data: Dictionary) -> SeedInstance:
 	instance.state = int(data.get("state", SeedState.Value.GROWING))
 	# Backward compatibility: older seed saves used "biome" as the key.
 	instance.produces_biome = int(data.get("produces_biome", data.get("biome", BiomeType.Value.NONE)))
+	instance.as_build_block = bool(data.get("as_build_block", false))
 	return instance

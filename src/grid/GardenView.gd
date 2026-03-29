@@ -212,6 +212,10 @@ func _draw() -> void:
 			base_color = base_color.darkened(0.18)
 		_draw_tile(coord, base_color)
 		_draw_tile_decorations(coord, tile.biome, in_large)
+		var is_build_block: bool = bool(tile.metadata.get("is_build_block", false))
+		var is_completed_building: bool = bool(tile.metadata.get("is_building_complete", false))
+		if is_build_block or is_completed_building:
+			_draw_build_block_icon(coord, tile.biome, is_build_block, is_completed_building)
 		if tile.locked:
 			var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 			draw_circle(Vector2(tc.x + TILE_RADIUS * 0.6, tc.y - TILE_RADIUS * 0.5), 4.0, Color(1.0, 0.85, 0.0))
@@ -279,7 +283,7 @@ func _draw() -> void:
 
 	# 7. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
-	_draw_satori_overlay()
+	_draw_build_progress_overlays()
 
 
 func _draw_pending_seed_previews() -> void:
@@ -325,20 +329,89 @@ func _draw_shrine_status_overlays() -> void:
 	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
 	for coord: Vector2i in GameState.grid.tiles:
 		var tile: GardenTile = GameState.grid.tiles[coord]
-		if bool(tile.metadata.get("shrine_buildable", false)) and not bool(tile.metadata.get("shrine_built", false)):
+		var is_origin_shrine: bool = bool(tile.metadata.get("is_origin_shrine", false))
+		var is_water_dropoff: bool = bool(tile.metadata.get("is_water_dropoff", false))
+		if bool(tile.metadata.get("shrine_buildable", false)) and not bool(tile.metadata.get("shrine_built", false)) and not str(tile.metadata.get("build_discovery_id", "")).is_empty():
 			var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 			_draw_seed_overlay_text(center + Vector2(-10.0, -10.0), "Build", 11, Color(0.94, 0.90, 0.65, 0.90))
-		if not interact_mode:
-			continue
 		if alchemy == null or not alchemy.has_method("has_shrine_charge"):
 			continue
-		if not bool(tile.metadata.get("shrine_built", false)):
+		if not is_origin_shrine and not is_water_dropoff and not bool(tile.metadata.get("shrine_built", false)):
+			continue
+		if not is_origin_shrine and not is_water_dropoff and str(tile.metadata.get("shrine_spirit_id", "")).is_empty():
 			continue
 		if not alchemy.has_shrine_charge(coord):
 			continue
 		var ring_center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-		draw_arc(ring_center, TILE_RADIUS * 0.55, 0.0, TAU, 24, Color(0.95, 0.92, 0.74, 0.95), 2.0)
-		_draw_seed_overlay_text(ring_center + Vector2(-14.0, -16.0), "Collect", 11, Color(0.95, 0.92, 0.74, 0.95))
+		var indicator_col: Color = Color(0.72, 0.90, 1.0, 0.88) if is_water_dropoff and not is_origin_shrine else Color(0.95, 0.92, 0.74, 0.85)
+		draw_arc(ring_center, TILE_RADIUS * 0.55, 0.0, TAU, 24, indicator_col, 2.0)
+		draw_circle(ring_center + Vector2(0.0, -TILE_RADIUS * 0.85), 5.0, indicator_col)
+		if interact_mode:
+			var collect_label: String = "Collect Water Essence" if is_water_dropoff and not is_origin_shrine else "Collect Essence"
+			_draw_seed_overlay_text(ring_center + Vector2(-36.0, -16.0), collect_label, 11, indicator_col)
+		else:
+			var ready_label: String = "Water Essence Ready" if is_water_dropoff and not is_origin_shrine else "Essence Ready"
+			_draw_seed_overlay_text(ring_center + Vector2(-34.0, -16.0), ready_label, 10, indicator_col)
+
+func _draw_build_progress_overlays() -> void:
+	var now: float = Time.get_unix_time_from_system()
+	for coord: Vector2i in GameState.grid.tiles:
+		var tile: GardenTile = GameState.grid.tiles[coord]
+		if tile == null:
+			continue
+		if not bool(tile.metadata.get("is_build_block", false)):
+			continue
+		if bool(tile.metadata.get("is_building_complete", false)):
+			continue
+		var started_at: float = float(tile.metadata.get("build_started_at", now))
+		var duration: float = float(tile.metadata.get("build_duration", 10.0))
+		var remaining: int = int(ceil(maxf(0.0, duration - (now - started_at))))
+		var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+		_draw_seed_overlay_text(center + Vector2(-18.0, -18.0), "Build %ds" % remaining, 10, Color(0.96, 0.90, 0.74, 0.92))
+
+func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: bool, completed: bool) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	var palette: Dictionary = _building_palette_for_biome(biome)
+	var roof_col: Color = Color(palette.get("roof", Color(0.60, 0.34, 0.20, 0.92)))
+	var wall_col: Color = Color(palette.get("wall", Color(0.82, 0.75, 0.62, 0.88)))
+	var accent_col: Color = Color(palette.get("accent", Color(0.95, 0.90, 0.70, 0.92)))
+	if under_construction:
+		roof_col = roof_col.darkened(0.22)
+		wall_col = wall_col.darkened(0.18)
+	elif completed:
+		roof_col = roof_col.lightened(0.08)
+		wall_col = wall_col.lightened(0.06)
+	var w: float = TILE_RADIUS * 0.85
+	var h: float = TILE_RADIUS * 0.55
+	var body_rect: Rect2 = Rect2(center + Vector2(-w * 0.5, -h * 0.15), Vector2(w, h))
+	var roof: PackedVector2Array = PackedVector2Array([
+		center + Vector2(-w * 0.6, -h * 0.15),
+		center + Vector2(0.0, -h * 0.75),
+		center + Vector2(w * 0.6, -h * 0.15),
+	])
+	draw_colored_polygon(roof, roof_col)
+	draw_rect(body_rect, wall_col)
+	draw_rect(body_rect, Color(0.32, 0.24, 0.14, 0.95), false, 1.3)
+	var door_rect: Rect2 = Rect2(center + Vector2(-w * 0.10, h * 0.10), Vector2(w * 0.20, h * 0.30))
+	draw_rect(door_rect, Color(0.36, 0.24, 0.14, 0.95))
+	if completed:
+		draw_circle(center + Vector2(w * 0.36, -h * 0.30), 2.8, accent_col)
+	elif under_construction:
+		draw_line(center + Vector2(-w * 0.45, -h * 0.10), center + Vector2(w * 0.45, h * 0.45), Color(0.44, 0.33, 0.18, 0.95), 1.4)
+		draw_line(center + Vector2(-w * 0.45, h * 0.45), center + Vector2(w * 0.45, -h * 0.10), Color(0.44, 0.33, 0.18, 0.95), 1.4)
+
+func _building_palette_for_biome(biome: int) -> Dictionary:
+	match biome:
+		BiomeType.Value.STONE:
+			return {"roof": Color(0.52, 0.52, 0.56, 0.95), "wall": Color(0.72, 0.72, 0.74, 0.90), "accent": Color(0.92, 0.92, 0.96, 0.95)}
+		BiomeType.Value.RIVER:
+			return {"roof": Color(0.20, 0.40, 0.62, 0.95), "wall": Color(0.66, 0.78, 0.90, 0.90), "accent": Color(0.92, 0.97, 1.0, 0.95)}
+		BiomeType.Value.EMBER_FIELD:
+			return {"roof": Color(0.64, 0.28, 0.18, 0.95), "wall": Color(0.82, 0.58, 0.46, 0.90), "accent": Color(1.0, 0.82, 0.55, 0.95)}
+		BiomeType.Value.MEADOW:
+			return {"roof": Color(0.26, 0.52, 0.24, 0.95), "wall": Color(0.76, 0.84, 0.70, 0.90), "accent": Color(0.92, 1.0, 0.88, 0.95)}
+		_:
+			return {"roof": Color(0.60, 0.34, 0.20, 0.92), "wall": Color(0.82, 0.75, 0.62, 0.88), "accent": Color(0.95, 0.90, 0.70, 0.92)}
 
 func _draw_satori_overlay() -> void:
 	var font: Font = ThemeDB.fallback_font

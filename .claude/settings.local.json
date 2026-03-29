@@ -35,7 +35,16 @@
       "Bash(do echo:*)",
       "Read(//c/Repo/Personal/Games/Satori/**)",
       "Bash(done)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(find /c/Repo/Personal/Games/Satori -type d -name *spirit*)",
+      "Bash(find /c/Repo/Personal/Games/Satori -name *spirit*.tscn)",
+      "Bash(python tools/spirit_asset_setup.py --help)",
+      "Bash(python -c \":*)",
+      "Bash(python tools/spirit_asset_setup.py --image /tmp/test_sheet.png --spirit-id spirit_red_fox --frame-width 32 --frame-height 32 --animations \"idle:0:3:8,walk:3:1:12\" --dry-run)",
+      "Bash(python tools/spirit_asset_setup.py --image test_sheet_tmp.png --spirit-id spirit_red_fox --frame-width 32 --frame-height 32 --animations \"idle:0:3:8,walk:3:1:12\" --dry-run)",
+      "Bash(rm test_sheet_tmp.png)",
+      "Bash(grep -n \"\\\\\\\\u2192\\\\|→\" tools/spirit_asset_setup.py)",
+      "Bash(del test_sheet_tmp.png)"
     ]
   }
 }

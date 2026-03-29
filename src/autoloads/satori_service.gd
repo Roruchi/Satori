@@ -16,12 +16,14 @@ signal satori_cap_changed(cap: int)
 signal era_changed(new_era: StringName)
 signal structure_build_blocked(discovery_id: String, reason: String)
 
-const TICK_INTERVAL_SECONDS: float = 60.0
+const TICK_INTERVAL_SECONDS: float = 5.0
 const PAGODA_PASSIVE_PER_MINUTE: int = 5
 const GREAT_TORII_BURST: int = 500
 const VOID_MIRROR_MULTIPLIER: float = 1.5
 const GUIDANCE_LANTERN_PACIFIED_MAX: int = 3
 const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
+const HOUSED_GAIN_INTERVAL_SECONDS: float = 10.0
+const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 5.0
 
 var _conditions: Array[SatoriConditionSet] = []
 var _fired: Dictionary = {}
@@ -34,6 +36,7 @@ var _current_satori: int = 0
 var _current_cap: int = SatoriIdsScript.BASE_SATORI_CAP
 var _current_era: StringName = SatoriIdsScript.ERA_STILLNESS
 var _tick_accumulator: float = 0.0
+var _fractional_satori_delta: float = 0.0
 var _structures: Array[Dictionary] = []
 var _blocked_unique_discovery_ids: Dictionary = {}
 var _structure_defs: Dictionary = {}
@@ -236,10 +239,21 @@ func process_minute_tick(snapshot_override: Dictionary = {}) -> Dictionary:
 	var snapshot: Dictionary = snapshot_override if not snapshot_override.is_empty() else _snapshot_from_services()
 	var housed_count: int = int(snapshot.get("housed_count", 0))
 	var unhoused_count: int = int(snapshot.get("unhoused_count", 0))
-	var base_delta: int = housed_count - (unhoused_count * 2)
-	var modifier_delta: int = _modifier_delta_from_structures(snapshot)
-	var applied_delta: int = base_delta + modifier_delta
-	_apply_satori(_current_satori + applied_delta)
+	var base_delta: float = (
+		float(housed_count) * (TICK_INTERVAL_SECONDS / HOUSED_GAIN_INTERVAL_SECONDS)
+	) - (
+		float(unhoused_count) * (TICK_INTERVAL_SECONDS / UNHOUSED_LOSS_INTERVAL_SECONDS)
+	)
+	var modifier_delta: float = _modifier_delta_from_structures(snapshot) * (TICK_INTERVAL_SECONDS / 60.0)
+	_fractional_satori_delta += base_delta + modifier_delta
+	var applied_delta: int = 0
+	if _fractional_satori_delta >= 1.0:
+		applied_delta = int(floor(_fractional_satori_delta))
+	elif _fractional_satori_delta <= -1.0:
+		applied_delta = int(ceil(_fractional_satori_delta))
+	_fractional_satori_delta -= float(applied_delta)
+	if applied_delta != 0:
+		_apply_satori(_current_satori + applied_delta)
 	return {
 		"base_delta": base_delta,
 		"modifier_delta": modifier_delta,
@@ -315,6 +329,8 @@ func _recompute_structures_from_grid() -> void:
 		var coord: Vector2i = coord_variant
 		var tile: GardenTile = grid.get_tile(coord)
 		if tile == null:
+			continue
+		if bool(tile.metadata.get("is_origin_shrine", false)):
 			continue
 		if not bool(tile.metadata.get("shrine_built", false)):
 			continue

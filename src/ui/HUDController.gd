@@ -2,6 +2,7 @@ class_name HUDController
 extends CanvasLayer
 
 const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
+const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 460.0
 const MIX_PANEL_SCREEN_MARGIN: float = 16.0
@@ -9,7 +10,7 @@ const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "⌘", "✋", "☷"]
-const MODE_TAB_TITLES: Array[String] = ["Plant", "Mix", "Build", "Interact", "Codex"]
+const MODE_TAB_TITLES: Array[String] = ["Plant", "Craft", "Build", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
@@ -28,6 +29,13 @@ const MODE_TRAY_BORDER := Color(0.60, 0.42, 0.21, 0.95)
 const MODE_TAB_ANIMATION_TIME := 0.18
 const MODE_TAB_INDICATOR_INSET_X := 10.0
 const MODE_TAB_INDICATOR_INSET_Y := 8.0
+const _ELEMENT_METER_LABELS: Dictionary = {
+	GodaiElementScript.Value.CHI: "Chi",
+	GodaiElementScript.Value.SUI: "Sui",
+	GodaiElementScript.Value.KA: "Ka",
+	GodaiElementScript.Value.FU: "Fu",
+	GodaiElementScript.Value.KU: "Ku",
+}
 
 enum Mode {
 	PLANT,
@@ -50,6 +58,12 @@ enum Mode {
 @onready var _codex_panel: CodexPanel = $Root/Panels/CodexPanel
 @onready var _instant_badge: Label = $Root/TopBar/InstantModeBadge
 @onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/SeedPouchDisplay
+@onready var _element_meter_row: HBoxContainer = $Root/TopBar/ElementMeterRow
+@onready var _chi_meter_label: Label = $Root/TopBar/ElementMeterRow/ChiMeterLabel
+@onready var _sui_meter_label: Label = $Root/TopBar/ElementMeterRow/SuiMeterLabel
+@onready var _ka_meter_label: Label = $Root/TopBar/ElementMeterRow/KaMeterLabel
+@onready var _fu_meter_label: Label = $Root/TopBar/ElementMeterRow/FuMeterLabel
+@onready var _ku_meter_label: Label = $Root/TopBar/ElementMeterRow/KuMeterLabel
 @onready var _settings_button: Button = $Root/TopBar/SettingsButton
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
 @onready var _satori_label: Label = $Root/TopBar/SatoriLabel
@@ -104,6 +118,15 @@ func _ready() -> void:
 			_on_satori_changed(int(satori_service.get_current_satori()), int(satori_service.get_current_cap()))
 		if satori_service.has_method("get_current_era"):
 			_on_era_changed(satori_service.get_current_era())
+	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy_service != null:
+		if alchemy_service.has_signal("element_charge_changed"):
+			alchemy_service.element_charge_changed.connect(_on_element_charge_changed)
+		if alchemy_service.has_signal("element_unlocked"):
+			alchemy_service.element_unlocked.connect(func(_element_id: int) -> void: _refresh_element_meters())
+		if alchemy_service.has_signal("shrine_charge_collected"):
+			alchemy_service.shrine_charge_collected.connect(func(_coord: Vector2i, _element_id: int, _amount: int) -> void: _refresh_element_meters())
+	_refresh_element_meters()
 
 func _layout_mix_panel() -> void:
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
@@ -134,11 +157,43 @@ func _on_satori_changed(current: int, cap: int) -> void:
 func _on_era_changed(new_era: StringName) -> void:
 	_era_label.text = "Era: %s" % str(new_era).capitalize()
 
+func _on_element_charge_changed(_element_id: int, _charge: int) -> void:
+	_refresh_element_meters()
+
+func _refresh_element_meters() -> void:
+	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy_service == null:
+		return
+	var label_map: Dictionary = {
+		GodaiElementScript.Value.CHI: _chi_meter_label,
+		GodaiElementScript.Value.SUI: _sui_meter_label,
+		GodaiElementScript.Value.KA: _ka_meter_label,
+		GodaiElementScript.Value.FU: _fu_meter_label,
+		GodaiElementScript.Value.KU: _ku_meter_label,
+	}
+	for element: int in label_map:
+		var meter_label: Label = label_map[element] as Label
+		if meter_label == null:
+			continue
+		var unlocked: bool = alchemy_service.has_method("is_element_unlocked") and alchemy_service.is_element_unlocked(element)
+		var charge: int = 0
+		if unlocked and alchemy_service.has_method("get_element_charge"):
+			charge = int(alchemy_service.get_element_charge(element))
+		meter_label.text = _format_element_meter_text(element, charge, unlocked)
+	_element_meter_row.visible = true
+
+func _format_element_meter_text(element: int, charge: int, unlocked: bool) -> String:
+	var label: String = str(_ELEMENT_METER_LABELS.get(element, "?"))
+	if not unlocked:
+		return "%s: --" % label
+	return "%s: %d/3" % [label, charge]
+
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode
 	if _tile_selector_hex != null:
-		_tile_selector_hex.visible = _mode == Mode.PLANT
-		_tile_selector_hex.set_process_input(_mode == Mode.PLANT)
+		var selector_active: bool = _mode == Mode.PLANT or _mode == Mode.BUILD
+		_tile_selector_hex.visible = selector_active
+		_tile_selector_hex.set_process_input(selector_active)
 	_mix_panel.visible = _mode == Mode.MIX
 	_codex_panel.visible = _mode == Mode.CODEX
 	_pouch_display.visible = _mode != Mode.CODEX
