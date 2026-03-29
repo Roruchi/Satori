@@ -271,6 +271,10 @@ func get_tier2_entries() -> Array[Dictionary]:
 			"is_unique": false,
 			"effect_type": "tending_boost"
 		},
+	]
+
+func get_tier3_entries() -> Array[Dictionary]:
+	return [
 		{
 			"discovery_id": "disc_heavenwind_torii",
 			"display_name": "Heavenwind Torii",

@@ -75,6 +75,18 @@ func _register_discovery_entries() -> void:
 			str(meta.get("display_name", _humanize_id(str(discovery_id_t2)))),
 			"A landmark structure discovered through biome arrangement."
 		)
+	for meta: Dictionary in discovery_data.get_tier3_entries():
+		var discovery_id_t3: StringName = StringName(str(meta.get("discovery_id", "")))
+		if discovery_id_t3 == StringName("") or _entries.has(discovery_id_t3):
+			continue
+		_structure_ids[discovery_id_t3] = true
+		_register_dynamic_entry(
+			discovery_id_t3,
+			CodexEntryScript.Category.STRUCTURE,
+			str(meta.get("flavor_text", "")),
+			str(meta.get("display_name", _humanize_id(str(discovery_id_t3)))),
+			"A landmark structure discovered through biome arrangement."
+		)
 
 func _register_structure_entries() -> void:
 	_register_structure_entries_from_dir("res://src/biomes/patterns/tier2/")

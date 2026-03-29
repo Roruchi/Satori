@@ -67,17 +67,23 @@ func test_ku_mapping_cardinality_integrity() -> void:
 		assert_true(found, "Deity spirit mapping missing: %s" % spirit_id)
 
 	var discovery_data: DiscoveryCatalogData = DiscoveryCatalogData.new()
-	var ku_structures: Array[String] = [
+	var ku_structures_t2: Array[String] = [
 		"disc_iwakura_sanctum",
 		"disc_misogi_spring_shrine",
 		"disc_eternal_kagura_hall",
-		"disc_heavenwind_torii",
 	]
 	var tier2_entries: Array[Dictionary] = discovery_data.get_tier2_entries()
-	for discovery_id: String in ku_structures:
+	for discovery_id: String in ku_structures_t2:
 		var found_discovery: bool = false
 		for entry: Dictionary in tier2_entries:
 			if str(entry.get("discovery_id", "")) == discovery_id:
 				found_discovery = true
 				break
 		assert_true(found_discovery, "Ku structure mapping missing: %s" % discovery_id)
+	var tier3_entries: Array[Dictionary] = discovery_data.get_tier3_entries()
+	var found_heavenwind: bool = false
+	for entry: Dictionary in tier3_entries:
+		if str(entry.get("discovery_id", "")) == "disc_heavenwind_torii":
+			found_heavenwind = true
+			break
+	assert_true(found_heavenwind, "Ku structure mapping missing: disc_heavenwind_torii")

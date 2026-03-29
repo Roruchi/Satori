@@ -83,6 +83,7 @@ func _load_structure_definitions() -> void:
 	var all_entries: Array[Dictionary] = []
 	all_entries.append_array(catalog_data.get_tier1_entries())
 	all_entries.append_array(catalog_data.get_tier2_entries())
+	all_entries.append_array(catalog_data.get_tier3_entries())
 	for meta: Dictionary in all_entries:
 		var did_from_catalog: String = str(meta.get("discovery_id", ""))
 		if did_from_catalog.is_empty():

@@ -116,18 +116,10 @@ func test_structure_cap_metadata_maps_by_tier() -> void:
 	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
 	for entry: Dictionary in data.get_tier1_entries():
 		assert_eq(int(entry.get("cap_increase", 0)), 50)
-	var tier3_ids: Dictionary = {
-		"disc_heavenwind_torii": true,
-		"disc_pagoda_of_the_five": true,
-		"disc_void_mirror": true,
-		"disc_great_torii": true,
-	}
 	for entry2: Dictionary in data.get_tier2_entries():
-		var did: String = str(entry2.get("discovery_id", ""))
-		if bool(tier3_ids.get(did, false)):
-			assert_eq(int(entry2.get("cap_increase", 0)), 1000)
-		elif int(entry2.get("tier", 0)) == 2:
-			assert_eq(int(entry2.get("cap_increase", 0)), 250)
+		assert_eq(int(entry2.get("cap_increase", 0)), 250)
+	for entry3: Dictionary in data.get_tier3_entries():
+		assert_eq(int(entry3.get("cap_increase", 0)), 1000)
 
 func test_tier_cap_contribution_values() -> void:
 	assert_eq(SatoriIds.TIER1_CAP_INCREASE, 50)

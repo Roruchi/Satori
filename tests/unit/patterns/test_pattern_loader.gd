@@ -61,7 +61,9 @@ func test_discovery_catalog_exposes_cap_and_unique_metadata() -> void:
 		if tier == 2:
 			found_tier2 = true
 			assert_eq(cap, 250)
-		if bool(entry.get("is_unique", false)):
+	for entry3: Dictionary in data.get_tier3_entries():
+		var cap: int = int(entry3.get("cap_increase", 0))
+		if bool(entry3.get("is_unique", false)):
 			found_unique = true
 			assert_eq(cap, 1000)
 	assert_true(found_unique, "Expected at least one unique monument entry")
