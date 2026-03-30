@@ -5,6 +5,23 @@ signal discovery_triggered(discovery_id: String, triggering_coords: Array[Vector
 signal discovery_blocked(discovery_id: String, triggering_coords: Array[Vector2i], reason: String)
 const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
 
+## Structures whose discovery_ids are now managed by the Craft→Inventory→Place
+## pipeline. They are excluded from the legacy pattern-scan so the old
+## shape-based triggers never fire for them.
+const _RETIRED_SHAPE_IDS: Dictionary = {
+	"disc_bamboo_chime": true,
+	"disc_bridge_of_sighs": true,
+	"disc_echoing_cavern": true,
+	"disc_floating_pavilion": true,
+	"disc_lotus_pagoda": true,
+	"disc_monks_rest": true,
+	"disc_origin_shrine": true,
+	"disc_star_gazing_deck": true,
+	"disc_sun_dial": true,
+	"disc_wayfarer_torii": true,
+	"disc_whale_bone_arch": true,
+}
+
 var _loader: PatternLoader
 var _spatial_query: SpatialQuery
 var _patterns: Array[PatternDefinition] = []
@@ -25,7 +42,11 @@ func _init() -> void:
 	reload_patterns()
 
 func reload_patterns() -> void:
-	_patterns = _loader.load_patterns()
+	var all: Array[PatternDefinition] = _loader.load_patterns()
+	_patterns.clear()
+	for p: PatternDefinition in all:
+		if not _RETIRED_SHAPE_IDS.has(p.discovery_id):
+			_patterns.append(p)
 
 func reload_patterns_from_dir(pattern_dir: String) -> void:
 	_patterns = _loader.load_patterns(pattern_dir)
