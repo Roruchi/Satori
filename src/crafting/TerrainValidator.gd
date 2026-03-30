@@ -53,9 +53,11 @@ func validate(recipe: RecipeDefinition, anchor: Vector2i, rotation_steps: int, g
 				var rule: Dictionary = recipe.terrain_rules[i] as Dictionary
 				var required_biome: int = int(rule.get("required_biome", -1))
 				if required_biome >= 0:
+					# world_coord has no tile here (passed the occupied check above).
+					# Query the underlying biome via the grid's biome API.
 					var found: bool = false
-					if grid.has_tile(world_coord):
-						found = int((grid.get_tile(world_coord) as GardenTile).biome) == required_biome
+					if grid.has_method("get_biome_at"):
+						found = int(grid.get_biome_at(world_coord)) == required_biome
 					if not found:
 						valid = false
 						var biome_name: String = BiomeType.get_display_name(required_biome) if BiomeType.has_method("get_display_name") else "Biome %d" % required_biome
