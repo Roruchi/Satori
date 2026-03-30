@@ -1,12 +1,23 @@
 class_name PlayerInventory
 extends RefCounted
 
+## Maximum number of distinct recipe slots the inventory can hold.
+const MAX_SLOTS: int = 8
+
 signal item_added(item: InventoryItem)
 signal item_removed(recipe_id: String)
 
 var _items: Dictionary = {}
 
-func add_item(item: InventoryItem) -> void:
+## Returns true if a new recipe_id can still be added (slot limit not reached).
+func can_add_item(recipe_id: String) -> bool:
+	if _items.has(recipe_id):
+		return true  # Stacking into an existing slot is always allowed.
+	return _items.size() < MAX_SLOTS
+
+func add_item(item: InventoryItem) -> bool:
+	if not can_add_item(item.recipe_id):
+		return false
 	if _items.has(item.recipe_id):
 		var existing: InventoryItem = _items[item.recipe_id] as InventoryItem
 		existing.quantity += item.quantity
@@ -18,6 +29,7 @@ func add_item(item: InventoryItem) -> void:
 		clone.output_id = item.output_id
 		_items[item.recipe_id] = clone
 	item_added.emit(_items[item.recipe_id] as InventoryItem)
+	return true
 
 func consume(recipe_id: String) -> bool:
 	if not _items.has(recipe_id):

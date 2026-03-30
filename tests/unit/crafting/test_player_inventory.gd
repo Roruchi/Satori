@@ -19,7 +19,7 @@ func _make_item(id: String, type: int, out_id: String, qty: int = 1) -> Inventor
 func test_add_item_makes_has_item_return_true() -> void:
 	gut.p("add_item followed by has_item returns true")
 	var inv := PlayerInventory.new()
-	inv.add_item(_make_item("recipe_fu_tile", 0, "3"))
+	assert_true(inv.add_item(_make_item("recipe_fu_tile", 0, "3")), "add_item should return true")
 	assert_true(inv.has_item("recipe_fu_tile"), "Inventory should contain the added item")
 
 func test_has_item_returns_false_for_missing_item() -> void:
@@ -56,6 +56,37 @@ func test_adding_same_recipe_id_twice_stacks_quantity_to_two() -> void:
 	var items: Array[InventoryItem] = inv.get_items()
 	assert_eq(items.size(), 1, "Should be a single stack")
 	assert_eq(items[0].quantity, 2, "Quantity should be 2 after adding twice")
+
+# ---------------------------------------------------------------------------
+# Tests: MAX_SLOTS = 8 capacity cap
+# ---------------------------------------------------------------------------
+
+func test_inventory_rejects_add_when_8_distinct_slots_are_full() -> void:
+	gut.p("add_item returns false and does not add when 8 distinct slots already occupied")
+	var inv := PlayerInventory.new()
+	for i: int in range(PlayerInventory.MAX_SLOTS):
+		var ok: bool = inv.add_item(_make_item("recipe_slot_%d" % i, 0, str(i)))
+		assert_true(ok, "Slot %d should succeed" % i)
+	# 9th distinct recipe_id must be rejected.
+	var rejected: bool = inv.add_item(_make_item("recipe_overflow", 0, "overflow"))
+	assert_false(rejected, "9th distinct slot should be rejected")
+	assert_false(inv.has_item("recipe_overflow"), "Overflow item must not appear in inventory")
+
+func test_can_add_item_returns_false_when_full() -> void:
+	gut.p("can_add_item returns false when 8 slots are occupied by different recipe_ids")
+	var inv := PlayerInventory.new()
+	for i: int in range(PlayerInventory.MAX_SLOTS):
+		inv.add_item(_make_item("recipe_slot_%d" % i, 0, str(i)))
+	assert_false(inv.can_add_item("recipe_new"), "Should be false when full")
+
+func test_stacking_existing_slot_succeeds_when_full() -> void:
+	gut.p("Stacking into an existing slot is always allowed even when full")
+	var inv := PlayerInventory.new()
+	for i: int in range(PlayerInventory.MAX_SLOTS):
+		inv.add_item(_make_item("recipe_slot_%d" % i, 0, str(i)))
+	# Stacking into slot 0 (same recipe_id) must succeed.
+	var ok: bool = inv.add_item(_make_item("recipe_slot_0", 0, "0"))
+	assert_true(ok, "Stacking into existing slot should always succeed")
 
 # ---------------------------------------------------------------------------
 # Tests: serialize / deserialize round-trip
@@ -128,3 +159,4 @@ func test_item_removed_signal_fires_on_consume() -> void:
 	inv.consume("recipe_ka_tile")
 	assert_eq(removed.size(), 1, "item_removed should fire once")
 	assert_eq(removed[0], "recipe_ka_tile")
+

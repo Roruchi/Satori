@@ -32,7 +32,7 @@ func _make_starter_house_recipe() -> RecipeDefinition:
 	r.output_type = RecipeDefinition.OutputType.STRUCTURE
 	r.output_id = "disc_starter_house"
 	r.shape = [Vector2i(0, 0), Vector2i(0, 1), Vector2i(1, 0), Vector2i(1, 1)]
-	r.elements = [3, 3, 3, 3]
+	r.elements = [3, 3, 0, 0]  # Row 0: Fu Fu (top), Row 1: Chi Chi (bottom)
 	r.display_name = "Starter House"
 	r.min_element_count = 4
 	return r
@@ -134,10 +134,11 @@ func test_starter_house_matches_top_left_corner() -> void:
 	gut.p("Starter House 2x2 matches when placed in top-left corner")
 	var reg := RecipeRegistry.new()
 	var grid := CraftingGrid.new(reg)
+	# Row 0 = Fu, Row 1 = Chi — matches recipe elements [3,3,0,0]
 	grid.set_cell(0, 0, 3)
 	grid.set_cell(0, 1, 3)
-	grid.set_cell(1, 0, 3)
-	grid.set_cell(1, 1, 3)
+	grid.set_cell(1, 0, 0)
+	grid.set_cell(1, 1, 0)
 	var result: Array = grid.normalize()
 	var recipe: RecipeDefinition = reg.lookup(result[0], result[1])
 	assert_not_null(recipe, "Should match a recipe")
@@ -147,10 +148,11 @@ func test_starter_house_matches_bottom_right_corner() -> void:
 	gut.p("Starter House 2x2 matches when placed in bottom-right corner")
 	var reg := RecipeRegistry.new()
 	var grid := CraftingGrid.new(reg)
+	# Row 1 = Fu (top of shape), Row 2 = Chi (bottom of shape)
 	grid.set_cell(1, 1, 3)
 	grid.set_cell(1, 2, 3)
-	grid.set_cell(2, 1, 3)
-	grid.set_cell(2, 2, 3)
+	grid.set_cell(2, 1, 0)
+	grid.set_cell(2, 2, 0)
 	var result: Array = grid.normalize()
 	var recipe: RecipeDefinition = reg.lookup(result[0], result[1])
 	assert_not_null(recipe, "Should match a recipe")
@@ -160,10 +162,11 @@ func test_starter_house_matches_top_right_corner() -> void:
 	gut.p("Starter House 2x2 matches when placed in top-right corner")
 	var reg := RecipeRegistry.new()
 	var grid := CraftingGrid.new(reg)
+	# Row 0 = Fu, Row 1 = Chi
 	grid.set_cell(0, 1, 3)
 	grid.set_cell(0, 2, 3)
-	grid.set_cell(1, 1, 3)
-	grid.set_cell(1, 2, 3)
+	grid.set_cell(1, 1, 0)
+	grid.set_cell(1, 2, 0)
 	var result: Array = grid.normalize()
 	var recipe: RecipeDefinition = reg.lookup(result[0], result[1])
 	assert_not_null(recipe, "Should match a recipe")
@@ -173,10 +176,11 @@ func test_starter_house_matches_bottom_left_corner() -> void:
 	gut.p("Starter House 2x2 matches when placed in bottom-left corner")
 	var reg := RecipeRegistry.new()
 	var grid := CraftingGrid.new(reg)
+	# Row 1 = Fu, Row 2 = Chi
 	grid.set_cell(1, 0, 3)
 	grid.set_cell(1, 1, 3)
-	grid.set_cell(2, 0, 3)
-	grid.set_cell(2, 1, 3)
+	grid.set_cell(2, 0, 0)
+	grid.set_cell(2, 1, 0)
 	var result: Array = grid.normalize()
 	var recipe: RecipeDefinition = reg.lookup(result[0], result[1])
 	assert_not_null(recipe, "Should match a recipe")

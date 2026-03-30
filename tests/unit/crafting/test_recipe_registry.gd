@@ -20,7 +20,7 @@ func _make_starter_house_recipe() -> RecipeDefinition:
 	r.output_type = RecipeDefinition.OutputType.STRUCTURE
 	r.output_id = "disc_starter_house"
 	r.shape = [Vector2i(0, 0), Vector2i(0, 1), Vector2i(1, 0), Vector2i(1, 1)]
-	r.elements = [3, 3, 3, 3]
+	r.elements = [3, 3, 0, 0]  # Row 0: Fu Fu (top), Row 1: Chi Chi (bottom)
 	r.display_name = "Starter House"
 	r.min_element_count = 4
 	return r

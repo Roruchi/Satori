@@ -32,13 +32,16 @@ func _on_item_removed(_recipe_id: String) -> void:
 	inventory_changed.emit()
 
 ## Craft a recipe: create an InventoryItem and add it to inventory.
-func craft(recipe: RecipeDefinition) -> void:
+## Returns false if the inventory is full (8-slot cap).
+func craft(recipe: RecipeDefinition) -> bool:
+	if not inventory.can_add_item(recipe.recipe_id):
+		return false
 	var item: InventoryItem = _InventoryItemScript.new()
 	item.recipe_id = recipe.recipe_id
 	item.item_type = recipe.output_type
 	item.quantity = 1
 	item.output_id = recipe.output_id
-	inventory.add_item(item)
+	return inventory.add_item(item)
 
 ## Enter ghost-placement build mode for a crafted structure item.
 func enter_build_mode(recipe_id: String) -> void:
