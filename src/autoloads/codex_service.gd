@@ -7,6 +7,9 @@ const CodexEntryScript = preload("res://src/codex/CodexEntry.gd")
 const SpiritCatalogDataScript = preload("res://src/spirits/spirit_catalog_data.gd")
 const DiscoveryCatalogDataScript = preload("res://src/biomes/discovery_catalog_data.gd")
 const SatoriIds = preload("res://src/satori/SatoriIds.gd")
+const _STRUCTURE_RECIPE_HINTS: Dictionary = {
+	"disc_lotus_pagoda": "Where still waters breathe mud, let four breaths of wind rest as one quiet square.",
+}
 
 var _entries: Dictionary = {}
 var _discovered: Dictionary = {}
@@ -180,3 +183,30 @@ func get_ku_guidance_state() -> StringName:
 
 func force_reveal(entry_id: StringName) -> void:
 	mark_discovered(entry_id)
+
+func hint_structure_recipe(discovery_id: StringName) -> void:
+	if discovery_id == StringName(""):
+		return
+	if not _structure_ids.has(discovery_id):
+		return
+	var entry_id: StringName = _structure_recipe_entry_id(discovery_id)
+	if _entries.has(entry_id):
+		return
+	var hint_text: String = str(_STRUCTURE_RECIPE_HINTS.get(str(discovery_id), "Place a deliberate pattern of houses where the land itself asks for it."))
+	var full_name: String = "Builder's Riddle: %s" % _humanize_id(str(discovery_id))
+	_register_dynamic_entry(
+		entry_id,
+		CodexEntryScript.Category.STRUCTURE,
+		hint_text,
+		full_name,
+		"The hidden building rite for this structure has been mastered."
+	)
+
+func mark_structure_recipe_completed(discovery_id: StringName) -> void:
+	var entry_id: StringName = _structure_recipe_entry_id(discovery_id)
+	if not _entries.has(entry_id):
+		return
+	mark_discovered(entry_id)
+
+func _structure_recipe_entry_id(discovery_id: StringName) -> StringName:
+	return StringName("recipe_hint_%s" % str(discovery_id))

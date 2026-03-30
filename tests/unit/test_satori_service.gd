@@ -2,6 +2,22 @@ extends GutTest
 
 const EXPECTED_DEBUG_POUCH_CAPACITY: int = 4
 
+func _setup_game_state_singleton() -> Node:
+	var root: Node = get_tree().root
+	var existing: Node = root.get_node_or_null("/root/GameState")
+	if existing != null:
+		existing.queue_free()
+	var gs: Node = Node.new()
+	gs.name = "GameState"
+	gs.set_script(load("res://src/autoloads/GameState.gd"))
+	root.add_child(gs)
+	gs._ready()
+	return gs
+
+func _cleanup_game_state_singleton(gs: Node) -> void:
+	if gs != null:
+		gs.queue_free()
+
 func test_satori_condition_evaluator_biome_present_true() -> void:
 	var gs: Node = Node.new()
 	gs.name = "GameState"
@@ -18,7 +34,6 @@ func test_trigger_debug_safe_call() -> void:
 	var settings: GardenSettingsNode = GardenSettingsNode.new()
 	settings.name = "GardenSettings"
 	add_child(settings)
-	settings.growth_mode = GrowthMode.Value.INSTANT
 	var growth_service: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
 	growth_service.name = "SeedGrowthService"
 	add_child(growth_service)
@@ -115,7 +130,10 @@ func test_spirit_tier_availability_predicates_follow_era_rules() -> void:
 func test_structure_cap_metadata_maps_by_tier() -> void:
 	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
 	for entry: Dictionary in data.get_tier1_entries():
-		assert_eq(int(entry.get("cap_increase", 0)), 50)
+		if str(entry.get("discovery_id", "")) == "disc_wayfarer_torii":
+			assert_eq(int(entry.get("cap_increase", 0)), 100)
+		else:
+			assert_eq(int(entry.get("cap_increase", 0)), 50)
 	for entry2: Dictionary in data.get_tier2_entries():
 		assert_eq(int(entry2.get("cap_increase", 0)), 250)
 	for entry3: Dictionary in data.get_tier3_entries():
@@ -125,6 +143,32 @@ func test_tier_cap_contribution_values() -> void:
 	assert_eq(SatoriIds.TIER1_CAP_INCREASE, 50)
 	assert_eq(SatoriIds.TIER2_CAP_INCREASE, 250)
 	assert_eq(SatoriIds.TIER3_CAP_INCREASE, 1000)
+
+func test_unique_discovery_increases_cap_by_50_once() -> void:
+	var root: Node = get_tree().root
+	var existing_dp: Node = root.get_node_or_null("/root/DiscoveryPersistence")
+	if existing_dp != null:
+		existing_dp.queue_free()
+	var dp: Node = Node.new()
+	dp.name = "DiscoveryPersistence"
+	dp.set_script(load("res://src/autoloads/discovery_persistence.gd"))
+	root.add_child(dp)
+	dp._ready()
+
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	assert_eq(service.get_current_cap(), SatoriIds.BASE_SATORI_CAP)
+
+	var payload: DiscoveryPayload = DiscoveryPayload.create("disc_glade", [Vector2i.ZERO], {})
+	dp.record_discovery(payload)
+	assert_eq(service.get_current_cap(), SatoriIds.BASE_SATORI_CAP + 50)
+
+	# Duplicate discovery ID should not increase cap again.
+	dp.record_discovery(payload)
+	assert_eq(service.get_current_cap(), SatoriIds.BASE_SATORI_CAP + 50)
+
+	service.queue_free()
+	dp.queue_free()
 
 func test_guidance_lantern_reduces_unhoused_penalty_for_up_to_three() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()
@@ -187,3 +231,60 @@ func test_great_torii_burst_is_clamped_to_cap() -> void:
 	service.apply_monument_on_build("disc_great_torii")
 	assert_eq(service.get_current_satori(), 600)
 	service.queue_free()
+
+func test_wayfarer_torii_allows_one_per_biome() -> void:
+	var gs: Node = _setup_game_state_singleton()
+	var grid: RefCounted = gs.get("grid")
+	var meadow_a: GardenTile = grid.place_tile(Vector2i(10, 0), BiomeType.Value.MEADOW)
+	meadow_a.metadata["shrine_built"] = true
+	meadow_a.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+	var meadow_b: GardenTile = grid.place_tile(Vector2i(11, 0), BiomeType.Value.MEADOW)
+	meadow_b.metadata["shrine_built"] = true
+	meadow_b.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+	var river: GardenTile = grid.place_tile(Vector2i(12, 0), BiomeType.Value.RIVER)
+	river.metadata["shrine_built"] = true
+	river.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	service._on_world_changed(Vector2i(12, 0), river)
+
+	assert_eq(service.get_structure_count("disc_wayfarer_torii"), 2, "Should keep one meadow torii and one river torii")
+	assert_eq(bool(meadow_a.metadata.get("shrine_built", false)) or bool(meadow_b.metadata.get("shrine_built", false)), true)
+
+	service.queue_free()
+	_cleanup_game_state_singleton(gs)
+
+func test_wayfarer_torii_duplicate_on_same_biome_is_removed_after_biome_change() -> void:
+	var gs: Node = _setup_game_state_singleton()
+	var grid: RefCounted = gs.get("grid")
+	var river_a: GardenTile = grid.place_tile(Vector2i(20, 0), BiomeType.Value.RIVER)
+	river_a.metadata["shrine_built"] = true
+	river_a.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+	var meadow: GardenTile = grid.place_tile(Vector2i(21, 0), BiomeType.Value.MEADOW)
+	meadow.metadata["shrine_built"] = true
+	meadow.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	assert_eq(service.get_structure_count("disc_wayfarer_torii"), 2)
+
+	# Changing the meadow tile biome to river creates a duplicate river torii biome slot.
+	var converted: GardenTile = grid.place_tile(Vector2i(21, 0), BiomeType.Value.RIVER)
+	converted.metadata["shrine_built"] = true
+	converted.metadata["build_discovery_id"] = "disc_wayfarer_torii"
+	service._on_world_changed(Vector2i(21, 0), converted)
+
+	assert_eq(service.get_structure_count("disc_wayfarer_torii"), 1, "Duplicate river torii should be removed")
+	var remaining_torii_tiles: int = 0
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if bool(tile.metadata.get("shrine_built", false)) and str(tile.metadata.get("build_discovery_id", "")) == "disc_wayfarer_torii":
+			remaining_torii_tiles += 1
+	assert_eq(remaining_torii_tiles, 1)
+
+	service.queue_free()
+	_cleanup_game_state_singleton(gs)

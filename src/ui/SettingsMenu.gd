@@ -1,8 +1,6 @@
 class_name SettingsMenu
 extends CanvasLayer
 
-const GrowthMode = preload("res://src/seeds/GrowthMode.gd")
-
 const PANEL_BG := Color(0.16, 0.11, 0.07, 0.98)
 const PANEL_BORDER := Color(0.60, 0.42, 0.21, 0.95)
 const TEXT_LIGHT := Color(0.89, 0.84, 0.74, 0.96)
@@ -37,12 +35,15 @@ func _sync_from_settings() -> void:
 			_mute_check.button_pressed = se.is_muted()
 	var gs: Node = get_node_or_null("/root/GardenSettings")
 	if gs != null:
-		var gm: Variant = gs.get("growth_mode")
-		if gm is int:
-			_growth_check.button_pressed = (gm == GrowthMode.Value.REAL_TIME)
+		var speed_mult: Variant = gs.get("growth_speed_multiplier")
+		if speed_mult is float:
+			_growth_check.button_pressed = float(speed_mult) > 1.0
+		elif speed_mult is int:
+			_growth_check.button_pressed = int(speed_mult) > 1
 
 func show_menu() -> void:
 	_sync_from_settings()
+	_growth_check.text = "Growth Speedup (x8)"
 	visible = true
 
 func _on_volume_changed(value: float) -> void:
@@ -57,8 +58,8 @@ func _on_mute_toggled(pressed: bool) -> void:
 
 func _on_growth_toggled(pressed: bool) -> void:
 	var gs: Node = get_node_or_null("/root/GardenSettings")
-	if gs != null and gs.has_method("set_growth_mode"):
-		gs.set_growth_mode(GrowthMode.Value.REAL_TIME if pressed else GrowthMode.Value.INSTANT)
+	if gs != null and gs.has_method("set_growth_speed_multiplier"):
+		gs.set_growth_speed_multiplier(8.0 if pressed else 1.0)
 
 func _on_close() -> void:
 	visible = false

@@ -107,25 +107,70 @@ Discovered by the `PatternMatcher` when tile arrangements match a `PatternDefini
 
 **Audio keys** follow the pattern `stinger_<suffix>` (e.g. `stinger_river`, `stinger_deep_stand`).
 
+### Tier 1 Building Class (Dwelling / House Discoveries)
+
+All Tier 1 discoveries in `DiscoveryCatalogData` are tagged as `effect_type = dwelling` with:
+
+- `cap_increase` metadata in catalog, but **game cap progression now uses unique discovery count**
+- `housing_capacity = +1`
+- `is_unique = false` (repeatable)
+
+This means they function as repeatable house-class structure unlocks in progression terms. Houses do not directly add cap.
+
+### Build-Mode Houses (Player-Placed)
+
+| Buildable | Repeatable | Satori Cap Increase | Spirit Housing |
+|-----------|------------|---------------------|----------------|
+| Any completed non-shrine build tile (`is_building_complete = true` and `shrine_built = false`) | Yes | 0 | +1 house slot per tile |
+
+These are the normal houses spirits can bind to. They are separate from shrine/landmark structures.
+
 ---
 
-## Tier 2 Structural Landmarks
+## Tier 1 and Tier 2 Structural Landmarks
 
-| `discovery_id`            | Display Name          | Pattern Type       | Key Trigger                                                            |
-|---------------------------|-----------------------|--------------------|------------------------------------------------------------------------|
-| `disc_origin_shrine`      | Origin Shrine         | SHAPE (anchored)   | Stone at grid `(0,0)` + River at N/S/E/W — coordinate-locked           |
-| `disc_bridge_of_sighs`    | Bridge of Sighs       | SHAPE              | Ember Field → River → Ember Field in a 3-tile line                     |
-| `disc_lotus_pagoda`       | Lotus Pagoda          | CLUSTER            | ≥4 Wetlands tiles (2×2 square)                                         |
-| `disc_monks_rest`         | Monk's Rest           | SHAPE              | Meadow centre enclosed by 6 Stone tiles                                |
-| `disc_star_gazing_deck`   | Star-Gazing Deck      | COMPOUND           | ≥20 Ember Field; needs `disc_mountain_peak` first                      |
-| `disc_sun_dial`           | Sun-Dial              | RATIO_PROXIMITY    | Ember Field with ≥5 Meadow neighbours within radius 1                  |
-| `disc_whale_bone_arch`    | Whale-Bone Arch       | SHAPE              | The Ashfall in a U-shape (5 tiles)                                     |
-| `disc_echoing_cavern`     | Echoing Cavern        | SHAPE              | 6 Ember Field tiles around an empty centre cell                        |
-| `disc_bamboo_chime`       | Bamboo Chime          | SHAPE              | 5 Frostlands tiles in a straight line                                  |
-| `disc_floating_pavilion`  | Floating Pavilion     | SHAPE              | Single Wetlands tile with no adjacent land biomes                      |
-| `disc_iwakura_sanctum`    | Iwakura Sanctum       | CLUSTER            | ≥4 Sacred Stone tiles *(spec 016)*                                     |
-| `disc_misogi_spring_shrine` | Misogi Spring Shrine | CLUSTER           | ≥4 Moonlit Pool tiles *(spec 016)*                                     |
-| `disc_eternal_kagura_hall` | Eternal Kagura Hall  | CLUSTER            | ≥4 Ember Shrine tiles *(spec 016)*                                     |
+| `discovery_id`            | Display Name          | Pattern Type       | Key Trigger                                                            | Repeatable | Catalog `cap_increase` |
+|---------------------------|-----------------------|--------------------|------------------------------------------------------------------------|------------|------------------------|
+| `disc_origin_shrine`      | Origin Shrine         | Build recipe       | Build mode: select Meadow and place on any non-Ku tile; once per island | Yes (`is_unique = false`) | +250 |
+| `disc_wayfarer_torii`     | Wayfarer Torii        | Build recipe (Tier 1) | Build mode: rotatable **U** on any non-Ku biome tile group (ritual selector: Stone/Chi) | One per biome type (+ multi-color biome types) | +100 |
+| `disc_bridge_of_sighs`    | Bridge of Sighs       | SHAPE              | Ember Field → River → Ember Field in a 3-tile line                     | Yes (`is_unique = false`) | +250 |
+| `disc_lotus_pagoda`       | Lotus Pagoda          | CLUSTER            | ≥4 Wetlands tiles (2×2 square)                                         | Yes (`is_unique = false`) | +250 |
+| `disc_monks_rest`         | Monk's Rest           | SHAPE              | Meadow centre enclosed by 6 Stone tiles                                | Yes (`is_unique = false`) | +250 |
+| `disc_star_gazing_deck`   | Star-Gazing Deck      | COMPOUND           | ≥20 Ember Field; needs `disc_mountain_peak` first                      | Yes (`is_unique = false`) | +250 |
+| `disc_sun_dial`           | Sun-Dial              | RATIO_PROXIMITY    | Ember Field with ≥5 Meadow neighbours within radius 1                  | Yes (`is_unique = false`) | +250 |
+| `disc_whale_bone_arch`    | Whale-Bone Arch       | SHAPE              | The Ashfall in a U-shape (5 tiles)                                     | Yes (`is_unique = false`) | +250 |
+| `disc_echoing_cavern`     | Echoing Cavern        | SHAPE              | 6 Ember Field tiles around an empty centre cell                        | Yes (`is_unique = false`) | +250 |
+| `disc_bamboo_chime`       | Bamboo Chime          | SHAPE              | 5 Frostlands tiles in a straight line                                  | Yes (`is_unique = false`) | +250 |
+| `disc_floating_pavilion`  | Floating Pavilion     | SHAPE              | Single Wetlands tile with no adjacent land biomes                      | Yes (`is_unique = false`) | +250 |
+| `disc_iwakura_sanctum`    | Iwakura Sanctum       | CLUSTER            | ≥4 Sacred Stone tiles *(spec 016)*                                     | Yes (`is_unique = false`) | +250 |
+| `disc_misogi_spring_shrine` | Misogi Spring Shrine | CLUSTER           | ≥4 Moonlit Pool tiles *(spec 016)*                                     | Yes (`is_unique = false`) | +250 |
+| `disc_eternal_kagura_hall` | Eternal Kagura Hall  | CLUSTER            | ≥4 Ember Shrine tiles *(spec 016)*                                     | Yes (`is_unique = false`) | +250 |
+
+### Repeatable Cap-Increase Structures (Quick View)
+
+| Group | Example IDs | Repeatable | Cap Gain Each |
+|-------|-------------|------------|---------------|
+| Unique discovery unlocks (`disc_*`) | Any discovery ID recorded once | N/A | +50 once per unique discovery |
+
+Cap rule in game:
+
+- Houses do not increase cap.
+- Structures do not stack cap directly from placement count.
+- Each unique discovery (`disc_*`) increases cap by +50 exactly once.
+
+### Structure Build Recipes (Selector vs Target Biome)
+
+| Structure | Ritual Selector (selected biome) | Target Placement Biome | Shape | Resulting Variant |
+|-----------|----------------------------------|------------------------|-------|-------------------|
+| Wayfarer Torii (`disc_wayfarer_torii`) | Stone / Chi | Any non-Ku biome (single or multi-color biome IDs) | Rotatable U (3 tiles) | Biome-scoped Torii (e.g. water torii, meadow torii, stone torii, ember torii) |
+| Origin Shrine (`disc_origin_shrine`) | Meadow / Fu | Any non-Ku biome | Single tile build project | One origin shrine per island |
+| Lotus Pagoda (`disc_lotus_pagoda`) | Meadow / Fu | Wetlands | 2x2 / parallelogram (4 tiles) | Wetland pagoda |
+
+Wayfarer Torii biome rule:
+
+- A single Wayfarer Torii is allowed per biome type (Stone, River, Meadow, Ember Field, and multi-color biome IDs).
+- If biome changes/merges create two Torii on the same biome type, one is removed automatically.
+- Discovery-state changes that do not change tile biome (for example Meadow related discovery overlays such as Deep Stand) do not remove a valid Torii.
 
 **Audio keys** follow the pattern `stinger_<suffix>` (e.g. `stinger_origin_shrine`).
 
@@ -209,9 +254,6 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 | Unlock Event                  | Trigger                                                      | Effect                     |
 |-------------------------------|--------------------------------------------------------------|----------------------------|
 | **Kū Unlocked**               | Mist Stag summoned (`KU_UNLOCK` gift)                        | Kū selectable in Mix UI; opens Tier 2 (+Kū) recipes |
-| **First Tier 3 Recipe**       | River Otter summoned (`TIER3_RECIPE` gift)                   | `recipe_chi_sui_fu` unlocked in registry |
-| **Extra Growing Slot (Satori)**| All 4 base biomes present + ≥3 spirits summoned             | +1 growing slot capacity   |
-| **Extra Growing Slot (Lark)** | Meadow Lark summoned (`GROWING_SLOT_EXPAND` gift)            | +1 growing slot capacity   |
 | **Sky Whale (Prestige)**      | 1 000 tiles, macro-groups balanced                           | Capstone discovery event   |
 
 ---
@@ -219,6 +261,5 @@ Spirits are summoned when the garden matches a spirit's `PatternDefinition`. Spi
 ## Notes
 
 - Biome IDs 10–13 (`SACRED_STONE`, `MOONLIT_POOL`, `EMBER_SHRINE`, `CLOUD_RIDGE`) and their recipes are fully implemented as part of **spec 016**.
-- The Tier 3 recipes (`recipe_chi_sui_fu` and others) are specced but the `.tres` resource files do not yet exist; tier-3 biome IDs (Mossy Delta, Obsidian Shore, etc.) are not yet defined in `BiomeType.gd`.
 - `disc_heavenwind_torii` and `disc_great_torii` both trigger on ≥4 Cloud Ridge tiles; their trigger conditions need differentiation in a future spec.
 - All catalog sources of truth: `src/seeds/recipes/*.tres`, `src/biomes/discovery_catalog_data.gd`, `src/spirits/spirit_catalog_data.gd`.

@@ -5,7 +5,6 @@ const SeedInstanceScript = preload("res://src/seeds/SeedInstance.gd")
 const GrowthSlotTrackerScript = preload("res://src/seeds/GrowthSlotTracker.gd")
 const SeedPouchScript = preload("res://src/seeds/SeedPouch.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
-const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
 const EVALUATION_TICK_SECONDS: float = 60.0
 const REAL_TIME_GROWTH_SECONDS: float = 10.0
 
@@ -16,7 +15,7 @@ signal pouch_updated()
 
 var _tracker: GrowthSlotTracker = GrowthSlotTrackerScript.new()
 var _pouch: SeedPouch = SeedPouchScript.new()
-var _mode: int = GrowthModeScript.Value.INSTANT
+var _growth_speed_multiplier: float = 1.0
 var _tick_timer: Timer
 
 func _ready() -> void:
@@ -31,20 +30,14 @@ func _on_tick_timeout() -> void:
 	_evaluate_all()
 
 func _process(_delta: float) -> void:
-	if _mode == GrowthModeScript.Value.REAL_TIME:
-		_evaluate_all()
+	_evaluate_all()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		_evaluate_all()
 
 func _duration_for_tier(tier: int) -> float:
-	if _should_grow_instantly():
-		return 0.0
-	return REAL_TIME_GROWTH_SECONDS
-
-func _should_grow_instantly() -> bool:
-	return _mode == GrowthModeScript.Value.INSTANT
+	return REAL_TIME_GROWTH_SECONDS / maxf(1.0, _growth_speed_multiplier)
 
 func try_plant(coord: Vector2i, recipe: SeedRecipe, as_build_block: bool = false) -> bool:
 	var duration: float = _duration_for_tier(recipe.tier)
@@ -79,31 +72,8 @@ func _evaluate_all() -> void:
 	for seed_ready_instance: SeedInstance in pending_ready:
 		seed_ready.emit(seed_ready_instance)
 
-func get_mode() -> int:
-	return _mode
-
-func set_mode(mode: int) -> void:
-	_mode = mode
-	if _mode == GrowthModeScript.Value.INSTANT:
-		_promote_growing_seeds_for_instant_mode()
-		_evaluate_all()
-		_auto_bloom_ready_when_possible()
-
-func _promote_growing_seeds_for_instant_mode() -> void:
-	for seed: SeedInstance in _tracker.active_seeds:
-		if seed.state == SeedStateScript.Value.GROWING:
-			seed.growth_duration = 0.0
-			seed.state = SeedStateScript.Value.READY
-
-func _auto_bloom_ready_when_possible() -> void:
-	var game_state: Node = get_node_or_null("/root/GameState")
-	if game_state == null or not game_state.has_method("place_tile_from_seed"):
-		return
-	var ready_coords: Array[Vector2i] = []
-	for seed: SeedInstance in _tracker.get_ready_seeds():
-		ready_coords.append(seed.hex_coord)
-	for coord: Vector2i in ready_coords:
-		try_bloom(coord)
+func set_growth_speed_multiplier(multiplier: float) -> void:
+	_growth_speed_multiplier = clampf(multiplier, 1.0, 16.0)
 
 func available_slots() -> int:
 	return _tracker.available_slots()

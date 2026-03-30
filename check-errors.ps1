@@ -24,7 +24,7 @@ Write-Host "Using Godot: $GodotExe" -ForegroundColor Cyan
 Write-Host "Checking project at: $PSScriptRoot" -ForegroundColor Cyan
 
 $proc = Start-Process -FilePath $GodotExe `
-    -ArgumentList "--headless", "--path", "`"$PSScriptRoot`"", "--quit" `
+    -ArgumentList "--headless", "--audio-driver", "Dummy", "--path", "`"$PSScriptRoot`"", "--quit" `
     -NoNewWindow -Wait -PassThru -RedirectStandardOutput "$env:TEMP\godot_out.txt" `
     -RedirectStandardError  "$env:TEMP\godot_err.txt"
 

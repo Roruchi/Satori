@@ -1,7 +1,6 @@
 class_name HUDController
 extends CanvasLayer
 
-const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 460.0
@@ -72,6 +71,8 @@ enum Mode {
 var _mode: int = Mode.PLANT
 var _tile_selector_hex: Node2D = null
 var _mode_tabs_initialized: bool = false
+var _world_popover_panel: PanelContainer = null
+var _world_popover_label: Label = null
 
 func _ready() -> void:
 	_mix_panel.anchor_left = 0.0
@@ -97,16 +98,12 @@ func _ready() -> void:
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_tile_selector_hex = get_node_or_null("../TileSelector/TileSelectorHex")
 	var settings: Node = get_node_or_null("/root/GardenSettings")
-	if settings != null and settings.has_signal("growth_mode_changed"):
-		settings.growth_mode_changed.connect(_on_growth_mode_changed)
-		var current_mode_variant: Variant = settings.get("growth_mode")
-		if current_mode_variant is int:
-			_on_growth_mode_changed(int(current_mode_variant))
-		else:
-			_on_growth_mode_changed(GrowthModeScript.Value.REAL_TIME)
+	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
+		settings.growth_speed_multiplier_changed.connect(_on_growth_speed_multiplier_changed)
+		_on_growth_speed_multiplier_changed(float(settings.get("growth_speed_multiplier")))
 	else:
-		push_warning("HUDController could not connect to GardenSettings.growth_mode_changed")
-		_on_growth_mode_changed(GrowthModeScript.Value.REAL_TIME)
+		push_warning("HUDController could not connect to GardenSettings.growth_speed_multiplier_changed")
+		_on_growth_speed_multiplier_changed(1.0)
 	_set_mode(Mode.PLANT)
 	var satori_service: Node = get_node_or_null("/root/SatoriService")
 	if satori_service != null:
@@ -127,6 +124,7 @@ func _ready() -> void:
 		if alchemy_service.has_signal("shrine_charge_collected"):
 			alchemy_service.shrine_charge_collected.connect(func(_coord: Vector2i, _element_id: int, _amount: int) -> void: _refresh_element_meters())
 	_refresh_element_meters()
+	_init_world_popover()
 
 func _layout_mix_panel() -> void:
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
@@ -148,8 +146,13 @@ func _layout_codex_panel() -> void:
 	_codex_panel.position = Vector2(panel_x, panel_y)
 	_codex_panel.size = Vector2(panel_width, panel_height)
 
-func _on_growth_mode_changed(mode: int) -> void:
-	_instant_badge.visible = mode == GrowthModeScript.Value.INSTANT
+func _on_growth_speed_multiplier_changed(multiplier: float) -> void:
+	var rounded: int = int(round(multiplier))
+	if rounded <= 1:
+		_instant_badge.visible = false
+		return
+	_instant_badge.visible = true
+	_instant_badge.text = "x%d" % rounded
 
 func _on_satori_changed(current: int, cap: int) -> void:
 	_satori_label.text = "Satori: %d/%d" % [current, cap]
@@ -213,6 +216,73 @@ func is_build_mode() -> bool:
 
 func is_interact_mode() -> bool:
 	return _mode == Mode.INTERACT
+
+func show_world_popover(screen_anchor: Vector2, lines: Array[String]) -> void:
+	if _world_popover_panel == null or _world_popover_label == null:
+		return
+	if lines.is_empty():
+		hide_world_popover()
+		return
+	var joined: String = "\n".join(lines)
+	_world_popover_label.text = joined
+	var font: Font = ThemeDB.fallback_font
+	var font_size: int = 13
+	var max_width: float = 0.0
+	for line: String in lines:
+		var line_width: float = font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		max_width = maxf(max_width, line_width)
+	var line_height: float = 17.0
+	var padding: Vector2 = Vector2(10.0, 8.0)
+	var box_size: Vector2 = Vector2(max_width + padding.x * 2.0, line_height * float(lines.size()) + padding.y * 2.0)
+	var target_pos: Vector2 = screen_anchor + Vector2(18.0, -box_size.y - 16.0)
+	if _root != null:
+		target_pos.x = clampf(target_pos.x, 8.0, _root.size.x - box_size.x - 8.0)
+		target_pos.y = clampf(target_pos.y, 8.0, _root.size.y - box_size.y - 8.0)
+	_world_popover_panel.position = target_pos
+	_world_popover_panel.custom_minimum_size = box_size
+	_world_popover_panel.size = box_size
+	_world_popover_label.position = padding
+	_world_popover_label.size = Vector2(box_size.x - padding.x * 2.0, box_size.y - padding.y * 2.0)
+	_world_popover_panel.visible = true
+
+func hide_world_popover() -> void:
+	if _world_popover_panel == null:
+		return
+	_world_popover_panel.visible = false
+
+func _init_world_popover() -> void:
+	if _root == null:
+		return
+	if _world_popover_panel != null:
+		return
+	_world_popover_panel = PanelContainer.new()
+	_world_popover_panel.name = "WorldHoverPopover"
+	_world_popover_panel.visible = false
+	_world_popover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_world_popover_panel.z_index = 200
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.10, 0.16, 0.90)
+	panel_style.border_color = Color(0.55, 0.77, 1.0, 0.95)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.corner_radius_top_left = 8
+	panel_style.corner_radius_top_right = 8
+	panel_style.corner_radius_bottom_right = 8
+	panel_style.corner_radius_bottom_left = 8
+	_world_popover_panel.add_theme_stylebox_override("panel", panel_style)
+	_root.add_child(_world_popover_panel)
+
+	_world_popover_label = Label.new()
+	_world_popover_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_world_popover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_world_popover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_world_popover_label.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0, 0.98))
+	_world_popover_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.70))
+	_world_popover_label.add_theme_constant_override("shadow_offset_x", 1)
+	_world_popover_label.add_theme_constant_override("shadow_offset_y", 1)
+	_world_popover_panel.add_child(_world_popover_label)
 
 func _on_settings_pressed() -> void:
 	if _settings_menu != null:

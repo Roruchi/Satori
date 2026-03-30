@@ -64,14 +64,21 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 			var grid: RefCounted = grid_variant as RefCounted
 			if grid == null or not grid.has_method("get_tile"):
 				return
-			var dropoff_coord: Vector2i = _find_origin_dropoff_coord(grid)
+			var spirit_coord: Vector2i = _find_spirit_anchor_coord(grid, spirit_id)
+			var preferred_island: String = ""
+			if spirit_coord != _INVALID_COORD:
+				preferred_island = _island_id_for_coord(grid, spirit_coord)
+			var dropoff_coord: Vector2i = _find_origin_dropoff_coord(grid, preferred_island)
+			if dropoff_coord == _INVALID_COORD and not preferred_island.is_empty():
+				dropoff_coord = _find_origin_dropoff_coord(grid, "")
 			if dropoff_coord == _INVALID_COORD:
 				return
-			var spirit_coord: Vector2i = _find_spirit_anchor_coord(grid, spirit_id)
-			if _is_water_spirit(spirit_id) and spirit_coord != _INVALID_COORD and not _same_island(grid, spirit_coord, dropoff_coord):
-				var fallback_coord: Vector2i = _find_completed_water_building_dropoff(grid, _island_id_for_coord(grid, spirit_coord))
-				if fallback_coord != _INVALID_COORD:
-					dropoff_coord = fallback_coord
+			if _is_water_spirit(spirit_id):
+				var water_house_coord: Vector2i = _find_completed_water_building_dropoff(grid, preferred_island)
+				if water_house_coord == _INVALID_COORD and spirit_coord != _INVALID_COORD and not _same_island(grid, spirit_coord, dropoff_coord):
+					water_house_coord = _find_completed_water_building_dropoff(grid, "")
+				if water_house_coord != _INVALID_COORD:
+					dropoff_coord = water_house_coord
 					var fallback_tile: GardenTile = grid.get_tile(dropoff_coord)
 					if fallback_tile != null:
 						fallback_tile.metadata["is_water_dropoff"] = true
@@ -85,15 +92,19 @@ static func process_gift(gift_type: int, gift_payload: StringName) -> void:
 		_:
 			pass
 
-static func _find_origin_dropoff_coord(grid: RefCounted) -> Vector2i:
+static func _find_origin_dropoff_coord(grid: RefCounted, preferred_island: String = "") -> Vector2i:
 	for coord_variant: Variant in grid.tiles.keys():
 		var coord: Vector2i = coord_variant as Vector2i
 		var tile: GardenTile = grid.get_tile(coord)
 		if tile == null:
 			continue
 		if bool(tile.metadata.get("is_origin_shrine", false)):
+			if not preferred_island.is_empty():
+				var shrine_island: String = _island_id_for_coord(grid, coord)
+				if shrine_island != preferred_island:
+					continue
 			return coord
-	if grid.has_method("has_tile") and grid.has_tile(Vector2i.ZERO):
+	if preferred_island.is_empty() and grid.has_method("has_tile") and grid.has_tile(Vector2i.ZERO):
 		return Vector2i.ZERO
 	return _INVALID_COORD
 

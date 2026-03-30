@@ -4,6 +4,9 @@ extends Node2D
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const TILE_RADIUS: float = 20.0
 const SPIRIT_RADIUS: float = 8.0
+const HOUSED_LABEL_COLOR: Color = Color(1.0, 1.0, 1.0)
+const UNHOUSED_LABEL_COLOR: Color = Color(1.0, 0.35, 0.35)
+const HOUSING_COLOR_REFRESH_SECONDS: float = 0.5
 
 signal moved_to(spirit_id: String, coord: Vector2i)
 
@@ -19,6 +22,7 @@ var _display_color: Color = Color.WHITE
 var _label: Label
 var _preferred_biomes: Array[int] = []
 var _disliked_biomes: Array[int] = []
+var _housing_color_refresh_remaining: float = 0.0
 
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
@@ -42,6 +46,7 @@ func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	var display_name: String = str(catalog_entry.get("display_name", spirit_id))
 	if _label != null:
 		_label.text = display_name
+		_update_housing_label_color(true)
 	var start_world: Vector2 = _coord_to_world(instance.spawn_coord)
 	position = start_world
 	queue_redraw()
@@ -90,9 +95,15 @@ func _draw() -> void:
 func _process(delta: float) -> void:
 	if _wait_time > 0.0:
 		_wait_time -= delta
+		_housing_color_refresh_remaining -= delta
+		if _housing_color_refresh_remaining <= 0.0:
+			_update_housing_label_color()
 		if _wait_time <= 0.0:
 			_pick_new_target()
 		return
+	_housing_color_refresh_remaining -= delta
+	if _housing_color_refresh_remaining <= 0.0:
+		_update_housing_label_color()
 	var diff: Vector2 = _target_world - position
 	if diff.length() < 0.1:
 		var coord: Vector2i = _world_to_coord(position)
@@ -186,3 +197,35 @@ func _is_disliked_coord(coord: Vector2i) -> bool:
 
 func update_bounds(new_bounds: Rect2i) -> void:
 	wander_bounds = new_bounds
+
+func set_island_id(new_island_id: String) -> void:
+	_island_id = new_island_id
+
+func _update_housing_label_color(force_refresh: bool = false) -> void:
+	if _label == null:
+		return
+	if not force_refresh and _housing_color_refresh_remaining > 0.0:
+		return
+	_housing_color_refresh_remaining = HOUSING_COLOR_REFRESH_SECONDS
+	var spirit_service: Node = _resolve_spirit_service()
+	if spirit_service == null or not spirit_service.has_method("is_spirit_housed"):
+		_label.add_theme_color_override("font_color", HOUSED_LABEL_COLOR)
+		return
+	var is_housed: bool = bool(spirit_service.is_spirit_housed(spirit_id, _island_id))
+	_label.add_theme_color_override("font_color", HOUSED_LABEL_COLOR if is_housed else UNHOUSED_LABEL_COLOR)
+
+func _resolve_spirit_service() -> Node:
+	var direct: Node = get_node_or_null("/root/SpiritService")
+	if direct != null:
+		return direct
+	var garden_path: Node = get_node_or_null("/root/Garden/SpiritService")
+	if garden_path != null:
+		return garden_path
+	var voxel_path: Node = get_node_or_null("/root/VoxelGarden/SpiritService")
+	if voxel_path != null:
+		return voxel_path
+	var root: Node = get_tree().root if get_tree() != null else null
+	if root == null:
+		return null
+	var discovered: Node = root.find_child("SpiritService", true, false)
+	return discovered

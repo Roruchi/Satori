@@ -44,6 +44,9 @@ func unlock_element(element: int) -> void:
 	_unlocked_elements.append(element)
 	element_unlocked.emit(element)
 	if element == GodaiElementScript.Value.KU:
+		# Ku should start at full charge immediately on unlock.
+		_kusho_pool.set_charge(GodaiElementScript.Value.KU, KushoPoolScript.CAPACITY_PER_ELEMENT)
+		element_charge_changed.emit(GodaiElementScript.Value.KU, _kusho_pool.get_charge(GodaiElementScript.Value.KU))
 		_register_discovery(SatoriIds.KU_GUIDANCE_ENTRY_ID, false)
 
 func lookup_recipe(elements: Array[int]) -> SeedRecipe:
@@ -170,6 +173,13 @@ func has_shrine_charge(coord: Vector2i) -> bool:
 	if not (counts_variant is Dictionary):
 		return false
 	return not (counts_variant as Dictionary).is_empty()
+
+func get_shrine_charge_counts(coord: Vector2i) -> Dictionary:
+	var coord_key: String = _coord_key(coord)
+	var counts_variant: Variant = _pending_shrine_charges.get(coord_key, null)
+	if counts_variant is Dictionary:
+		return (counts_variant as Dictionary).duplicate(true)
+	return {}
 
 func _coord_key(coord: Vector2i) -> String:
 	return "%d,%d" % [coord.x, coord.y]

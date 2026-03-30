@@ -4,7 +4,6 @@ extends Node
 const SatoriConditionSetScript = preload("res://src/satori/SatoriConditionSet.gd")
 const SatoriConditionEvaluatorScript = preload("res://src/satori/SatoriConditionEvaluator.gd")
 const SpiritGiftTypeScript = preload("res://src/spirits/SpiritGiftType.gd")
-const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SatoriIdsScript = preload("res://src/satori/SatoriIds.gd")
 const PatternLoaderScript = preload("res://src/biomes/pattern_loader.gd")
@@ -24,6 +23,7 @@ const GUIDANCE_LANTERN_PACIFIED_MAX: int = 3
 const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
 const HOUSED_GAIN_INTERVAL_SECONDS: float = 10.0
 const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 5.0
+const DISCOVERY_CAP_PER_UNIQUE: int = 50
 
 var _conditions: Array[SatoriConditionSet] = []
 var _fired: Dictionary = {}
@@ -55,6 +55,9 @@ func _ready() -> void:
 		game_state.tile_placed.connect(_on_world_changed)
 	if game_state != null and game_state.has_signal("tile_mixed"):
 		game_state.tile_mixed.connect(_on_world_changed)
+	var discovery_persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
+	if discovery_persistence != null and discovery_persistence.has_signal("discovery_recorded"):
+		discovery_persistence.discovery_recorded.connect(_on_discovery_recorded)
 	_recompute_structures_from_grid()
 	_recompute_cap_from_structures()
 	_emit_satori_if_changed()
@@ -130,6 +133,9 @@ func _on_world_changed(_coord: Vector2i, _tile: GardenTile) -> void:
 	_recompute_structures_from_grid()
 	_recompute_cap_from_structures()
 
+func _on_discovery_recorded(_discovery_id: String) -> void:
+	_recompute_cap_from_structures()
+
 func evaluate() -> void:
 	for condition_set: SatoriConditionSet in _conditions:
 		if bool(_fired.get(condition_set.condition_id, false)):
@@ -139,11 +145,6 @@ func evaluate() -> void:
 			return
 
 func trigger_debug() -> void:
-	var settings: Node = get_node_or_null("/root/GardenSettings")
-	if settings == null:
-		return
-	if int(settings.get("growth_mode")) != GrowthModeScript.Value.INSTANT:
-		return
 	for condition_set: SatoriConditionSet in _conditions:
 		if str(condition_set.condition_id) == "satori_first_awakening":
 			if bool(_fired.get(condition_set.condition_id, false)):
@@ -324,6 +325,7 @@ func _recompute_structures_from_grid() -> void:
 	var grid: RefCounted = game_state.get("grid")
 	if grid == null:
 		return
+	_enforce_wayfarer_torii_per_biome(grid)
 	var seen_unique: Dictionary = {}
 	for coord_variant: Variant in grid.tiles.keys():
 		var coord: Vector2i = coord_variant
@@ -351,6 +353,7 @@ func _recompute_structures_from_grid() -> void:
 		var structure: Dictionary = {
 			"discovery_id": discovery_id,
 			"coord": coord,
+			"biome": tile.biome,
 			"island_id": island_id,
 			"tier": int(def.get("tier", 0)),
 			"cap_increase": int(def.get("cap_increase", 0)),
@@ -361,16 +364,73 @@ func _recompute_structures_from_grid() -> void:
 		}
 		_structures.append(structure)
 
+func _enforce_wayfarer_torii_per_biome(grid: RefCounted) -> void:
+	if grid == null or not grid.has_method("get_tile"):
+		return
+	var torii_coords_by_biome: Dictionary = {}
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if not bool(tile.metadata.get("shrine_built", false)):
+			continue
+		if str(tile.metadata.get("build_discovery_id", "")) != "disc_wayfarer_torii":
+			continue
+		var biome: int = tile.biome
+		var arr_variant: Variant = torii_coords_by_biome.get(biome, null)
+		var arr: Array[Vector2i] = []
+		if arr_variant is Array:
+			for existing_variant: Variant in arr_variant as Array:
+				if existing_variant is Vector2i:
+					arr.append(existing_variant as Vector2i)
+		arr.append(coord)
+		torii_coords_by_biome[biome] = arr
+
+	for biome_variant: Variant in torii_coords_by_biome.keys():
+		var coords_variant: Variant = torii_coords_by_biome.get(int(biome_variant), null)
+		if not (coords_variant is Array):
+			continue
+		var coords: Array[Vector2i] = []
+		for coord_variant: Variant in coords_variant as Array:
+			if coord_variant is Vector2i:
+				coords.append(coord_variant as Vector2i)
+		if coords.size() <= 1:
+			continue
+		coords.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			if a.x == b.x:
+				return a.y < b.y
+			return a.x < b.x
+		)
+		for i: int in range(1, coords.size()):
+			var extra_coord: Vector2i = coords[i]
+			var extra_tile: GardenTile = grid.get_tile(extra_coord)
+			if extra_tile == null:
+				continue
+			extra_tile.metadata["shrine_built"] = false
+			extra_tile.metadata.erase("build_discovery_id")
+			extra_tile.metadata.erase("is_water_dropoff")
+
 func _recompute_cap_from_structures() -> void:
-	var cap_total: int = SatoriIdsScript.BASE_SATORI_CAP
-	for structure: Dictionary in _structures:
-		cap_total += int(structure.get("cap_increase", 0))
+	var cap_total: int = SatoriIdsScript.BASE_SATORI_CAP + _discovery_cap_bonus()
 	var old_cap: int = _current_cap
 	_current_cap = maxi(cap_total, SatoriIdsScript.BASE_SATORI_CAP)
 	if old_cap != _current_cap:
 		_current_satori = clamp(_current_satori, 0, _current_cap)
 		satori_cap_changed.emit(_current_cap)
 		_emit_satori_if_changed()
+
+func _discovery_cap_bonus() -> int:
+	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
+	if persistence == null or not persistence.has_method("get_discovered_ids"):
+		return 0
+	var discovered_ids: Array[String] = persistence.get_discovered_ids()
+	var unique_disc_ids: Dictionary = {}
+	for did: String in discovered_ids:
+		if not did.begins_with("disc_"):
+			continue
+		unique_disc_ids[did] = true
+	return unique_disc_ids.size() * DISCOVERY_CAP_PER_UNIQUE
 
 func get_active_structures() -> Array[Dictionary]:
 	return _structures.duplicate(true)

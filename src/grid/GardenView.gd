@@ -156,14 +156,6 @@ func _on_mix_rejected(coord: Vector2i, reason: String) -> void:
 
 func _on_discovery_triggered(discovery_id: String, coords: Array[Vector2i]) -> void:
 	_discovery_overlays[discovery_id] = coords
-	if _BUILD_GATED_DISCOVERY_IDS.has(discovery_id):
-		for coord: Vector2i in coords:
-			var tile: GardenTile = GameState.grid.get_tile(coord)
-			if tile == null:
-				continue
-			tile.metadata["shrine_buildable"] = true
-			tile.metadata["shrine_built"] = false
-			tile.metadata["build_discovery_id"] = discovery_id
 	queue_redraw()
 
 func _on_discovery_blocked(_discovery_id: String, coords: Array[Vector2i], _reason: String) -> void:
@@ -204,6 +196,7 @@ func _draw() -> void:
 	_draw_background()
 
 	# 1. Draw base tiles
+	var build_icons_to_draw: Array[Dictionary] = []
 	for coord: Vector2i in GameState.grid.tiles:
 		var tile: GardenTile = GameState.grid.tiles[coord]
 		var in_large: bool = _is_in_large_cluster(coord, tile.biome)
@@ -214,11 +207,17 @@ func _draw() -> void:
 		_draw_tile_decorations(coord, tile.biome, in_large)
 		var is_build_block: bool = bool(tile.metadata.get("is_build_block", false))
 		var is_completed_building: bool = bool(tile.metadata.get("is_building_complete", false))
-		if is_build_block or is_completed_building:
-			_draw_build_block_icon(coord, tile.biome, is_build_block, is_completed_building)
-		if tile.locked:
-			var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-			draw_circle(Vector2(tc.x + TILE_RADIUS * 0.6, tc.y - TILE_RADIUS * 0.5), 4.0, Color(1.0, 0.85, 0.0))
+		var is_built_structure: bool = bool(tile.metadata.get("shrine_built", false)) or bool(tile.metadata.get("is_origin_shrine", false)) or bool(tile.metadata.get("is_water_dropoff", false))
+		if is_build_block or is_completed_building or is_built_structure:
+			build_icons_to_draw.append({
+				"coord": coord,
+				"biome": tile.biome,
+				"under_construction": is_build_block,
+				"completed": is_completed_building or is_built_structure,
+				"is_origin_shrine": bool(tile.metadata.get("is_origin_shrine", false)),
+				"is_water_dropoff": bool(tile.metadata.get("is_water_dropoff", false)),
+				"is_wayfarer_torii": str(tile.metadata.get("build_discovery_id", "")) == "disc_wayfarer_torii",
+			})
 
 	# 1.5 Draw pending seed previews (ephemeral tiles in growth pipeline).
 	_draw_pending_seed_previews()
@@ -239,6 +238,19 @@ func _draw() -> void:
 		if _BUILD_GATED_DISCOVERY_IDS.has(discovery_id) and not _is_any_build_tile_built(disc_coords):
 			continue
 		_draw_discovery_overlay(discovery_id, disc_coords)
+
+	# 3.5 Completed/active structures should remain visually above biome overlays.
+	for icon_data_variant: Variant in build_icons_to_draw:
+		var icon_data: Dictionary = icon_data_variant as Dictionary
+		_draw_build_block_icon(
+			icon_data.get("coord", Vector2i.ZERO),
+			int(icon_data.get("biome", 0)),
+			bool(icon_data.get("under_construction", false)),
+			bool(icon_data.get("completed", false)),
+			bool(icon_data.get("is_origin_shrine", false)),
+			bool(icon_data.get("is_water_dropoff", false)),
+			bool(icon_data.get("is_wayfarer_torii", false))
+		)
 
 	# 4. Shrine build/interact status overlays.
 	_draw_shrine_status_overlays()
@@ -284,6 +296,7 @@ func _draw() -> void:
 	# 7. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
 	_draw_build_progress_overlays()
+	_draw_interact_hover_popover()
 
 
 func _draw_pending_seed_previews() -> void:
@@ -327,11 +340,12 @@ func _draw_shrine_status_overlays() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	var hud: Node = get_node_or_null("../HUD")
 	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
+	var build_mode: bool = hud != null and hud.has_method("is_build_mode") and hud.is_build_mode()
 	for coord: Vector2i in GameState.grid.tiles:
 		var tile: GardenTile = GameState.grid.tiles[coord]
 		var is_origin_shrine: bool = bool(tile.metadata.get("is_origin_shrine", false))
 		var is_water_dropoff: bool = bool(tile.metadata.get("is_water_dropoff", false))
-		if bool(tile.metadata.get("shrine_buildable", false)) and not bool(tile.metadata.get("shrine_built", false)) and not str(tile.metadata.get("build_discovery_id", "")).is_empty():
+		if build_mode and bool(tile.metadata.get("shrine_buildable", false)) and not bool(tile.metadata.get("shrine_built", false)) and not str(tile.metadata.get("build_discovery_id", "")).is_empty():
 			var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 			_draw_seed_overlay_text(center + Vector2(-10.0, -10.0), "Build", 11, Color(0.94, 0.90, 0.65, 0.90))
 		if alchemy == null or not alchemy.has_method("has_shrine_charge"):
@@ -353,6 +367,129 @@ func _draw_shrine_status_overlays() -> void:
 			var ready_label: String = "Water Essence Ready" if is_water_dropoff and not is_origin_shrine else "Essence Ready"
 			_draw_seed_overlay_text(ring_center + Vector2(-34.0, -16.0), ready_label, 10, indicator_col)
 
+func _draw_interact_hover_popover() -> void:
+	var hud: Node = get_node_or_null("../HUD")
+	if hud != null and hud.has_method("hide_world_popover"):
+		hud.hide_world_popover()
+	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
+	if not interact_mode:
+		return
+	var tile: GardenTile = GameState.grid.get_tile(_hover_coord)
+	if tile == null:
+		return
+	var is_house: bool = bool(tile.metadata.get("is_building_complete", false)) and not bool(tile.metadata.get("shrine_built", false))
+	var is_structure: bool = bool(tile.metadata.get("shrine_built", false)) or bool(tile.metadata.get("is_origin_shrine", false)) or bool(tile.metadata.get("is_water_dropoff", false))
+	if not is_house and not is_structure:
+		return
+	var lines: Array[String] = []
+	if is_house:
+		lines.append("Type: House (%s)" % _biome_label(tile.biome))
+		var owner_label: String = "Owner: Unbound"
+		var spirit_service: Node = _resolve_spirit_service()
+		if spirit_service != null and spirit_service.has_method("get_house_owner_at_coord"):
+			var owner_info: Dictionary = spirit_service.get_house_owner_at_coord(_hover_coord)
+			if not owner_info.is_empty():
+				owner_label = "Owner: %s" % str(owner_info.get("display_name", owner_info.get("spirit_id", "Unknown")))
+		lines.append(owner_label)
+	if is_structure:
+		lines.append("Type: %s" % _structure_label_for_tile(tile))
+		var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+		if alchemy != null and alchemy.has_method("get_shrine_charge_counts"):
+			var counts: Dictionary = alchemy.get_shrine_charge_counts(_hover_coord)
+			lines.append("Essence: %s" % _format_shrine_counts(counts))
+	if lines.is_empty():
+		return
+	if hud != null and hud.has_method("show_world_popover"):
+		var anchor_world: Vector2 = _HexUtils.axial_to_pixel(_hover_coord, TILE_RADIUS)
+		var anchor_screen: Vector2 = get_global_transform_with_canvas() * anchor_world
+		hud.show_world_popover(anchor_screen, lines)
+
+func _structure_label_for_tile(tile: GardenTile) -> String:
+	if tile == null:
+		return "Structure"
+	if bool(tile.metadata.get("is_origin_shrine", false)):
+		return "Origin Shrine"
+	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
+	if not discovery_id.is_empty():
+		return _humanize_discovery_id(discovery_id)
+	if bool(tile.metadata.get("is_water_dropoff", false)):
+		return "Water Dropoff Shrine"
+	return "Shrine"
+
+func _format_shrine_counts(counts: Dictionary) -> String:
+	if counts.is_empty():
+		return "Empty"
+	var element_ids: Array[int] = []
+	for key_variant: Variant in counts.keys():
+		element_ids.append(int(key_variant))
+	element_ids.sort()
+	var parts: PackedStringArray = PackedStringArray()
+	for element_id: int in element_ids:
+		var amount: int = int(counts.get(element_id, 0))
+		if amount <= 0:
+			continue
+		parts.append("%s x%d" % [_godai_name(element_id), amount])
+	if parts.is_empty():
+		return "Empty"
+	return ", ".join(parts)
+
+func _godai_name(element_id: int) -> String:
+	match element_id:
+		0:
+			return "Chi"
+		1:
+			return "Sui"
+		2:
+			return "Ka"
+		3:
+			return "Fu"
+		4:
+			return "Ku"
+		_:
+			return "?"
+
+func _biome_label(biome: int) -> String:
+	match biome:
+		BiomeType.Value.STONE:
+			return "Stone"
+		BiomeType.Value.RIVER:
+			return "River"
+		BiomeType.Value.EMBER_FIELD:
+			return "Ember"
+		BiomeType.Value.MEADOW:
+			return "Meadow"
+		BiomeType.Value.WETLANDS:
+			return "Wetlands"
+		BiomeType.Value.KU:
+			return "Ku"
+		_:
+			return "Mixed"
+
+func _humanize_discovery_id(discovery_id: String) -> String:
+	var raw: String = discovery_id
+	if raw.begins_with("disc_"):
+		raw = raw.substr(5)
+	var words: PackedStringArray = PackedStringArray()
+	for part: String in raw.split("_"):
+		if part.is_empty():
+			continue
+		words.append(part.substr(0, 1).to_upper() + part.substr(1))
+	if words.is_empty():
+		return "Structure"
+	return " ".join(words)
+
+func _resolve_spirit_service() -> Node:
+	var direct: Node = get_node_or_null("/root/SpiritService")
+	if direct != null:
+		return direct
+	var garden_path: Node = get_node_or_null("/root/Garden/SpiritService")
+	if garden_path != null:
+		return garden_path
+	var voxel_path: Node = get_node_or_null("/root/VoxelGarden/SpiritService")
+	if voxel_path != null:
+		return voxel_path
+	return null
+
 func _draw_build_progress_overlays() -> void:
 	var now: float = Time.get_unix_time_from_system()
 	for coord: Vector2i in GameState.grid.tiles:
@@ -363,13 +500,34 @@ func _draw_build_progress_overlays() -> void:
 			continue
 		if bool(tile.metadata.get("is_building_complete", false)):
 			continue
+		var countdown_started: bool = bool(tile.metadata.get("build_countdown_started", false))
+		if not countdown_started:
+			var pending_center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+			var pending_highlight: PackedVector2Array = _hex_polygon(pending_center, TILE_RADIUS - 2.0)
+			var recipe_valid: bool = bool(tile.metadata.get("project_recipe_valid", false))
+			var fill_col: Color = Color(0.28, 0.82, 0.48, 0.25) if recipe_valid else Color(0.35, 0.63, 1.0, 0.24)
+			var border_col: Color = Color(0.32, 0.95, 0.56, 0.95) if recipe_valid else Color(0.42, 0.72, 1.0, 0.95)
+			draw_colored_polygon(pending_highlight, fill_col)
+			var pending_border: PackedVector2Array = PackedVector2Array(pending_highlight)
+			pending_border.append(pending_highlight[0])
+			draw_polyline(pending_border, border_col, 2.0)
+			var invalid_flash_started_at: float = float(tile.metadata.get("project_invalid_flash_started_at", -1.0))
+			if invalid_flash_started_at >= 0.0:
+				var elapsed_flash: float = now - invalid_flash_started_at
+				if elapsed_flash <= 2.0:
+					var flash_alpha: float = elapsed_flash if elapsed_flash <= 1.0 else (2.0 - elapsed_flash)
+					flash_alpha = clampf(flash_alpha, 0.0, 1.0)
+					draw_polyline(pending_border, Color(1.0, 0.18, 0.15, 0.95 * flash_alpha), 3.3)
+			_draw_seed_overlay_text(pending_center + Vector2(-28.0, -26.0), "Confirm", 10, Color(0.96, 0.93, 0.80, 0.96))
+			_draw_seed_overlay_text(pending_center + Vector2(-34.0, -12.0), "RMB Cancel", 10, Color(0.95, 0.78, 0.72, 0.94))
+			continue
 		var started_at: float = float(tile.metadata.get("build_started_at", now))
 		var duration: float = float(tile.metadata.get("build_duration", 10.0))
 		var remaining: int = int(ceil(maxf(0.0, duration - (now - started_at))))
 		var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 		_draw_seed_overlay_text(center + Vector2(-18.0, -18.0), "Build %ds" % remaining, 10, Color(0.96, 0.90, 0.74, 0.92))
 
-func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: bool, completed: bool) -> void:
+func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: bool, completed: bool, is_origin_shrine: bool = false, is_water_dropoff: bool = false, is_wayfarer_torii: bool = false) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	var palette: Dictionary = _building_palette_for_biome(biome)
 	var roof_col: Color = Color(palette.get("roof", Color(0.60, 0.34, 0.20, 0.92)))
@@ -399,6 +557,30 @@ func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: boo
 	elif under_construction:
 		draw_line(center + Vector2(-w * 0.45, -h * 0.10), center + Vector2(w * 0.45, h * 0.45), Color(0.44, 0.33, 0.18, 0.95), 1.4)
 		draw_line(center + Vector2(-w * 0.45, h * 0.45), center + Vector2(w * 0.45, -h * 0.10), Color(0.44, 0.33, 0.18, 0.95), 1.4)
+
+	if is_origin_shrine:
+		# Distinct shrine marker: ring + core + simple cross-sigil.
+		var shrine_center: Vector2 = center + Vector2(0.0, -h * 0.48)
+		draw_circle(shrine_center, 6.8, Color(0.08, 0.10, 0.16, 0.85))
+		draw_arc(shrine_center, 7.4, 0.0, TAU, 24, Color(0.98, 0.90, 0.58, 0.98), 1.8)
+		draw_circle(shrine_center, 2.1, Color(1.0, 0.96, 0.80, 0.95))
+		draw_line(shrine_center + Vector2(-3.0, 0.0), shrine_center + Vector2(3.0, 0.0), Color(0.98, 0.90, 0.58, 0.98), 1.5)
+		draw_line(shrine_center + Vector2(0.0, -3.0), shrine_center + Vector2(0.0, 3.0), Color(0.98, 0.90, 0.58, 0.98), 1.5)
+	elif is_wayfarer_torii:
+		# Torii marker: two pillars with top beam, tinted by biome palette.
+		var gate_center: Vector2 = center + Vector2(0.0, -h * 0.42)
+		var beam_col: Color = roof_col.lightened(0.20)
+		var post_col: Color = wall_col.darkened(0.10)
+		draw_rect(Rect2(gate_center + Vector2(-8.5, -6.0), Vector2(17.0, 2.6)), beam_col)
+		draw_rect(Rect2(gate_center + Vector2(-6.2, -3.4), Vector2(2.4, 8.8)), post_col)
+		draw_rect(Rect2(gate_center + Vector2(3.8, -3.4), Vector2(2.4, 8.8)), post_col)
+		draw_circle(gate_center + Vector2(0.0, -1.8), 1.1, accent_col)
+	elif is_water_dropoff:
+		# Subtle water-drop marker for water essence dropoff structures.
+		var drop_center: Vector2 = center + Vector2(0.0, -h * 0.50)
+		draw_circle(drop_center, 5.6, Color(0.10, 0.20, 0.32, 0.80))
+		draw_circle(drop_center + Vector2(0.0, -1.2), 2.8, Color(0.70, 0.90, 1.0, 0.95))
+		draw_arc(drop_center, 4.9, 0.0, TAU, 20, Color(0.80, 0.95, 1.0, 0.92), 1.4)
 
 func _building_palette_for_biome(biome: int) -> Dictionary:
 	match biome:

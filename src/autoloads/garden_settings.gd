@@ -1,23 +1,22 @@
 class_name GardenSettingsNode
 extends Node
 
-const GrowthModeScript = preload("res://src/seeds/GrowthMode.gd")
+signal growth_speed_multiplier_changed(multiplier: float)
 
-signal growth_mode_changed(mode: int)
-
-var growth_mode: int = GrowthModeScript.Value.INSTANT
+var growth_speed_multiplier: float = 1.0
 
 func _ready() -> void:
 	var seed_growth_service: Node = get_node_or_null("/root/SeedGrowthService")
-	if seed_growth_service != null and seed_growth_service.has_method("set_mode"):
-		seed_growth_service.set_mode(growth_mode)
-	growth_mode_changed.emit(growth_mode)
+	if seed_growth_service != null and seed_growth_service.has_method("set_growth_speed_multiplier"):
+		seed_growth_service.set_growth_speed_multiplier(growth_speed_multiplier)
+	growth_speed_multiplier_changed.emit(growth_speed_multiplier)
 
-func set_growth_mode(mode: int) -> void:
-	if growth_mode == mode:
+func set_growth_speed_multiplier(multiplier: float) -> void:
+	var clamped_multiplier: float = clampf(multiplier, 1.0, 16.0)
+	if is_equal_approx(growth_speed_multiplier, clamped_multiplier):
 		return
-	growth_mode = mode
+	growth_speed_multiplier = clamped_multiplier
 	var seed_growth_service: Node = get_node_or_null("/root/SeedGrowthService")
-	if seed_growth_service != null and seed_growth_service.has_method("set_mode"):
-		seed_growth_service.set_mode(mode)
-	growth_mode_changed.emit(mode)
+	if seed_growth_service != null and seed_growth_service.has_method("set_growth_speed_multiplier"):
+		seed_growth_service.set_growth_speed_multiplier(growth_speed_multiplier)
+	growth_speed_multiplier_changed.emit(growth_speed_multiplier)

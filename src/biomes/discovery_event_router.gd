@@ -47,9 +47,19 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	var codex: Node = get_node_or_null("/root/CodexService")
 	if codex != null and codex.has_method("mark_discovered"):
 		codex.mark_discovered(StringName(discovery_id))
+		if codex.has_method("hint_structure_recipe") and _is_structure_discovery(discovery_id):
+			codex.hint_structure_recipe(StringName(discovery_id))
 	# Enqueue for UI notification
 	if _queue != null:
 		_queue.enqueue(payload)
+
+func _is_structure_discovery(discovery_id: String) -> bool:
+	if discovery_id.is_empty() or not discovery_id.begins_with("disc_"):
+		return false
+	var meta: Dictionary = _catalog.lookup(discovery_id)
+	if meta.is_empty():
+		return false
+	return int(meta.get("tier", 0)) >= 2
 
 func get_catalog_entries() -> Dictionary:
 	if _catalog == null:

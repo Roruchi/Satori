@@ -44,8 +44,9 @@ func place_tile_from_seed(coord: Vector2i, biome: int, as_build_block: bool = fa
 	tile.metadata["is_build_block"] = as_build_block
 	if as_build_block:
 		tile.metadata["is_building_complete"] = false
-		tile.metadata["build_started_at"] = Time.get_unix_time_from_system()
-		tile.metadata["build_duration"] = 10.0
 		tile.metadata["build_completion_pending"] = true
+		tile.metadata["build_countdown_started"] = false
+		tile.metadata.erase("build_started_at")
+		tile.metadata.erase("build_duration")
 	tile_placed.emit(coord, tile)
 	bloom_confirmed.emit(coord, biome)

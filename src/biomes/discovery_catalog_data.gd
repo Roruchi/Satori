@@ -135,6 +135,16 @@ func get_tier1_entries() -> Array[Dictionary]:
 			"effect_type": "dwelling",
 			"housing_capacity": 1
 		},
+		{
+			"discovery_id": "disc_wayfarer_torii",
+			"display_name": "Wayfarer Torii",
+			"flavor_text": "A traveler\'s gate set at a three-way wind crossing.",
+			"audio_key": "stinger_wayfarer_torii",
+			"tier": 1,
+			"cap_increase": 100,
+			"is_unique": false,
+			"effect_type": "swiftness"
+		},
 	]
 
 func get_tier2_entries() -> Array[Dictionary]:
