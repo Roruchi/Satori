@@ -19,6 +19,19 @@ Structure-related runtime pattern scanning is fully retired. Biome cluster disco
 
 ---
 
+## Clarifications
+
+### Session 2026-03-30
+
+- Q: What is the precise algorithm for canonical shape normalization used in floating recipe matching? → A: Translate all occupied cells so that `min(row) = 0` and `min(col) = 0`; then sort the resulting offsets lexicographically by `(row, col)` ascending. This normalized set is stored in `RecipeDefinition` and recomputed by `CraftingGrid` on every grid change for instant recipe lookup.
+- Q: How is placement rotation persisted in the garden state after a Build Mode confirm? → A: A confirmed placement record stores `(recipe_id: String, anchor_cell: Vector2i, rotation_steps: int)` where `rotation_steps` is 0–3 (each step = 90° clockwise). Actual tile cell positions are derived at render and save-load time as `TerrainValidator.apply_rotation(canonical_offsets, rotation_steps) + anchor_cell`.
+- Q: Is "elemental charge" or "seed" the canonical term in code and UI? → A: "Elemental charge" is canonical across all UI strings and new code symbols. "Seed" is a deprecated legacy alias retired from both. The grant feature name "Starter Seed Injection" is retained as a proper noun in this spec for traceability, but all items it grants are referred to as "elemental charges."
+- Q: Do all single elemental charge types have an implicit 1-element tile recipe, or must each be registered explicitly? → A: Every distinct elemental charge type has an explicit single-element `RecipeDefinition` entry in the recipe registry (e.g., Chi → Stone tile, Sui → River tile, Fu → Meadow tile). This keeps the registry as the single source of truth and ensures FR-008 (unrecognised shape → confirm disabled) remains consistent with no special-casing in `CraftingGrid`.
+- Q: How are spirit-binding events handled when they arrive during an active Build Mode session? → A: Spirit events are queued (deferred, FIFO order) and processed immediately after Build Mode exits — whether via confirm or cancel. No spirit event interrupts or dismisses an active placement session.
+- Q: What is the backward-compatibility policy for old save files that predate the new placement record format? → A: Old saves contain placed structure tiles stored by grid coordinates (FR-019 path); they never contained structure inventory items (the old system produced no such items). On load, structure inventory is initialised to empty — no migration is required. The only schema delta is adding `item_type` to inventory entries, which defaults to `tile` when absent for forward-compat reads.
+
+---
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Craft a Single-Tile Biome from the Grid (Priority: P1)
@@ -116,7 +129,7 @@ All runtime scanning for structure footprints on the game board is removed from 
 - What happens when the player rotates the ghost footprint to an orientation that leaves the footprint partially off the edge of the currently loaded area? Footprint must clamp or show an error rather than creating an out-of-bounds placement.
 - What happens if two elemental charges of the same type are placed in the grid but are not contiguous? Each isolated island must be flagged individually; the confirm button must remain disabled.
 - What happens if a recipe shape matches more than one recipe (ambiguous)? The recipe registry must be designed such that ambiguity is not possible — validated at data-authoring time.
-- What happens if the player is in Build Mode and receives a spirit event? Spirit events must queue or pause; Build Mode should not be interrupted unexpectedly.
+- What happens if the player is in Build Mode and receives a spirit event? Spirit events are queued (deferred, FIFO order) and processed immediately after Build Mode exits via confirm or cancel. Build Mode is never interrupted or dismissed by a spirit event.
 - What happens if a 4-element (2×2) Starter House footprint is placed and one of the 4 cells is already occupied? The entire placement is rejected atomically — no partial placement occurs.
 
 ---
@@ -141,7 +154,7 @@ All runtime scanning for structure footprints on the game board is removed from 
 - **FR-014**: The player MUST be able to cancel Build Mode at any time; the structure item MUST be returned to inventory on cancel.
 - **FR-015**: The Starter House recipe MUST require a 2×2 solid block of 4 Fu (Wind) elemental charges arranged anywhere in the 3×3 grid.
 - **FR-016**: The legacy 2-element (Chi + Fu) house recipe MUST be removed. A Chi + Fu arrangement in the crafting grid produces only a Meadow tile.
-- **FR-017**: The post-tutorial "Starter Seed Injection" grant MUST include at least 4 Fu charges so a first-time player can craft the Starter House without additional farming.
+- **FR-017**: The post-tutorial "Starter Seed Injection" grant MUST include at least 4 Fu elemental charges so a first-time player can craft the Starter House without additional farming. Per the RFC's "increase starter seed injection for new economy," the total grant MUST be larger than the legacy amount; additional elemental charges of other types are included at content-team discretion to enable exploratory crafting beyond the first house.
 - **FR-018**: All runtime structure detection by spatial pattern scanning on the game board MUST be removed from the active code paths.
 - **FR-019**: Existing structures stored in saved gardens MUST continue to render correctly using stored placement coordinates, never re-inferred from tile proximity.
 - **FR-020**: The crafting grid UI MUST display a visual preview of a recipe's output (name and icon) when a valid recipe is detected in the grid.
@@ -154,10 +167,11 @@ All runtime scanning for structure footprints on the game board is removed from 
 
 ### Key Entities
 
-- **CraftingGrid**: Transient 3×3 state holding up to 9 elemental charge slots. Responsible for contiguity validation, floating-shape normalisation (canonical top-left alignment for lookup), and signalling recipe match state to the UI.
-- **RecipeDefinition**: Data resource that describes a recipe by its canonical normalised shape (set of relative `Vector2i` offsets), required element types per cell, minimum element count, and output item type. Replaces the role structure shape-patterns played in the old `PatternDefinition` catalog.
+- **CraftingGrid**: Transient 3×3 state holding up to 9 elemental charge slots. Responsible for contiguity validation, floating-shape normalisation, and signalling recipe match state to the UI. **Normalisation algorithm**: on each grid change, collect occupied cell coordinates, translate so `min(row) = 0` and `min(col) = 0`, sort by `(row, col)` ascending, and use the resulting `Array[Vector2i]` as the lookup key into the `RecipeDefinition` registry.
+- **RecipeDefinition**: Data resource that describes a recipe by its canonical normalised shape (sorted `Array[Vector2i]` offsets, origin at top-left per the normalisation algorithm above), required element type per occupied cell, minimum element count, and output item type. Every elemental charge type MUST have at least one explicit single-element `RecipeDefinition` entry (e.g., Chi → Stone tile, Sui → River tile, Fu → Meadow tile) so that `CraftingGrid` requires no special-casing for the 1-element path. Replaces the role structure shape-patterns played in the old `PatternDefinition` catalog.
 - **InventoryItem**: A discrete crafted output record held in player inventory. Contains item type (tile or structure), associated recipe ID, and quantity. Must survive save/load.
-- **BuildMode**: Transient runtime state active when the player is placing a structure item. Holds the ghost footprint shape, current rotation state, target anchor cell, and latest terrain-validation result.
+- **BuildMode**: Transient runtime state active when the player is placing a structure item. Holds the ghost footprint shape, current `rotation_steps: int` (0–3, each = 90° clockwise), target anchor cell, and latest terrain-validation result. On confirm, emits a `PlacementRecord` to the garden state and clears itself. On cancel, returns the item to inventory and clears itself.
+- **PlacementRecord**: Persisted garden entry created on placement confirm. Fields: `recipe_id: String`, `anchor_cell: Vector2i`, `rotation_steps: int` (0–3). Tile positions are derived on demand via `TerrainValidator.apply_rotation(canonical_offsets, rotation_steps) + anchor_cell`. Old saves that predate this record format load with an empty structure inventory; placed structure tiles stored by coordinates remain intact.
 - **GhostFootprint**: A visual scene node that renders the translucent multi-tile preview on the map and communicates valid/blocked cells per-cell using a colour overlay and text label.
 - **TerrainValidator**: Stateless helper that accepts a structure recipe, a map anchor cell, and a rotation angle, then returns a per-cell pass/fail result with localised error strings.
 
@@ -171,7 +185,7 @@ All runtime scanning for structure footprints on the game board is removed from 
 - **SC-002**: Atomic Placement — multi-tile structures always appear fully on the board within a single frame; frame profiling of the confirmation event shows no intermediate partial-structure state.
 - **SC-003**: UX Clarity — in a lightweight playtest (minimum 5 new players), every participant can describe the full build flow ("open grid → place elements → craft item → place on map") in one sentence without prompting.
 - **SC-004**: Legacy Code Retired — a search of the active codebase finds zero call sites that trigger runtime structure pattern scanning on the game board; the shape-based structure matchers are deleted or isolated behind a deprecated-only compilation flag.
-- **SC-005**: Tutorial Completion — new players complete the crafting-grid tutorial and successfully place their first Starter House without additional elemental farming; the post-tutorial seed grant is sufficient.
+- **SC-005**: Tutorial Completion — new players complete the crafting-grid tutorial and successfully place their first Starter House without additional elemental farming; the post-tutorial Starter Seed Injection grant is sufficient.
 - **SC-006**: Save/Load Fidelity — structure inventory items survive a save/load round trip; placed structures from saves render correctly without re-running any structure scan.
 
 ---
@@ -179,7 +193,7 @@ All runtime scanning for structure footprints on the game board is removed from 
 ## Assumptions
 
 - Biome cluster and biome ratio/proximity discoveries (`disc_river`, `disc_deep_stand`, all Tier 1/2 biome discoveries) are **not** part of this migration. They continue to use the existing `PatternMatcher` pipeline.
-- The existing elemental charge ("seed") inventory system is sufficient to hold the new discrete structure items, or a straightforward extension of it is used; no new persistence schema is required beyond adding an `item_type` field.
+- The existing elemental charge inventory system is sufficient to hold the new discrete structure items, or a straightforward extension of it is used; no new persistence schema is required beyond adding an `item_type` field (defaults to `tile` when absent for forward-compat reads of old saves). Old saves that predate structure inventory items load with an empty structure inventory; placed structure tiles stored by grid coordinates remain intact and correct.
 - Ku-element recipes (spec 016) continue to follow the same 1-/2-element → tile rule; no Ku-specific structure recipes are added in this feature.
 - The Tier 2 structural landmark recipes (`disc_wayfarer_torii`, `disc_origin_shrine`, etc.) that previously relied on build-mode shape recognition will be migrated to the new 3×3 crafting grid recipe format. Their terrain placement rules move to the `TerrainValidator`.
 - The Codex entry format can be extended to show a recipe-grid illustration without a separate feature spec; this is a cosmetic addition inside this feature's scope.
