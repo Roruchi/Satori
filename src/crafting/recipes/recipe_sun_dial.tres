@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/crafting/RecipeDefinition.gd" id="1_sundial"]
+
+[resource]
+script = ExtResource("1_sundial")
+recipe_id = "recipe_sun_dial"
+output_type = 1
+output_id = "disc_sun_dial"
+shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(0, 1), Vector2i(1, 1)])
+elements = Array[int]([2, 3, 2])
+display_name = "Sun Dial"
+icon_path = ""
+terrain_rules = Array[Dictionary]([])
+min_element_count = 1

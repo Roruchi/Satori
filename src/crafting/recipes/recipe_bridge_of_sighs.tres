@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/crafting/RecipeDefinition.gd" id="1_bridgeofsighs"]
+
+[resource]
+script = ExtResource("1_bridgeofsighs")
+recipe_id = "recipe_bridge_of_sighs"
+output_type = 1
+output_id = "disc_bridge_of_sighs"
+shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2)])
+elements = Array[int]([2, 1, 2])
+display_name = "Bridge of Sighs"
+icon_path = ""
+terrain_rules = Array[Dictionary]([])
+min_element_count = 1

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/crafting/RecipeDefinition.gd" id="1_katile"]
+
+[resource]
+script = ExtResource("1_katile")
+recipe_id = "recipe_ka_tile"
+output_type = 0
+output_id = "2"
+shape = Array[Vector2i]([Vector2i(0, 0)])
+elements = Array[int]([2])
+display_name = "Ember Field"
+icon_path = ""
+terrain_rules = Array[Dictionary]([])
+min_element_count = 1

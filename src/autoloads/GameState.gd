@@ -3,9 +3,11 @@
 extends Node
 
 const _GardenGridScript = preload("res://src/grid/GridMap.gd")
+const _TerrainValidatorScript = preload("res://src/crafting/TerrainValidator.gd")
 
 var grid: RefCounted       # GardenGrid instance
 var selected_biome: int = BiomeType.Value.STONE
+var placement_records: Array = []
 
 signal tile_placed(coord: Vector2i, tile: GardenTile)
 signal bloom_confirmed(coord: Vector2i, biome: int)
@@ -50,3 +52,40 @@ func place_tile_from_seed(coord: Vector2i, biome: int, as_build_block: bool = fa
 		tile.metadata.erase("build_duration")
 	tile_placed.emit(coord, tile)
 	bloom_confirmed.emit(coord, biome)
+
+## Atomically place a crafted structure's tiles on the grid.
+## Called by CraftingService after the player confirms ghost placement.
+func confirm_placement(record: PlacementRecord) -> void:
+	var recipe: RecipeDefinition = CraftingService.registry.get_by_id(record.recipe_id)
+	if recipe == null:
+		push_error("GameState.confirm_placement: unknown recipe_id '%s'" % record.recipe_id)
+		return
+	var rotated: Array[Vector2i] = _TerrainValidatorScript.apply_rotation(
+		recipe.shape, record.rotation_steps
+	)
+	# Atomicity check — abort if any target cell is already occupied.
+	for offset: Vector2i in rotated:
+		var coord: Vector2i = Vector2i(record.anchor_cell.x + offset.x,
+				record.anchor_cell.y + offset.y)
+		if grid.has_tile(coord):
+			push_error("GameState.confirm_placement: cell %s is already occupied" % str(coord))
+			return
+	# Place all tiles in a single pass.
+	for i: int in range(rotated.size()):
+		var offset: Vector2i = rotated[i]
+		var coord: Vector2i = Vector2i(record.anchor_cell.x + offset.x,
+				record.anchor_cell.y + offset.y)
+		var biome: int = _element_to_biome(int(recipe.elements[i]))
+		var tile: GardenTile = grid.place_tile(coord, biome)
+		tile.metadata["placement_record_id"] = record.recipe_id
+		tile_placed.emit(coord, tile)
+	placement_records.append(record)
+
+## Map a GodaiElement value to its corresponding BiomeType.
+static func _element_to_biome(element: int) -> int:
+	match element:
+		0: return BiomeType.Value.STONE        # CHI
+		1: return BiomeType.Value.RIVER        # SUI
+		2: return BiomeType.Value.EMBER_FIELD  # KA
+		3: return BiomeType.Value.MEADOW       # FU
+		_: return BiomeType.Value.STONE

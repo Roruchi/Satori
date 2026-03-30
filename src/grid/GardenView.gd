@@ -3,6 +3,7 @@ extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
+const _GhostFootprintScene = preload("res://scenes/UI/GhostFootprint.tscn")
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
