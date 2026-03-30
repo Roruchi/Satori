@@ -150,16 +150,16 @@ func test_completed_house_cannot_be_restarted_as_new_build_block() -> void:
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)
 
-func test_fu_build_block_on_stone_marks_pending_origin_shrine() -> void:
+func test_ku_build_block_on_stone_marks_pending_origin_shrine() -> void:
 	var ctx: Dictionary = _setup_build_test_context()
 	var game_state: Node = ctx["game_state"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
-	var fu_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.FU])
-	assert_not_null(fu_recipe)
-	assert_true(growth.get_pouch().add(fu_recipe, 1))
+	var ku_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.KU])
+	assert_not_null(ku_recipe)
+	assert_true(growth.get_pouch().add(ku_recipe, 1))
 	game_state.place_tile_from_seed(Vector2i(6, 0), BiomeType.Value.STONE, false)
-	game_state.selected_biome = BiomeType.Value.MEADOW
+	game_state.selected_biome = BiomeType.Value.KU
 
 	var controller: Node2D = Node2D.new()
 	controller.set_script(PlacementControllerScript)
@@ -174,26 +174,26 @@ func test_fu_build_block_on_stone_marks_pending_origin_shrine() -> void:
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)
 
-func test_fu_build_block_on_non_ku_tile_marks_pending_origin_shrine() -> void:
+func test_ku_build_block_on_non_stone_tile_does_not_mark_pending_origin_shrine() -> void:
 	var ctx: Dictionary = _setup_build_test_context()
 	var game_state: Node = ctx["game_state"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
-	var fu_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.FU])
-	assert_not_null(fu_recipe)
-	assert_true(growth.get_pouch().add(fu_recipe, 1))
-	# River tile should now also support origin shrine placement intent.
+	var ku_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.KU])
+	assert_not_null(ku_recipe)
+	assert_true(growth.get_pouch().add(ku_recipe, 1))
+	# Origin shrine must be placed on Stone only.
 	game_state.place_tile_from_seed(Vector2i(6, 1), BiomeType.Value.RIVER, false)
-	game_state.selected_biome = BiomeType.Value.MEADOW
+	game_state.selected_biome = BiomeType.Value.KU
 
 	var controller: Node2D = Node2D.new()
 	controller.set_script(PlacementControllerScript)
 	add_child(controller)
 
-	assert_true(controller._toggle_build_block(Vector2i(6, 1)))
+	assert_false(controller._toggle_build_block(Vector2i(6, 1)))
 	var tile: GardenTile = game_state.grid.get_tile(Vector2i(6, 1))
-	assert_true(bool(tile.metadata.get("is_build_block", false)))
-	assert_true(bool(tile.metadata.get("pending_origin_shrine", false)))
+	assert_false(bool(tile.metadata.get("is_build_block", false)))
+	assert_false(bool(tile.metadata.get("pending_origin_shrine", false)))
 
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)
@@ -203,16 +203,16 @@ func test_origin_shrine_build_is_limited_to_one_per_island() -> void:
 	var game_state: Node = ctx["game_state"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
-	var fu_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.FU])
-	assert_not_null(fu_recipe)
-	assert_true(growth.get_pouch().add(fu_recipe, 2))
+	var ku_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.KU])
+	assert_not_null(ku_recipe)
+	assert_true(growth.get_pouch().add(ku_recipe, 2))
 
 	# Separate island with two connected stone tiles.
 	game_state.place_tile_from_seed(Vector2i(10, 0), BiomeType.Value.STONE, false)
 	game_state.place_tile_from_seed(Vector2i(11, 0), BiomeType.Value.STONE, false)
 	var first_tile: GardenTile = game_state.grid.get_tile(Vector2i(10, 0))
 	first_tile.metadata["is_origin_shrine"] = true
-	game_state.selected_biome = BiomeType.Value.MEADOW
+	game_state.selected_biome = BiomeType.Value.KU
 
 	var controller: Node2D = Node2D.new()
 	controller.set_script(PlacementControllerScript)
@@ -249,15 +249,15 @@ func test_build_project_requires_adjacency_for_new_pending_blocks() -> void:
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)
 
-func test_confirming_one_pending_project_starts_countdown_for_all_project_tiles() -> void:
+func test_confirming_multi_tile_non_recipe_project_is_blocked() -> void:
 	var ctx: Dictionary = _setup_build_test_context()
 	var game_state: Node = ctx["game_state"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
-	var base_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.CHI])
+	var base_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.FU])
 	assert_not_null(base_recipe)
 	assert_true(growth.get_pouch().add(base_recipe, 3))
-	game_state.selected_biome = BiomeType.Value.STONE
+	game_state.selected_biome = BiomeType.Value.MEADOW
 	game_state.place_tile_from_seed(Vector2i(30, 0), BiomeType.Value.STONE, false)
 	game_state.place_tile_from_seed(Vector2i(31, 0), BiomeType.Value.STONE, false)
 
@@ -266,13 +266,13 @@ func test_confirming_one_pending_project_starts_countdown_for_all_project_tiles(
 	add_child(controller)
 
 	assert_true(controller._toggle_build_block(Vector2i(30, 0)))
-	assert_true(controller._toggle_build_block(Vector2i(31, 0)))
+	assert_false(controller._toggle_build_block(Vector2i(31, 0)))
 	assert_true(controller._toggle_build_block(Vector2i(30, 0)))
 
 	var first_tile: GardenTile = game_state.grid.get_tile(Vector2i(30, 0))
 	var second_tile: GardenTile = game_state.grid.get_tile(Vector2i(31, 0))
 	assert_true(bool(first_tile.metadata.get("build_countdown_started", false)))
-	assert_true(bool(second_tile.metadata.get("build_countdown_started", false)))
+	assert_false(bool(second_tile.metadata.get("build_countdown_started", false)))
 
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)

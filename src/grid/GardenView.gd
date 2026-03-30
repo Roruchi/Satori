@@ -209,6 +209,7 @@ func _draw() -> void:
 		var is_completed_building: bool = bool(tile.metadata.get("is_building_complete", false))
 		var is_built_structure: bool = bool(tile.metadata.get("shrine_built", false)) or bool(tile.metadata.get("is_origin_shrine", false)) or bool(tile.metadata.get("is_water_dropoff", false))
 		if is_build_block or is_completed_building or is_built_structure:
+			var structure_discovery_id: String = str(tile.metadata.get("structure_discovery_id", tile.metadata.get("build_discovery_id", "")))
 			build_icons_to_draw.append({
 				"coord": coord,
 				"biome": tile.biome,
@@ -216,7 +217,7 @@ func _draw() -> void:
 				"completed": is_completed_building or is_built_structure,
 				"is_origin_shrine": bool(tile.metadata.get("is_origin_shrine", false)),
 				"is_water_dropoff": bool(tile.metadata.get("is_water_dropoff", false)),
-				"is_wayfarer_torii": str(tile.metadata.get("build_discovery_id", "")) == "disc_wayfarer_torii",
+				"is_wayfarer_torii": structure_discovery_id == "disc_wayfarer_torii",
 			})
 
 	# 1.5 Draw pending seed previews (ephemeral tiles in growth pipeline).

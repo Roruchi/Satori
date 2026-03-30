@@ -706,25 +706,33 @@ func _finalize_pending_buildings() -> void:
 		if now - started_at < maxf(0.1, duration):
 			continue
 		var pending_structure_id: String = str(tile.metadata.get("pending_structure_id", ""))
+		var pending_structure_anchor: bool = bool(tile.metadata.get("pending_structure_anchor", true))
 		var pending_origin_shrine: bool = bool(tile.metadata.get("pending_origin_shrine", false))
 		var is_special_structure: bool = pending_origin_shrine or not pending_structure_id.is_empty()
 		tile.metadata["is_build_block"] = false
 		tile.metadata["is_building_complete"] = not is_special_structure
+		if not is_special_structure:
+			tile.metadata.erase("structure_discovery_id")
 		if pending_origin_shrine:
 			tile.metadata["is_origin_shrine"] = true
 			tile.metadata["shrine_buildable"] = false
 			tile.metadata["shrine_built"] = true
 			tile.metadata["build_discovery_id"] = "disc_origin_shrine"
+			tile.metadata["structure_discovery_id"] = "disc_origin_shrine"
 		if not pending_structure_id.is_empty():
 			tile.metadata["shrine_buildable"] = false
 			tile.metadata["shrine_built"] = true
-			tile.metadata["build_discovery_id"] = pending_structure_id
-			var satori_service: Node = get_node_or_null("/root/SatoriService")
-			if satori_service != null and satori_service.has_method("apply_monument_on_build"):
-				satori_service.apply_monument_on_build(pending_structure_id)
-			var codex: Node = get_node_or_null("/root/CodexService")
-			if codex != null and codex.has_method("mark_structure_recipe_completed"):
-				codex.mark_structure_recipe_completed(StringName(pending_structure_id))
+			tile.metadata["structure_discovery_id"] = pending_structure_id
+			if pending_structure_anchor:
+				tile.metadata["build_discovery_id"] = pending_structure_id
+				var satori_service: Node = get_node_or_null("/root/SatoriService")
+				if satori_service != null and satori_service.has_method("apply_monument_on_build"):
+					satori_service.apply_monument_on_build(pending_structure_id)
+				var codex: Node = get_node_or_null("/root/CodexService")
+				if codex != null and codex.has_method("mark_structure_recipe_completed"):
+					codex.mark_structure_recipe_completed(StringName(pending_structure_id))
+			else:
+				tile.metadata.erase("build_discovery_id")
 		tile.metadata["building_completed_at"] = now
 		tile.metadata["build_completion_pending"] = false
 		tile.metadata.erase("build_started_at")
@@ -735,5 +743,6 @@ func _finalize_pending_buildings() -> void:
 		tile.metadata.erase("pending_origin_shrine")
 		tile.metadata.erase("pending_structure_candidate")
 		tile.metadata.erase("pending_structure_id")
+		tile.metadata.erase("pending_structure_anchor")
 		tile.locked = false
 		building_completed.emit(coord, tile.biome)

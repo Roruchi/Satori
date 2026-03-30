@@ -574,3 +574,43 @@ func test_finalize_pending_buildings_converts_pending_structure_metadata() -> vo
 
 	svc.queue_free()
 	game_state.queue_free()
+
+func test_finalize_pending_torii_project_marks_all_tiles_as_structure_not_houses() -> void:
+	var root: Node = get_tree().root
+	var game_state: Node = Node.new()
+	game_state.name = "GameState"
+	game_state.set("grid", _make_grid())
+	root.add_child(game_state)
+	var grid: RefCounted = game_state.get("grid")
+	var coords: Array[Vector2i] = [Vector2i(30, 0), Vector2i(31, 0), Vector2i(30, 1)]
+	for i: int in range(coords.size()):
+		var tile: GardenTile = grid.place_tile(coords[i], BiomeType.Value.RIVER)
+		tile.metadata["is_build_block"] = true
+		tile.metadata["is_building_complete"] = false
+		tile.metadata["build_countdown_started"] = true
+		tile.metadata["build_started_at"] = Time.get_unix_time_from_system() - 20.0
+		tile.metadata["build_duration"] = 1.0
+		tile.metadata["pending_structure_id"] = "disc_wayfarer_torii"
+		tile.metadata["pending_structure_anchor"] = i == 0
+		tile.locked = true
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._finalize_pending_buildings()
+
+	var anchor_count: int = 0
+	var footprint_count: int = 0
+	for coord: Vector2i in coords:
+		var tile: GardenTile = grid.get_tile(coord)
+		assert_true(bool(tile.metadata.get("shrine_built", false)))
+		assert_false(bool(tile.metadata.get("is_building_complete", true)))
+		assert_false(tile.locked)
+		if str(tile.metadata.get("structure_discovery_id", "")) == "disc_wayfarer_torii":
+			footprint_count += 1
+		if str(tile.metadata.get("build_discovery_id", "")) == "disc_wayfarer_torii":
+			anchor_count += 1
+	assert_eq(anchor_count, 1, "Exactly one anchor tile should carry build_discovery_id for multi-tile structure")
+	assert_eq(footprint_count, 3, "All Torii project tiles should be marked as structure footprint")
+
+	svc.queue_free()
+	game_state.queue_free()

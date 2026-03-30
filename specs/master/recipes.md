@@ -124,6 +124,8 @@ This means they function as repeatable house-class structure unlocks in progress
 | Any completed non-shrine build tile (`is_building_complete = true` and `shrine_built = false`) | Yes | 0 | +1 house slot per tile |
 
 These are the normal houses spirits can bind to. They are separate from shrine/landmark structures.
+In build mode, selecting Meadow/Fu places normal house blocks on any existing non-shrine tile.
+Grouped multi-tile building is recipe-only: generic houses must be confirmed one tile at a time.
 
 ---
 
@@ -131,7 +133,7 @@ These are the normal houses spirits can bind to. They are separate from shrine/l
 
 | `discovery_id`            | Display Name          | Pattern Type       | Key Trigger                                                            | Repeatable | Catalog `cap_increase` |
 |---------------------------|-----------------------|--------------------|------------------------------------------------------------------------|------------|------------------------|
-| `disc_origin_shrine`      | Origin Shrine         | Build recipe       | Build mode: select Meadow and place on any non-Ku tile; once per island | Yes (`is_unique = false`) | +250 |
+| `disc_origin_shrine`      | Origin Shrine         | Build recipe       | Build mode: select Ku and place on Stone tile; once per island | Yes (`is_unique = false`) | +250 |
 | `disc_wayfarer_torii`     | Wayfarer Torii        | Build recipe (Tier 1) | Build mode: rotatable **U** on any non-Ku biome tile group (ritual selector: Stone/Chi) | One per biome type (+ multi-color biome types) | +100 |
 | `disc_bridge_of_sighs`    | Bridge of Sighs       | SHAPE              | Ember Field → River → Ember Field in a 3-tile line                     | Yes (`is_unique = false`) | +250 |
 | `disc_lotus_pagoda`       | Lotus Pagoda          | CLUSTER            | ≥4 Wetlands tiles (2×2 square)                                         | Yes (`is_unique = false`) | +250 |
@@ -163,7 +165,7 @@ Cap rule in game:
 | Structure | Ritual Selector (selected biome) | Target Placement Biome | Shape | Resulting Variant |
 |-----------|----------------------------------|------------------------|-------|-------------------|
 | Wayfarer Torii (`disc_wayfarer_torii`) | Stone / Chi | Any non-Ku biome (single or multi-color biome IDs) | Rotatable U (3 tiles) | Biome-scoped Torii (e.g. water torii, meadow torii, stone torii, ember torii) |
-| Origin Shrine (`disc_origin_shrine`) | Meadow / Fu | Any non-Ku biome | Single tile build project | One origin shrine per island |
+| Origin Shrine (`disc_origin_shrine`) | Ku | Stone only | Single tile build project | One origin shrine per island |
 | Lotus Pagoda (`disc_lotus_pagoda`) | Meadow / Fu | Wetlands | 2x2 / parallelogram (4 tiles) | Wetland pagoda |
 
 Wayfarer Torii biome rule:
@@ -171,6 +173,7 @@ Wayfarer Torii biome rule:
 - A single Wayfarer Torii is allowed per biome type (Stone, River, Meadow, Ember Field, and multi-color biome IDs).
 - If biome changes/merges create two Torii on the same biome type, one is removed automatically.
 - Discovery-state changes that do not change tile biome (for example Meadow related discovery overlays such as Deep Stand) do not remove a valid Torii.
+- The full 3-tile U project finalizes as one large structure footprint; it does not create house tiles.
 
 **Audio keys** follow the pattern `stinger_<suffix>` (e.g. `stinger_origin_shrine`).
 

@@ -125,12 +125,11 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 	if pouch == null:
 		return false
 	var pending_project_id: int = _get_active_pending_project_id()
-	var target_biome: int = tile.biome
 	var origin_shrine_build: bool = _is_origin_shrine_build_selection(tile)
 	var torii_build: bool = _is_wayfarer_torii_build_selection(tile)
 	if origin_shrine_build and not _can_place_origin_shrine_on_island(coord):
 		return false
-	var recipe_biome: int = target_biome
+	var recipe_biome: int = int(GameState.selected_biome)
 	if origin_shrine_build:
 		recipe_biome = BiomeType.Value.MEADOW
 	elif torii_build:
@@ -168,6 +167,9 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 	if recipe == null:
 		return false
 	var pending_structure_candidate: String = _resolve_structure_candidate_id(tile, recipe_biome)
+	if project_id_for_new_block != _NO_PROJECT_ID and pending_structure_candidate.is_empty():
+		# Only structure recipes can expand into multi-tile projects.
+		return false
 	pouch.consume_use_at(recipe_index)
 	_mark_build_block_pending_confirm(tile, recipe_biome, origin_shrine_build, project_id_for_new_block, pending_structure_candidate)
 	_refresh_project_recipe_state(project_id_for_new_block)
@@ -213,6 +215,7 @@ func _cancel_pending_build_block(coord: Vector2i) -> bool:
 	tile.metadata.erase("pending_origin_shrine")
 	tile.metadata.erase("pending_structure_candidate")
 	tile.metadata.erase("pending_structure_id")
+	tile.metadata.erase("pending_structure_anchor")
 	tile.metadata.erase("project_recipe_required")
 	tile.metadata.erase("project_recipe_valid")
 	tile.metadata.erase("project_invalid_flash_started_at")
@@ -250,14 +253,16 @@ func _mark_build_block_pending_confirm(tile: GardenTile, recipe_biome: int, pend
 	tile.metadata.erase("build_duration")
 	tile.metadata.erase("building_completed_at")
 	tile.metadata.erase("pending_structure_id")
+	tile.metadata.erase("pending_structure_anchor")
 	tile.metadata.erase("project_invalid_flash_started_at")
 
 func _is_origin_shrine_build_selection(tile: GardenTile) -> bool:
 	if tile == null:
 		return false
-	if tile.biome == BiomeType.Value.KU:
+	if tile.biome != BiomeType.Value.STONE:
 		return false
-	return int(GameState.selected_biome) == BiomeType.Value.MEADOW
+	# Reserve Ku selection for origin-shrine intent so Fu can always place normal houses.
+	return int(GameState.selected_biome) == BiomeType.Value.KU
 
 func _is_wayfarer_torii_build_selection(tile: GardenTile) -> bool:
 	if tile == null:
@@ -297,6 +302,11 @@ func _try_start_project_countdown(project_id: int) -> bool:
 	if project_coords.is_empty():
 		return false
 	var requires_recipe: bool = _project_requires_structure_recipe(project_coords)
+	if not requires_recipe and project_coords.size() > 1:
+		# Generic houses can only be confirmed one tile at a time.
+		_mark_project_invalid_flash(project_coords)
+		_refresh_project_recipe_state(project_id)
+		return false
 	var structure_id: String = ""
 	if requires_recipe:
 		structure_id = _resolve_project_structure_id(project_coords)
@@ -326,10 +336,12 @@ func _start_project_countdown(project_id: int, structure_id: String) -> void:
 		tile.metadata.erase("project_recipe_required")
 		tile.metadata.erase("project_recipe_valid")
 		tile.metadata.erase("project_invalid_flash_started_at")
-		if not structure_id.is_empty() and coord == structure_anchor:
+		if not structure_id.is_empty():
 			tile.metadata["pending_structure_id"] = structure_id
+			tile.metadata["pending_structure_anchor"] = coord == structure_anchor
 		else:
 			tile.metadata.erase("pending_structure_id")
+			tile.metadata.erase("pending_structure_anchor")
 
 func _get_active_pending_project_id() -> int:
 	var found_project_id: int = _NO_PROJECT_ID
@@ -482,12 +494,10 @@ func _lexicographic_min_coord(coords: Array[Vector2i]) -> Vector2i:
 	return sorted[0]
 
 func _project_requires_structure_recipe(project_coords: Array[Vector2i]) -> bool:
-	for coord: Vector2i in project_coords:
-		var tile: GardenTile = GameState.grid.get_tile(coord)
-		if tile == null:
-			continue
-		if not str(tile.metadata.get("pending_structure_candidate", "")).is_empty():
-			return true
+	if project_coords.size() == 3 and _all_project_tiles_match_candidate(project_coords, _STRUCTURE_WAYFARER_TORII_ID):
+		return true
+	if project_coords.size() == 4 and _all_project_tiles_match_candidate(project_coords, _STRUCTURE_PAGODA_ID):
+		return true
 	return false
 
 func _refresh_project_recipe_state(project_id: int) -> void:
