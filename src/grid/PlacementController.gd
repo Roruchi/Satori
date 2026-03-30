@@ -13,6 +13,8 @@ const _STRUCTURE_WAYFARER_TORII_ID: String = "disc_wayfarer_torii"
 
 @onready var _garden_view: Node2D = $"../GardenView"
 @onready var _camera_pan: Node2D = $"../CameraPanController"
+## Cached autoload reference — avoids repeated get_node_or_null calls per frame.
+@onready var _crafting_service: Node = get_node_or_null("/root/CraftingService")
 
 # --- long-press state ---
 var _pressing: bool = false
@@ -31,10 +33,9 @@ func _process(_delta: float) -> void:
 	_garden_view.set_hover(coord, valid, mix)
 
 	# Update the crafting build-mode anchor to the tile under the cursor.
-	var cs: Node = get_node_or_null("/root/CraftingService")
 	var active_bm: Variant = null
-	if cs != null:
-		active_bm = cs.get("active_build_mode")
+	if _crafting_service != null:
+		active_bm = _crafting_service.get("active_build_mode")
 	var in_crafting_build: bool = active_bm != null
 	if in_crafting_build:
 		active_bm.set_anchor(coord)
@@ -55,9 +56,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _camera_pan.is_drag_gesture():
 				return
 			# Cancel crafting build mode on right-click.
-			var cs: Node = get_node_or_null("/root/CraftingService")
-			if cs != null:
-				var active_bm: Variant = cs.get("active_build_mode")
+			if _crafting_service != null:
+				var active_bm: Variant = _crafting_service.get("active_build_mode")
 				if active_bm != null:
 					active_bm.cancel()
 					return
@@ -547,9 +547,8 @@ func _is_build_countdown_started(tile: GardenTile) -> bool:
 
 func _on_long_press(coord: Vector2i) -> void:
 	# If crafting build mode is active, long-press confirms the placement.
-	var cs: Node = get_node_or_null("/root/CraftingService")
-	if cs != null:
-		var active_bm: Variant = cs.get("active_build_mode")
+	if _crafting_service != null:
+		var active_bm: Variant = _crafting_service.get("active_build_mode")
 		if active_bm != null:
 			active_bm.set_anchor(coord)
 			if active_bm.can_confirm():

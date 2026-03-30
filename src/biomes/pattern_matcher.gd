@@ -49,7 +49,11 @@ func reload_patterns() -> void:
 			_patterns.append(p)
 
 func reload_patterns_from_dir(pattern_dir: String) -> void:
-	_patterns = _loader.load_patterns(pattern_dir)
+	var all: Array[PatternDefinition] = _loader.load_patterns(pattern_dir)
+	_patterns.clear()
+	for p: PatternDefinition in all:
+		if not _RETIRED_SHAPE_IDS.has(p.discovery_id):
+			_patterns.append(p)
 
 func set_patterns(patterns: Array[PatternDefinition]) -> void:
 	_patterns = patterns.duplicate()
