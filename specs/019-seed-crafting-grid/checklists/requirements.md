@@ -1,0 +1,82 @@
+# Specification Quality Checklist: Phase 1 Seed Crafting in 3x3 Grid
+
+**Purpose**: Validate specification completeness and quality before proceeding to planning
+**Created**: 2026-03-31
+**Feature**: [spec.md](../spec.md)
+
+## Content Quality
+
+- [x] No implementation details (languages, frameworks, APIs)
+- [x] Focused on user value and business needs
+- [x] Written for non-technical stakeholders
+- [x] All mandatory sections completed
+
+## Requirement Completeness
+
+- [x] No [NEEDS CLARIFICATION] markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic (no implementation details)
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions identified
+
+## Feature Readiness
+
+- [x] All functional requirements have clear acceptance criteria
+- [x] User scenarios cover primary flows
+- [x] Feature meets measurable outcomes defined in Success Criteria
+- [x] No implementation details leak into specification
+
+## Notes
+
+- Validation pass completed in one iteration.
+- Scope is explicitly bounded to seed recipes in Phase 1; structure/build migration is deferred.
+
+## Requirement Completeness
+
+- [ ] CHK001 Are the Phase 1 scope boundaries explicitly limited to seed recipes in all requirement sections and scenario descriptions? [Completeness, Spec §FR-013, Spec §FR-016]
+- [ ] CHK002 Are output destination requirements fully specified so every successful craft path ends in plant inventory with no alternate destination ambiguity? [Completeness, Spec §FR-008]
+- [ ] CHK003 Are success and failure preconditions documented for empty grid, invalid combo, locked Ku, and inventory-full states as distinct requirement cases? [Completeness, Spec §FR-007, Spec §FR-011, Spec §FR-012, Gap]
+- [ ] CHK004 Are consumed-slot clearing rules defined for all successful recipe shapes used in Phase 1 (single-token and dual-token)? [Completeness, Spec §FR-010]
+
+## Requirement Clarity
+
+- [ ] CHK005 Is "position-insensitive" matching defined precisely enough to avoid interpretation differences about slot ordering and token arrangement? [Clarity, Spec §FR-004, Spec §SC-002]
+- [ ] CHK006 Is "consume only on successful craft" stated with unambiguous operation ordering relative to inventory insertion and feedback emission? [Clarity, Spec §FR-009, Spec §FR-011]
+- [ ] CHK007 Is "inventory-full message" specified with required content or minimum guidance criteria so "clear feedback" is objectively interpretable? [Clarity, Spec §FR-011, Spec §EX-002, Ambiguity]
+- [ ] CHK008 Is "minimum 48x48 px touch target" clarified as effective interactive hit area (not only visual icon size) across all grid slots? [Clarity, Spec §EX-003]
+
+## Requirement Consistency
+
+- [ ] CHK009 Do scope statements in Out of Scope and Functional Requirements consistently exclude structure/build migrations without contradictory language? [Consistency, Spec §FR-013, Spec §FR-014]
+- [ ] CHK010 Do acceptance scenarios and functional requirements consistently describe token persistence on blocked inventory-full craft attempts? [Consistency, Spec §FR-011, Spec Edge Cases]
+- [ ] CHK011 Do deterministic outcome constraints align with all user-facing feedback outcomes for repeated identical inputs and unlock state? [Consistency, Spec §EX-004, Spec §FR-012]
+- [ ] CHK012 Are Ku unlock-gating requirements consistent between single-token and dual-token Ku recipes with no mismatch in eligibility rules? [Consistency, Spec §FR-005, Spec §FR-006, Spec §FR-007]
+
+## Acceptance Criteria Quality
+
+- [ ] CHK013 Are measurable acceptance thresholds defined for feedback quality, beyond "clear" wording, so pass/fail can be objectively assessed? [Measurability, Spec §EX-002, Spec §SC-003, Gap]
+- [ ] CHK014 Do success criteria fully trace to each critical clarified behavior (consume-on-success, blocked-on-full with tokens retained, consumed-slot clearing, 48x48 mobile targets)? [Traceability, Spec §SC-001, Spec §SC-003, Spec §FR-009, Spec §FR-010, Spec §FR-011, Spec §EX-003]
+- [ ] CHK015 Is the first-attempt 30-second completion criterion bounded by defined test conditions (device class, tutorial context, input assumptions)? [Measurability, Spec §SC-004, Ambiguity]
+
+## Scenario Coverage
+
+- [ ] CHK016 Are primary scenarios complete for all five single-token recipes and ten dual-token recipes, including Ku-dependent outcomes? [Coverage, Spec §FR-005, Spec §FR-006, Spec §FR-007]
+- [ ] CHK017 Are alternate scenarios defined for duplicate-token two-slot inputs to distinguish intentional non-recipes from malformed recipe attempts? [Coverage, Spec Edge Cases]
+- [ ] CHK018 Are exception scenarios complete for valid recipe plus inventory-full where output is blocked and grid state is preserved? [Coverage, Spec §FR-011]
+- [ ] CHK019 Are recovery expectations specified after failure feedback (for example, whether user can retry immediately without grid mutation)? [Coverage, Spec §FR-009, Spec §FR-012, Gap]
+
+## Edge Case and Non-Functional Coverage
+
+- [ ] CHK020 Are zero-state requirements explicit for confirming craft on an empty grid, including required feedback specificity? [Edge Case, Spec Edge Cases, Spec §FR-012]
+- [ ] CHK021 Are requirements explicit about handling legacy structure/build token patterns as non-matching seed inputs in this phase? [Edge Case, Spec §FR-016]
+- [ ] CHK022 Are accessibility requirements beyond touch-target size (for example focus order, readability, and input affordance clarity) intentionally specified or explicitly deferred? [Non-Functional, Spec §EX-003, Gap]
+- [ ] CHK023 Are performance requirements for craft attempt evaluation and feedback responsiveness documented or explicitly marked as inherited assumptions? [Non-Functional, Assumption, Gap]
+
+## Dependencies, Assumptions, and Ambiguities
+
+- [ ] CHK024 Is dependency on pre-existing Ku unlock-rule definitions documented with a traceable source so requirement interpretation stays stable? [Dependency, Spec Assumptions]
+- [ ] CHK025 Are assumptions about unchanged non-seed gameplay flows constrained with explicit boundaries to prevent hidden regression risk? [Assumption, Spec §FR-015]
+- [ ] CHK026 Is a conflict-check requirement present to ensure future spec edits cannot silently reintroduce structure/build migration into Phase 1 scope? [Ambiguity, Conflict, Spec §FR-013, Spec §FR-014, Gap]
