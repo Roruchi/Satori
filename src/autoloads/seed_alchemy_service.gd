@@ -5,6 +5,8 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SeedRecipeRegistryScript = preload("res://src/seeds/SeedRecipeRegistry.gd")
 const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
 const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
+const BuildingCraftAttemptResultScript = preload("res://src/seeds/BuildingCraftAttemptResult.gd")
+const BuildingRecipeCatalogScript = preload("res://src/seeds/BuildingRecipeCatalog.gd")
 const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
@@ -17,10 +19,13 @@ signal shrine_charge_ready(coord: Vector2i, element_id: int)
 signal shrine_charge_collected(coord: Vector2i, element_id: int, amount: int)
 signal element_charge_changed(element_id: int, charge: int)
 signal craft_attempt_resolved(outcome: StringName, feedback_key: StringName, guidance: String, consumed_slot_indices: Array[int])
+signal building_craft_resolved(building_type_key: StringName, outcome: StringName, feedback_key: StringName, guidance: String, consumed_slot_indices: Array[int], is_first_discovery: bool)
 
 var _registry
 var _kusho_pool: KushoPool = KushoPoolScript.new()
 var _grid_normalizer = SeedCraftGridNormalizerScript.new()
+var _building_catalog = null
+var _building_discovered: Dictionary = {}
 var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.CHI,
 	GodaiElementScript.Value.SUI,
@@ -32,6 +37,7 @@ var _pending_shrine_charges: Dictionary = {}
 
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
+	_building_catalog = BuildingRecipeCatalogScript.new()
 	for element: int in _unlocked_elements:
 		_kusho_pool.set_charge(element, KushoPoolScript.CAPACITY_PER_ELEMENT)
 	_kusho_pool.set_charge(GodaiElementScript.Value.KU, 0)
@@ -304,3 +310,61 @@ func get_pouch() -> SeedPouch:
 
 func get_registry():
 	return _registry
+
+func attempt_building_craft_from_grid(slot_tokens: Array[int]) -> BuildingCraftAttemptResult:
+	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
+	var occupied_count: int = int(normalized.get("occupied_count", 0))
+	if occupied_count < 3:
+		return BuildingCraftAttemptResultScript.no_match()
+
+	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
+	if not (normalized_variant is Array):
+		return BuildingCraftAttemptResultScript.no_match()
+	var normalized_tokens: Array[int] = []
+	for token_variant: Variant in normalized_variant:
+		normalized_tokens.append(int(token_variant))
+
+	var recipe_entry = _building_catalog.lookup(normalized_tokens)
+	if recipe_entry == null:
+		return BuildingCraftAttemptResultScript.no_match()
+
+	var pouch: SeedPouch = get_pouch()
+	if pouch == null or not pouch.add_building(recipe_entry.building_type_key):
+		return BuildingCraftAttemptResultScript.inventory_full(recipe_entry.building_type_key)
+
+	var occupied_indices_variant: Variant = normalized.get("occupied_slot_indices", [])
+	var consumed_slots: Array[int] = []
+	if occupied_indices_variant is Array:
+		for idx_variant: Variant in occupied_indices_variant:
+			consumed_slots.append(int(idx_variant))
+
+	var is_first: bool = not _building_discovered.has(recipe_entry.discovery_entry_id)
+	if is_first:
+		_building_discovered[recipe_entry.discovery_entry_id] = true
+		_register_discovery(recipe_entry.discovery_entry_id, true)
+
+	var result: BuildingCraftAttemptResult = BuildingCraftAttemptResultScript.success(
+		recipe_entry.building_type_key, consumed_slots, is_first
+	)
+	building_craft_resolved.emit(
+		result.building_type_key,
+		result.outcome,
+		result.feedback_key,
+		result.guidance,
+		result.consumed_slot_indices,
+		result.is_first_discovery
+	)
+	return result
+
+func preview_building_recipe_from_grid(slot_tokens: Array[int]):
+	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
+	var occupied_count: int = int(normalized.get("occupied_count", 0))
+	if occupied_count < 3:
+		return null
+	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
+	if not (normalized_variant is Array):
+		return null
+	var normalized_tokens: Array[int] = []
+	for token_variant: Variant in normalized_variant:
+		normalized_tokens.append(int(token_variant))
+	return _building_catalog.lookup(normalized_tokens)

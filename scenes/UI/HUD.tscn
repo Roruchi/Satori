@@ -141,12 +141,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "✦\nCraft"
 
-[node name="BuildButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "⌘\nBuild"
-
 [node name="InteractButton" type="Button" parent="Root/BottomBar"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2

@@ -6,6 +6,7 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
 const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
+const BuildingCraftAttemptResultScript = preload("res://src/seeds/BuildingCraftAttemptResult.gd")
 
 const _ELEMENT_COLORS: Dictionary = {
 	0: Color(0.62, 0.62, 0.62),      # CHI stone-grey
@@ -47,6 +48,9 @@ const _FEEDBACK_MESSAGES: Dictionary = {
 	SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching seed recipe.",
 	SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU: "Ku is locked for this recipe.",
 	SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Plant inventory is full.",
+	BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS: "Building added to inventory.",
+	BuildingCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching building recipe.",
+	BuildingCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Building inventory is full.",
 }
 
 @onready var _preview_label: Label = $VBox/Preview
@@ -96,6 +100,8 @@ func _ready() -> void:
 		alchemy.element_charge_changed.connect(_on_element_charge_changed)
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(_on_seed_added_to_pouch)
+	if alchemy != null and alchemy.has_signal("building_craft_resolved"):
+		alchemy.building_craft_resolved.connect(_on_building_craft_resolved)
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
@@ -231,6 +237,18 @@ func _on_confirm_pressed() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy == null:
 		return
+	var occupied_count: int = _count_occupied_slots()
+	if occupied_count >= 3 and alchemy.has_method("attempt_building_craft_from_grid"):
+		var building_result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(_slot_tokens)
+		if building_result.is_success():
+			for slot_index: int in building_result.consumed_slot_indices:
+				if slot_index >= 0 and slot_index < _slot_tokens.size():
+					_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+			_last_feedback = _feedback_text_for_key(BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS)
+		else:
+			_last_feedback = _feedback_text_for_key(building_result.feedback_key)
+		_update_ui()
+		return
 	var result: SeedCraftAttemptResult = alchemy.attempt_seed_craft_from_grid(_slot_tokens)
 	if result.is_success():
 		for slot_index: int in result.consumed_slot_indices:
@@ -270,7 +288,15 @@ func _update_ui() -> void:
 	for i: int in range(_slot_buttons.size()):
 		_update_slot_button(i)
 	var recipe: SeedRecipe = alchemy.preview_phase1_seed_recipe_from_grid(_slot_tokens)
-	if recipe == null:
+	if occupied_count >= 3 and alchemy.has_method("preview_building_recipe_from_grid"):
+		var building_entry = alchemy.preview_building_recipe_from_grid(_slot_tokens)
+		if building_entry != null:
+			_preview_label.text = "Preview: Building (%s)" % str(building_entry.building_type_key).replace("building_", "").capitalize()
+		elif recipe == null:
+			_preview_label.text = "Preview: --"
+		else:
+			_preview_label.text = "Preview: %s" % _recipe_display_name(recipe)
+	elif recipe == null:
 		_preview_label.text = "Preview: --"
 	else:
 		_preview_label.text = "Preview: %s" % _recipe_display_name(recipe)
@@ -406,3 +432,7 @@ func _recipe_display_name(recipe: SeedRecipe) -> String:
 	if recipe == null:
 		return ""
 	return str(_BIOME_SEED_NAMES.get(recipe.produces_biome, recipe.recipe_id))
+
+func _on_building_craft_resolved(_building_type_key: StringName, _outcome: StringName, feedback_key: StringName, _guidance: String, _consumed: Array[int], _first_disc: bool) -> void:
+_last_feedback = _feedback_text_for_key(feedback_key)
+_update_ui()

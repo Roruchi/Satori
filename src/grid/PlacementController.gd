@@ -4,6 +4,8 @@
 extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacementSession.gd")
+const BuildingFootprintScript = preload("res://src/grid/BuildingFootprint.gd")
 const TILE_RADIUS: float = 20.0
 const LONG_PRESS_THRESHOLD_MS: float = 500.0
 const _NO_PROJECT_ID: int = -1
@@ -21,14 +23,33 @@ var _press_coord: Vector2i = Vector2i.ZERO
 var _press_on_occupied: bool = false
 var _long_press_fired: bool = false
 
+# --- building placement session ---
+var _building_session: BuildingPlacementSession = null
+var _building_footprint_catalog: Dictionary = {}
+
 func _world_to_tile(world_pos: Vector2) -> Vector2i:
 	return _HexUtils.pixel_to_axial(world_pos, TILE_RADIUS)
 
 func _process(_delta: float) -> void:
-	var coord := _world_to_tile(get_global_mouse_position())
+	var coord: Vector2i = _world_to_tile(get_global_mouse_position())
 	var valid: bool = GameState.grid.is_placement_valid(coord)
 	var mix: bool = not valid and GameState.grid.has_tile(coord)
 	_garden_view.set_hover(coord, valid, mix)
+
+	# Update active building session anchor for preview rendering.
+	if _building_session != null and _building_session.active:
+		var type_key: StringName = _building_session.building_type_key
+		var footprint: BuildingFootprint = _get_or_create_footprint(type_key)
+		var eval: Dictionary = _evaluate_footprint_validity(coord, footprint)
+		var eval_tiles: Array[Vector2i] = []
+		var eval_variant: Variant = eval.get("tiles", [])
+		if eval_variant is Array:
+			for t: Variant in eval_variant:
+				if t is Vector2i:
+					eval_tiles.append(t as Vector2i)
+		_building_session.update_anchor(coord, eval_tiles, bool(eval.get("valid", false)), StringName(str(eval.get("reason", ""))))
+		if _garden_view != null and _garden_view.has_method("queue_redraw"):
+			_garden_view.queue_redraw()
 
 	# Long-press detection: fire once threshold is reached on an occupied tile.
 	if _pressing and _press_on_occupied and not _long_press_fired:
@@ -40,11 +61,15 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
+		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT and not mb.pressed:
 			if _camera_pan.is_drag_gesture():
 				return
-			var right_coord := _world_to_tile(get_global_mouse_position())
+			# Right-click cancels active building placement session.
+			if _building_session != null and _building_session.active:
+				cancel_building_placement()
+				return
+			var right_coord: Vector2i = _world_to_tile(get_global_mouse_position())
 			var right_hud: Node = get_node_or_null("../HUD")
 			var right_build_mode: bool = right_hud != null and right_hud.has_method("is_build_mode") and right_hud.is_build_mode()
 			if right_build_mode:
@@ -52,7 +77,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
-				var coord := _world_to_tile(get_global_mouse_position())
+				var coord: Vector2i = _world_to_tile(get_global_mouse_position())
+				# Left-click confirms active building placement session.
+				if _building_session != null and _building_session.active:
+					if _building_session.can_confirm():
+						confirm_building_placement()
+					return
 				_pressing = true
 				_press_start_time = Time.get_ticks_msec()
 				_press_coord = coord
@@ -64,7 +94,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					return
 				if _long_press_fired:
 					return  # long-press already handled; skip normal tap placement
-				var coord := _world_to_tile(get_global_mouse_position())
+				# Skip normal placement if building session is active.
+				if _building_session != null and _building_session.active:
+					return
+				var coord: Vector2i = _world_to_tile(get_global_mouse_position())
 				var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 				if growth_service != null and growth_service.has_method("get_pouch"):
 					if growth_service.has_method("try_bloom") and growth_service.has_method("get_tracker"):
@@ -564,3 +597,81 @@ func _try_build_shrine(coord: Vector2i) -> bool:
 		if satori_service != null and satori_service.has_method("apply_monument_on_build"):
 			satori_service.apply_monument_on_build(discovery_id)
 	return true
+
+# --- Building placement session API ---
+
+func start_building_placement(type_key: StringName) -> void:
+_building_session = BuildingPlacementSessionScript.new()
+_building_session.start(type_key)
+if not _building_footprint_catalog.has(type_key):
+_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
+var hud: Node = get_node_or_null("../HUD")
+if hud != null and hud.has_method("start_building_placement"):
+hud.start_building_placement(type_key)
+_connect_hud_signal_once(hud, "building_placement_confirm_requested", confirm_building_placement)
+_connect_hud_signal_once(hud, "building_placement_cancel_requested", cancel_building_placement)
+if _garden_view != null and _garden_view.has_method("queue_redraw"):
+_garden_view.queue_redraw()
+
+func confirm_building_placement() -> bool:
+if _building_session == null or not _building_session.can_confirm():
+return false
+var type_key: StringName = _building_session.building_type_key
+var tiles: Array[Vector2i] = _building_session.footprint_tiles
+var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+if growth_service == null or not growth_service.has_method("get_pouch"):
+return false
+var pouch: SeedPouch = growth_service.get_pouch()
+if pouch == null:
+return false
+var inv_index: int = pouch.find_building_index(type_key)
+if inv_index < 0:
+return false
+if not pouch.consume_building_at(inv_index, 1):
+return false
+for tile_coord: Vector2i in tiles:
+if GameState.grid.has_tile(tile_coord):
+var tile: GardenTile = GameState.grid.get_tile(tile_coord)
+if tile != null:
+tile.metadata["is_building_complete"] = true
+tile.metadata["structure_discovery_id"] = str(type_key)
+_building_session = null
+var hud: Node = get_node_or_null("../HUD")
+if hud != null and hud.has_method("stop_building_placement"):
+hud.stop_building_placement()
+if _garden_view != null and _garden_view.has_method("queue_redraw"):
+_garden_view.queue_redraw()
+return true
+
+func cancel_building_placement() -> void:
+_building_session = null
+var hud: Node = get_node_or_null("../HUD")
+if hud != null and hud.has_method("stop_building_placement"):
+hud.stop_building_placement()
+if _garden_view != null and _garden_view.has_method("queue_redraw"):
+_garden_view.queue_redraw()
+
+func get_active_building_session() -> BuildingPlacementSession:
+return _building_session
+
+func _get_or_create_footprint(type_key: StringName) -> BuildingFootprint:
+if not _building_footprint_catalog.has(type_key):
+_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
+var fp_variant: Variant = _building_footprint_catalog.get(type_key, null)
+if fp_variant is BuildingFootprint:
+return fp_variant as BuildingFootprint
+return BuildingFootprintScript.single_tile(type_key)
+
+func _connect_hud_signal_once(hud: Node, signal_name: String, target_callable: Callable) -> void:
+if hud.has_signal(signal_name) and not hud.is_connected(signal_name, target_callable):
+hud.connect(signal_name, target_callable)
+
+func _evaluate_footprint_validity(anchor: Vector2i, footprint: BuildingFootprint) -> Dictionary:
+var tiles: Array[Vector2i] = footprint.get_world_tiles(anchor)
+for tile_coord: Vector2i in tiles:
+if not GameState.grid.has_tile(tile_coord):
+return {"valid": false, "reason": StringName("no_tile"), "tiles": tiles}
+var tile: GardenTile = GameState.grid.get_tile(tile_coord)
+if tile != null and bool(tile.metadata.get("is_building_complete", false)):
+return {"valid": false, "reason": StringName("occupied"), "tiles": tiles}
+return {"valid": true, "reason": StringName(""), "tiles": tiles}

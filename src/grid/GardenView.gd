@@ -3,6 +3,7 @@ extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
+const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacementSession.gd")
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
@@ -297,6 +298,7 @@ func _draw() -> void:
 	# 7. Screen-edge mist vignette (drawn last so it overlays everything)
 	_draw_edge_mist()
 	_draw_build_progress_overlays()
+	_draw_building_placement_preview()
 	_draw_interact_hover_popover()
 
 
@@ -1840,3 +1842,23 @@ static func _biome_color(biome: int) -> Color:
 		BiomeType.Value.SAVANNAH:   return Color(0.78, 0.65, 0.25)
 		BiomeType.Value.CANYON:     return Color(0.72, 0.35, 0.18)
 	return Color(0.502, 0.502, 0.502)
+
+func _draw_building_placement_preview() -> void:
+var placement_ctrl: Node = get_node_or_null("../PlacementController")
+if placement_ctrl == null or not placement_ctrl.has_method("get_active_building_session"):
+return
+var session_variant: Variant = placement_ctrl.get_active_building_session()
+if not (session_variant is BuildingPlacementSession):
+return
+var session: BuildingPlacementSession = session_variant as BuildingPlacementSession
+if not session.active:
+return
+var overlay_color: Color = Color(0.2, 0.9, 0.2, 0.35) if session.is_valid else Color(0.9, 0.2, 0.2, 0.35)
+var border_color: Color = Color(0.3, 1.0, 0.3, 0.85) if session.is_valid else Color(1.0, 0.3, 0.3, 0.85)
+for tile_coord: Vector2i in session.footprint_tiles:
+var center: Vector2 = _HexUtils.axial_to_pixel(tile_coord, TILE_RADIUS)
+var pts: PackedVector2Array = _hex_polygon(center, TILE_RADIUS)
+draw_colored_polygon(pts, overlay_color)
+var border: PackedVector2Array = PackedVector2Array(pts)
+border.append(pts[0])
+draw_polyline(border, border_color, 2.5)

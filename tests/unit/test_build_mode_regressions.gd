@@ -407,3 +407,69 @@ func test_can_start_new_project_while_previous_project_counts_down() -> void:
 
 	controller.queue_free()
 	_cleanup_build_test_context(ctx)
+
+func test_normal_tile_placement_does_not_require_confirm() -> void:
+var ctx: Dictionary = _setup_build_test_context()
+var game_state: Node = ctx["game_state"]
+var controller: Node2D = Node2D.new()
+controller.set_script(PlacementControllerScript)
+add_child(controller)
+
+game_state.selected_biome = BiomeType.Value.STONE
+game_state.place_tile_from_seed(Vector2i(90, 0), BiomeType.Value.STONE, false)
+assert_true(game_state.grid.has_tile(Vector2i(90, 0)), "Normal tile placement should succeed without confirm")
+
+controller.queue_free()
+_cleanup_build_test_context(ctx)
+
+func test_building_placement_session_confirm_consumes_inventory_item() -> void:
+var ctx: Dictionary = _setup_build_test_context()
+var game_state: Node = ctx["game_state"]
+var growth: SeedGrowthServiceNode = ctx["growth"]
+var pouch: SeedPouch = growth.get_pouch()
+game_state.place_tile_from_seed(Vector2i(95, 0), BiomeType.Value.STONE, false)
+assert_true(pouch.add_building(&"building_house", 2))
+
+var controller: Node2D = Node2D.new()
+controller.set_script(PlacementControllerScript)
+add_child(controller)
+
+controller.start_building_placement(&"building_house")
+var session = controller.get_active_building_session()
+assert_not_null(session)
+session.update_anchor(Vector2i(95, 0), [Vector2i(95, 0)], true, &"")
+assert_true(controller.confirm_building_placement())
+assert_null(controller.get_active_building_session())
+var idx: int = pouch.find_building_index(&"building_house")
+if idx >= 0:
+var entry: BuildingInventoryEntry = pouch.get_building_at(idx)
+assert_not_null(entry)
+assert_eq(entry.count, 1)
+
+controller.queue_free()
+_cleanup_build_test_context(ctx)
+
+func test_building_placement_session_cancel_preserves_inventory() -> void:
+var ctx: Dictionary = _setup_build_test_context()
+var growth: SeedGrowthServiceNode = ctx["growth"]
+var pouch: SeedPouch = growth.get_pouch()
+assert_true(pouch.add_building(&"building_house", 3))
+var initial_idx: int = pouch.find_building_index(&"building_house")
+var initial_entry: BuildingInventoryEntry = pouch.get_building_at(initial_idx)
+var initial_count: int = initial_entry.count if initial_entry != null else 0
+
+var controller: Node2D = Node2D.new()
+controller.set_script(PlacementControllerScript)
+add_child(controller)
+
+controller.start_building_placement(&"building_house")
+controller.cancel_building_placement()
+assert_null(controller.get_active_building_session())
+
+var after_idx: int = pouch.find_building_index(&"building_house")
+var after_entry: BuildingInventoryEntry = pouch.get_building_at(after_idx)
+var after_count: int = after_entry.count if after_entry != null else 0
+assert_eq(after_count, initial_count, "Cancel must not consume inventory items")
+
+controller.queue_free()
+_cleanup_build_test_context(ctx)
