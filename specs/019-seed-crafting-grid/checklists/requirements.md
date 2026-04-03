@@ -11,18 +11,16 @@
 - [x] Written for non-technical stakeholders
 - [x] All mandatory sections completed
 
-## Requirement Completeness
+## Initial Validation Snapshot (Archived Specify Pass)
 
-- [x] No [NEEDS CLARIFICATION] markers remain
-- [x] Requirements are testable and unambiguous
-- [x] Success criteria are measurable
-- [x] Success criteria are technology-agnostic (no implementation details)
-- [x] All acceptance scenarios are defined
-- [x] Edge cases are identified
-- [x] Scope is clearly bounded
-- [x] Dependencies and assumptions identified
+This section is archival context from the initial specify gate and is not the active decision gate for current readiness.
 
-## Feature Readiness
+- No [NEEDS CLARIFICATION] markers remained at specify-time.
+- Acceptance scenarios and edge cases were present at specify-time.
+- Scope was bounded to seed-only Phase 1 at specify-time.
+- Dependencies and assumptions were captured at specify-time.
+
+## Feature Readiness (Archived Specify Pass)
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
@@ -33,8 +31,10 @@
 
 - Validation pass completed in one iteration.
 - Scope is explicitly bounded to seed recipes in Phase 1; structure/build migration is deferred.
+- The initial validation snapshot reflects the original specify-phase gate outcome.
+- The detailed checks below are the active post-analyze remediation gate and authoritative readiness source.
 
-## Requirement Completeness
+## Detailed Review Checks (Post-Analyze)
 
 - [ ] CHK001 Are the Phase 1 scope boundaries explicitly limited to seed recipes in all requirement sections and scenario descriptions? [Completeness, Spec §FR-013, Spec §FR-016]
 - [ ] CHK002 Are output destination requirements fully specified so every successful craft path ends in plant inventory with no alternate destination ambiguity? [Completeness, Spec §FR-008]

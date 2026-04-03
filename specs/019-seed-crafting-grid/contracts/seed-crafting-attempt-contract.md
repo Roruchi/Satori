@@ -32,6 +32,16 @@ Rules:
 2. Non-success outcomes must not produce output seeds.
 3. Every outcome must provide a user-facing feedback message key.
 
+Feedback key mapping (required):
+- `success` -> `craft_success_seed_added`
+- `empty_input` -> `craft_empty_input`
+- `no_matching_seed_recipe` -> `craft_no_matching_seed_recipe`
+- `locked_element` -> `craft_locked_ku`
+- `inventory_full` -> `craft_inventory_full`
+
+Corrective guidance rule:
+- Every non-success outcome message must include one actionable corrective phrase (for example: "Place 1 or 2 valid seed tokens", "Unlock Ku to use this recipe", or "Free plant inventory space and try again").
+
 ## Consumption and mutation ordering contract
 
 Operation sequence is authoritative:

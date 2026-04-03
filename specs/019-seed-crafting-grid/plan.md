@@ -23,7 +23,7 @@ Implement the first phase of grid crafting by moving seed crafting to a 3x3 toke
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Spec Traceability**: PASS. Planned work maps directly to US1-US3 and FR-001..FR-016 in `spec.md`, including clarified decisions on token consumption and full-inventory blocking.
+- **Spec Traceability**: PASS. Planned work maps directly to US1-US3 and FR-001..FR-019 in `spec.md`, including clarified decisions on token consumption, full-inventory blocking, measurable feedback keys, and explicit regression validation requirements.
 - **Godot-Native Fit**: PASS. Work remains in Godot-native GDScript/scripts/scenes/tests without introducing external architecture.
 - **Validation Strategy**: PASS. Deterministic resolver/inventory paths receive GUT coverage; interaction feedback and touch-target sizing receive manual in-editor checks.
 - **World Rule Safety**: PASS. No changes to permanence rules, save schema, or deterministic world simulation outside crafting input resolution.

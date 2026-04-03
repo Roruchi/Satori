@@ -51,12 +51,12 @@
 
 **Goal**: Deliver 3x3 slot-based single-token crafting that outputs exactly one seed to plant inventory and clears only consumed slots.
 
-**Independent Test**: Player places each single token in any slot, confirms craft, sees exactly one expected seed in pouch, and only consumed slot(s) clear.
+**Independent Test**: Player places each single token in any slot, confirms craft, sees exactly one expected seed in plant inventory, and only consumed slot(s) clear.
 
 ### Tests for User Story 1
 
 <!-- sequential -->
-- [ ] T010 [US1] Add GUT coverage for all FR-005 single-token mappings and single-output pouch insertion in tests/unit/seeds/test_seed_crafting_grid.gd
+- [ ] T010 [US1] Add GUT coverage for all FR-005 single-token mappings and single-output plant inventory insertion in tests/unit/seeds/test_seed_crafting_grid.gd
 
 ### Implementation for User Story 1
 
@@ -68,7 +68,7 @@
 <!-- sequential -->
 - [ ] T014 [US1] Apply successful-craft slot clearing using consumed slot indices only in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T015 [US1] Ensure successful craft inserts exactly one seed into pouch before any token consumption in src/autoloads/seed_alchemy_service.gd
+- [ ] T015 [US1] Ensure successful craft inserts exactly one seed into plant inventory before any token consumption in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
 - [ ] T016 [US1] Record manual single-token flow validation steps and first-attempt timing evidence in specs/019-seed-crafting-grid/quickstart.md
 
@@ -118,7 +118,7 @@
 - [ ] T023 [P] [US3] Add explicit UI feedback mapping for success/invalid/locked/full states in src/ui/SeedAlchemyPanel.gd
 - [ ] T024 [P] [US3] Return deterministic outcome payload including feedback key and consumed slots for every attempt in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
-- [ ] T025 [US3] Block valid craft completion when pouch is full while keeping recipe tokens in-grid in src/ui/SeedAlchemyPanel.gd
+- [ ] T025 [US3] Block valid craft completion when plant inventory is full while keeping recipe tokens in-grid in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
 - [ ] T026 [US3] Treat 3+ token and legacy structure-like combinations as no-matching seed input in src/seeds/SeedRecipeRegistry.gd
 <!-- sequential -->
@@ -133,7 +133,7 @@
 **Purpose**: Regression hardening and final validation.
 
 <!-- parallel-group: 5 -->
-- [ ] T028 [P] Add regression assertions ensuring charge consumption happens only on successful craft in tests/unit/seeds/test_seed_recipe_registry.gd
+- [ ] T028 [P] Add regression assertions ensuring token consumption happens only on successful craft in tests/unit/seeds/test_seed_crafting_grid.gd
 - [ ] T029 [P] Add focused manual checklist entries for 48x48 effective slot touch-target verification in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
 - [ ] T030 Run focused GUT suite command and record pass/fail evidence in specs/019-seed-crafting-grid/quickstart.md
@@ -141,6 +141,16 @@
 - [ ] T031 Run headless Godot parse check and record validation notes in specs/019-seed-crafting-grid/checklists/requirements.md
 <!-- sequential -->
 - [ ] T032 Remove obsolete two-token-only UI assumptions and dead helper branches in src/ui/SeedAlchemyPanel.gd
+<!-- sequential -->
+- [ ] T033 Add explicit grouped build-confirm regression validation steps and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
+<!-- sequential -->
+- [ ] T034 Add representative non-seed gameplay regression validation (for example planting flow) and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
+<!-- sequential -->
+- [ ] T035 Add GUT/manual traceability assertions that every craft outcome exposes expected feedback key and corrective guidance for non-success cases in tests/unit/seeds/test_seed_crafting_grid.gd
+<!-- sequential -->
+- [ ] T036 Execute grouped build-confirm regression validation and record unchanged-behavior evidence in specs/019-seed-crafting-grid/quickstart.md
+<!-- sequential -->
+- [ ] T037 Execute representative non-seed gameplay regression validation and record unchanged-behavior evidence in specs/019-seed-crafting-grid/quickstart.md
 
 ---
 
