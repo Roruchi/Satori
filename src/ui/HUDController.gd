@@ -8,12 +8,11 @@ const MIX_PANEL_SCREEN_MARGIN: float = 16.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
-const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "⌘", "✋", "☷"]
-const MODE_TAB_TITLES: Array[String] = ["Plant", "Craft", "Build", "Interact", "Codex"]
+const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
+const MODE_TAB_TITLES: Array[String] = ["Plant", "Craft", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
-	Color(0.72, 0.62, 0.84),
 	Color(0.71, 0.80, 0.90),
 	Color(0.58, 0.50, 0.32),
 ]
@@ -39,14 +38,12 @@ const _ELEMENT_METER_LABELS: Dictionary = {
 enum Mode {
 	PLANT,
 	MIX,
-	BUILD,
 	INTERACT,
 	CODEX,
 }
 
 @onready var _plant_button: Button = $Root/BottomBar/PlantButton
 @onready var _mix_button: Button = $Root/BottomBar/MixButton
-@onready var _build_button: Button = $Root/BottomBar/BuildButton
 @onready var _interact_button: Button = $Root/BottomBar/InteractButton
 @onready var _codex_button: Button = $Root/BottomBar/CodexButton
 @onready var _root: Control = $Root
@@ -71,6 +68,11 @@ enum Mode {
 var _mode: int = Mode.PLANT
 var _tile_selector_hex: Node2D = null
 var _mode_tabs_initialized: bool = false
+var _building_confirm_panel: PanelContainer = null
+
+signal building_placement_started(type_key: StringName)
+signal building_placement_confirm_requested()
+signal building_placement_cancel_requested()
 var _world_popover_panel: PanelContainer = null
 var _world_popover_label: Label = null
 
@@ -92,7 +94,6 @@ func _ready() -> void:
 	call_deferred("_layout_mode_tab_indicator")
 	_plant_button.pressed.connect(func() -> void: _set_mode(Mode.PLANT))
 	_mix_button.pressed.connect(func() -> void: _set_mode(Mode.MIX))
-	_build_button.pressed.connect(func() -> void: _set_mode(Mode.BUILD))
 	_interact_button.pressed.connect(func() -> void: _set_mode(Mode.INTERACT))
 	_codex_button.pressed.connect(func() -> void: _set_mode(Mode.CODEX))
 	_settings_button.pressed.connect(_on_settings_pressed)
@@ -194,7 +195,7 @@ func _format_element_meter_text(element: int, charge: int, unlocked: bool) -> St
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode
 	if _tile_selector_hex != null:
-		var selector_active: bool = _mode == Mode.PLANT or _mode == Mode.BUILD
+		var selector_active: bool = _mode == Mode.PLANT
 		_tile_selector_hex.visible = selector_active
 		_tile_selector_hex.set_process_input(selector_active)
 	_mix_panel.visible = _mode == Mode.MIX
@@ -202,9 +203,8 @@ func _set_mode(next_mode: int) -> void:
 	_pouch_display.visible = _mode != Mode.CODEX
 	_apply_mode_tab_state(_plant_button, _mode == Mode.PLANT, 0)
 	_apply_mode_tab_state(_mix_button, _mode == Mode.MIX, 1)
-	_apply_mode_tab_state(_build_button, _mode == Mode.BUILD, 2)
-	_apply_mode_tab_state(_interact_button, _mode == Mode.INTERACT, 3)
-	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 4)
+	_apply_mode_tab_state(_interact_button, _mode == Mode.INTERACT, 2)
+	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 3)
 	call_deferred("_refresh_mode_tab_motion", _mode_tabs_initialized)
 	_mode_tabs_initialized = true
 
@@ -212,7 +212,9 @@ func is_plant_mode() -> bool:
 	return _mode == Mode.PLANT
 
 func is_build_mode() -> bool:
-	return _mode == Mode.BUILD
+	# Build mode has been retired. Returns false for backward compatibility with
+	# callers (PlacementController, GardenView) that still check this method.
+	return false
 
 func is_interact_mode() -> bool:
 	return _mode == Mode.INTERACT
@@ -316,8 +318,8 @@ func _style_mode_tabs() -> void:
 	indicator_style.corner_radius_bottom_right = 12
 	_active_tab_indicator.add_theme_stylebox_override("panel", indicator_style)
 	_bottom_bar.add_theme_constant_override("separation", 12)
-	for button_index: int in 5:
-		var button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][button_index]
+	for button_index: int in 4:
+		var button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][button_index]
 		button.custom_minimum_size = Vector2(0, 72)
 		button.clip_text = false
 		button.add_theme_font_size_override("font_size", 18)
@@ -360,14 +362,14 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)
-	for button_index: int in 5:
-		var button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][button_index]
+	for button_index: int in 4:
+		var button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][button_index]
 		var is_active: bool = button_index == _mode
 		button.z_index = 2 if is_active else 1
 		button.scale = Vector2.ONE
 
 func _layout_mode_tab_indicator(animated: bool = false) -> void:
-	var active_button: Button = [_plant_button, _mix_button, _build_button, _interact_button, _codex_button][_mode]
+	var active_button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][_mode]
 	var local_origin: Vector2 = active_button.global_position - _bottom_tray.global_position
 	var indicator_position: Vector2 = Vector2(
 		local_origin.x + MODE_TAB_INDICATOR_INSET_X,
@@ -386,3 +388,60 @@ func _layout_mode_tab_indicator(animated: bool = false) -> void:
 	else:
 		_active_tab_indicator.position = indicator_position
 		_active_tab_indicator.size = indicator_size
+
+func start_building_placement(type_key: StringName) -> void:
+_init_building_confirm_panel()
+if _building_confirm_panel != null:
+_building_confirm_panel.visible = true
+building_placement_started.emit(type_key)
+
+func stop_building_placement() -> void:
+if _building_confirm_panel != null:
+_building_confirm_panel.visible = false
+
+func _init_building_confirm_panel() -> void:
+if _building_confirm_panel != null:
+return
+if _root == null:
+return
+_building_confirm_panel = PanelContainer.new()
+_building_confirm_panel.name = "BuildingPlacementPanel"
+_building_confirm_panel.visible = false
+_building_confirm_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+_building_confirm_panel.z_index = 150
+var anchored: Control = _building_confirm_panel
+anchored.layout_mode = 1
+anchored.anchors_preset = PRESET_CENTER_TOP
+anchored.offset_top = 8.0
+var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+panel_style.bg_color = Color(0.08, 0.10, 0.16, 0.88)
+panel_style.border_color = Color(0.35, 0.75, 0.35, 0.90)
+panel_style.border_width_left = 2
+panel_style.border_width_top = 2
+panel_style.border_width_right = 2
+panel_style.border_width_bottom = 2
+panel_style.corner_radius_top_left = 8
+panel_style.corner_radius_top_right = 8
+panel_style.corner_radius_bottom_right = 8
+panel_style.corner_radius_bottom_left = 8
+panel_style.content_margin_left = 12.0
+panel_style.content_margin_right = 12.0
+panel_style.content_margin_top = 6.0
+panel_style.content_margin_bottom = 6.0
+_building_confirm_panel.add_theme_stylebox_override("panel", panel_style)
+var hbox: HBoxContainer = HBoxContainer.new()
+hbox.add_theme_constant_override("separation", 16)
+_building_confirm_panel.add_child(hbox)
+var label: Label = Label.new()
+label.text = "Place building"
+label.add_theme_color_override("font_color", Color(0.90, 0.95, 0.90, 0.98))
+hbox.add_child(label)
+var confirm_btn: Button = Button.new()
+confirm_btn.text = "✓ Confirm"
+confirm_btn.pressed.connect(func() -> void: building_placement_confirm_requested.emit())
+hbox.add_child(confirm_btn)
+var cancel_btn: Button = Button.new()
+cancel_btn.text = "✗ Cancel"
+cancel_btn.pressed.connect(func() -> void: building_placement_cancel_requested.emit())
+hbox.add_child(cancel_btn)
+_root.add_child(_building_confirm_panel)
