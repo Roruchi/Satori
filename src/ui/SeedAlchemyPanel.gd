@@ -4,6 +4,8 @@ extends PanelContainer
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
+const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
+const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
 
 const _ELEMENT_COLORS: Dictionary = {
 	0: Color(0.62, 0.62, 0.62),      # CHI stone-grey
@@ -39,10 +41,29 @@ const _BIOME_SEED_NAMES: Dictionary = {
 	BiomeTypeScript.Value.KU: "Ku Seed",
 }
 
+const _FEEDBACK_MESSAGES: Dictionary = {
+	SeedCraftAttemptResultScript.FEEDBACK_SUCCESS: "Seed added to plant inventory.",
+	SeedCraftAttemptResultScript.FEEDBACK_EMPTY_INPUT: "Craft grid is empty.",
+	SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching seed recipe.",
+	SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU: "Ku is locked for this recipe.",
+	SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Plant inventory is full.",
+}
+
 @onready var _preview_label: Label = $VBox/Preview
 @onready var _pouch_status_label: Label = $VBox/PouchStatus
 @onready var _feedback_label: Label = $VBox/Feedback
 @onready var _slots_label: Label = $VBox/Slots
+@onready var _slot_buttons: Array[Button] = [
+	$VBox/Grid/Slot0,
+	$VBox/Grid/Slot1,
+	$VBox/Grid/Slot2,
+	$VBox/Grid/Slot3,
+	$VBox/Grid/Slot4,
+	$VBox/Grid/Slot5,
+	$VBox/Grid/Slot6,
+	$VBox/Grid/Slot7,
+	$VBox/Grid/Slot8,
+]
 @onready var _confirm_button: Button = $VBox/Actions/ConfirmButton
 @onready var _clear_button: Button = $VBox/Actions/ClearButton
 @onready var _chi_button: Button = $VBox/Elements/ChiButton
@@ -51,10 +72,16 @@ const _BIOME_SEED_NAMES: Dictionary = {
 @onready var _fu_button: Button = $VBox/Elements/FuButton
 @onready var _ku_button: Button = $VBox/Elements/KuButton
 
-var _selected: Array[int] = []
+var _slot_tokens: Array[int] = []
+var _active_element: int = SeedCraftGridNormalizerScript.EMPTY_SLOT
 var _last_feedback: String = ""
 
 func _ready() -> void:
+	for _i: int in range(9):
+		_slot_tokens.append(SeedCraftGridNormalizerScript.EMPTY_SLOT)
+	for i: int in range(_slot_buttons.size()):
+		var button: Button = _slot_buttons[i]
+		button.pressed.connect(func() -> void: _on_slot_pressed(i))
 	_chi_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.CHI))
 	_sui_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.SUI))
 	_ka_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.KA))
@@ -121,7 +148,7 @@ func _apply_button_styles() -> void:
 		GodaiElementScript.Value.KU,
 	]
 	for i: int in range(buttons.size()):
-		_style_element_button(buttons[i], elements[i], false)
+		_style_element_button(buttons[i], elements[i], _active_element == elements[i])
 
 func _style_element_button(btn: Button, element: int, selected: bool) -> void:
 	var col: Color = Color(_ELEMENT_COLORS.get(element, Color.WHITE))
@@ -181,25 +208,41 @@ func _on_element_tapped(element_id: int) -> void:
 		return
 	if not alchemy.is_element_unlocked(element_id):
 		return
-	if _selected.has(element_id):
-		_shake_button_for_element(element_id)
+	if _active_element == element_id:
+		_active_element = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	else:
+		_active_element = element_id
+	_update_ui()
+
+func _on_slot_pressed(slot_index: int) -> void:
+	if slot_index < 0 or slot_index >= _slot_tokens.size():
 		return
-	if _selected.size() >= 2:
-		_shake_button_for_element(element_id)
-		return
-	_selected.append(element_id)
+	if _active_element == SeedCraftGridNormalizerScript.EMPTY_SLOT:
+		if _slot_tokens[slot_index] != SeedCraftGridNormalizerScript.EMPTY_SLOT:
+			_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	else:
+		if _slot_tokens[slot_index] == _active_element:
+			_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+		else:
+			_slot_tokens[slot_index] = _active_element
 	_update_ui()
 
 func _on_confirm_pressed() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy == null:
 		return
-	if alchemy.craft_seed(_selected):
-		_selected.clear()
+	var result: SeedCraftAttemptResult = alchemy.attempt_seed_craft_from_grid(_slot_tokens)
+	if result.is_success():
+		for slot_index: int in result.consumed_slot_indices:
+			if slot_index >= 0 and slot_index < _slot_tokens.size():
+				_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	_last_feedback = _feedback_text_for_result(result)
 	_update_ui()
 
 func _on_clear_pressed() -> void:
-	_selected.clear()
+	for i: int in range(_slot_tokens.size()):
+		_slot_tokens[i] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	_active_element = SeedCraftGridNormalizerScript.EMPTY_SLOT
 	_update_ui()
 
 func _update_ui() -> void:
@@ -221,20 +264,22 @@ func _update_ui() -> void:
 		if btn != null:
 			btn.disabled = not unlocked or charge <= 0
 			btn.text = _format_element_button_text(element, charge, unlocked)
-		_style_element_button(btn, element, _selected.has(element))
-	if _selected.is_empty():
-		_slots_label.text = "Select 1 or 2 elements"
-	else:
-		var labels: Array[String] = []
-		for value: int in _selected:
-			labels.append(str(GodaiElementScript.DISPLAY_NAMES.get(value, "?")))
-		_slots_label.text = " + ".join(labels)
-	var recipe: SeedRecipe = alchemy.lookup_recipe(_selected)
-	var can_afford_selected: bool = _selected.is_empty() or alchemy.can_afford_mix(_selected)
+		_style_element_button(btn, element, _active_element == element)
+	var occupied_count: int = _count_occupied_slots()
+	_slots_label.text = "Occupied slots: %d/9" % occupied_count
+	for i: int in range(_slot_buttons.size()):
+		_update_slot_button(i)
+	var recipe: SeedRecipe = alchemy.preview_phase1_seed_recipe_from_grid(_slot_tokens)
 	if recipe == null:
-		_preview_label.text = "\u2192  \u2026"
+		_preview_label.text = "Preview: --"
 	else:
-		_preview_label.text = "\u2192  %s" % _recipe_display_name(recipe)
+		_preview_label.text = "Preview: %s" % _recipe_display_name(recipe)
+	var craft_elements: Array[int] = []
+	for token: int in _slot_tokens:
+		if token == SeedCraftGridNormalizerScript.EMPTY_SLOT:
+			continue
+		craft_elements.append(token)
+	var can_afford_selected: bool = craft_elements.is_empty() or alchemy.can_afford_mix(craft_elements)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	var pouch_full: bool = pouch != null and pouch.is_full()
 	if pouch == null:
@@ -242,20 +287,93 @@ func _update_ui() -> void:
 	else:
 		_pouch_status_label.text = "Pouch: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, pouch.total_uses()]
 	if pouch_full:
-		_feedback_label.text = "Pouch full"
-	elif not can_afford_selected and not _selected.is_empty():
+		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL)
+	elif not can_afford_selected and occupied_count > 0:
 		_feedback_label.text = "Insufficient essence"
 	elif not _last_feedback.is_empty():
 		_feedback_label.text = _last_feedback
+	elif recipe != null and _recipe_has_locked_element(alchemy, recipe):
+		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU)
 	elif recipe != null:
-		_feedback_label.text = "Confirm to craft"
-	elif _selected.size() == 2:
-		_feedback_label.text = "No stable resonance for that pairing"
-	elif _selected.size() == 1:
-		_feedback_label.text = "Select one more element"
+		_feedback_label.text = "Confirm to craft this seed"
+	elif occupied_count == 0:
+		_feedback_label.text = "Place 1 or 2 tokens in the grid"
 	else:
-		_feedback_label.text = ""
-	_confirm_button.disabled = recipe == null or pouch_full or not can_afford_selected
+		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH)
+	_confirm_button.disabled = false
+
+func _update_slot_button(slot_index: int) -> void:
+	var token: int = _slot_tokens[slot_index]
+	var btn: Button = _slot_buttons[slot_index]
+	if token == SeedCraftGridNormalizerScript.EMPTY_SLOT:
+		btn.text = "+"
+		var empty_style := StyleBoxFlat.new()
+		empty_style.bg_color = Color(0.12, 0.12, 0.16)
+		empty_style.border_color = Color(0.35, 0.35, 0.45)
+		empty_style.border_width_left = 1
+		empty_style.border_width_right = 1
+		empty_style.border_width_top = 1
+		empty_style.border_width_bottom = 1
+		empty_style.corner_radius_top_left = 6
+		empty_style.corner_radius_top_right = 6
+		empty_style.corner_radius_bottom_left = 6
+		empty_style.corner_radius_bottom_right = 6
+		btn.add_theme_stylebox_override("normal", empty_style)
+		btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
+		return
+	var filled_style := StyleBoxFlat.new()
+	filled_style.bg_color = Color(_ELEMENT_COLORS.get(token, Color(0.45, 0.45, 0.45))).darkened(0.35)
+	filled_style.border_color = Color(_ELEMENT_COLORS.get(token, Color(0.65, 0.65, 0.65)))
+	filled_style.border_width_left = 2
+	filled_style.border_width_right = 2
+	filled_style.border_width_top = 2
+	filled_style.border_width_bottom = 2
+	filled_style.corner_radius_top_left = 6
+	filled_style.corner_radius_top_right = 6
+	filled_style.corner_radius_bottom_left = 6
+	filled_style.corner_radius_bottom_right = 6
+	btn.add_theme_stylebox_override("normal", filled_style)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.text = _slot_token_short_name(token)
+
+func _slot_token_short_name(token: int) -> String:
+	match token:
+		GodaiElementScript.Value.CHI:
+			return "CHI"
+		GodaiElementScript.Value.SUI:
+			return "SUI"
+		GodaiElementScript.Value.KA:
+			return "KA"
+		GodaiElementScript.Value.FU:
+			return "FU"
+		GodaiElementScript.Value.KU:
+			return "KU"
+		_:
+			return "?"
+
+func _count_occupied_slots() -> int:
+	var count: int = 0
+	for token: int in _slot_tokens:
+		if token != SeedCraftGridNormalizerScript.EMPTY_SLOT:
+			count += 1
+	return count
+
+func _feedback_text_for_result(result: SeedCraftAttemptResult) -> String:
+	var base_text: String = _feedback_text_for_key(result.feedback_key)
+	if result.guidance.is_empty():
+		return base_text
+	return "%s %s" % [base_text, result.guidance]
+
+func _feedback_text_for_key(feedback_key: StringName) -> String:
+	return str(_FEEDBACK_MESSAGES.get(feedback_key, "Craft attempt processed."))
+
+func _recipe_has_locked_element(alchemy: Node, recipe: SeedRecipe) -> bool:
+	if alchemy == null or recipe == null:
+		return false
+	for element: int in recipe.elements:
+		if not alchemy.is_element_unlocked(element):
+			return true
+	return false
 
 func _format_element_button_text(element: int, charge: int, unlocked: bool) -> String:
 	var base: String = str(_ELEMENT_BUTTON_TEXT.get(element, "?"))

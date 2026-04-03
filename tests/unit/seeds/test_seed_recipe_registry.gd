@@ -62,12 +62,14 @@ func test_ku_pairings_are_valid_and_order_independent_after_unlock() -> void:
 		assert_eq(recipe_reverse.produces_biome, expected[key], "Unexpected reverse biome for %s" % key)
 	alchemy.queue_free()
 
-func test_solo_ku_and_unknown_ku_combinations_return_null() -> void:
+func test_solo_ku_is_available_after_unlock_and_unknown_ku_combos_still_fail() -> void:
 	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
 	add_child(alchemy)
 	alchemy._ready()
 	alchemy.unlock_element(GodaiElement.Value.KU)
-	assert_null(alchemy.lookup_recipe([GodaiElement.Value.KU]), "Solo Ku should remain invalid")
+	var solo_ku_recipe: SeedRecipe = alchemy.lookup_recipe([GodaiElement.Value.KU])
+	assert_not_null(solo_ku_recipe, "Solo Ku should resolve once unlocked")
+	assert_eq(solo_ku_recipe.produces_biome, BiomeType.Value.KU)
 	assert_null(alchemy.lookup_recipe([GodaiElement.Value.KU, GodaiElement.Value.KU]), "Duplicate Ku should remain invalid")
 	assert_null(alchemy.lookup_recipe([GodaiElement.Value.CHI, GodaiElement.Value.SUI, GodaiElement.Value.KU]), "Undefined 3-element Ku combo should remain invalid")
 	alchemy.queue_free()

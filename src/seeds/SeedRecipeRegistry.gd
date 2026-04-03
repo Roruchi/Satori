@@ -1,9 +1,12 @@
 class_name SeedRecipeRegistry
 extends RefCounted
 
+const SeedRecipeCatalogPhase1Script = preload("res://src/seeds/SeedRecipeCatalogPhase1.gd")
+
 var _recipes: Dictionary = {}
 var _recipes_by_id: Dictionary = {}
 var _unlocked_tier3: Dictionary = {}
+var _phase1_catalog = SeedRecipeCatalogPhase1Script.new()
 
 func _init() -> void:
 	_load_recipes()
@@ -45,6 +48,14 @@ func lookup(elements: Array[int]) -> SeedRecipe:
 		if not _unlocked_tier3.get(recipe.recipe_id, false):
 			return null
 	return recipe
+
+func lookup_phase1_seed(elements: Array[int]) -> SeedRecipe:
+	if not _phase1_catalog.is_valid_token_count(elements.size()):
+		return null
+	var key: String = _key_for_elements(elements)
+	if not _phase1_catalog.is_allowed_key(key):
+		return null
+	return lookup(elements)
 
 func unlock_recipe(recipe_id: StringName) -> void:
 	var recipe: SeedRecipe = _recipes_by_id.get(recipe_id, null)

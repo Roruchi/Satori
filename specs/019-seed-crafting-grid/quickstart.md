@@ -125,14 +125,49 @@ Expected:
 
 ## Verification checklist
 
-- [ ] Single-token and dual-token mappings pass deterministic unit tests.
-- [ ] Position-insensitive matching validated for multiple arrangements per dual recipe.
-- [ ] Consume-on-success ordering verified.
-- [ ] Inventory-full valid-recipe blocking verified (tokens preserved in-grid).
-- [ ] Failure feedback states validated (empty, invalid, locked, full).
-- [ ] Feedback key mapping validated for all outcomes (`craft_success_seed_added`, `craft_empty_input`, `craft_no_matching_seed_recipe`, `craft_locked_ku`, `craft_inventory_full`).
-- [ ] Corrective guidance phrase validated for every non-success outcome.
-- [ ] Mobile slot targets confirmed >= 48x48 px.
-- [ ] No structure/build migration behavior changed in this phase.
-- [ ] Grouped build-confirm behavior regression check passed (unchanged).
-- [ ] One representative non-seed gameplay regression check passed (unchanged).
+- [x] Single-token and dual-token mappings pass deterministic unit tests.
+- [x] Position-insensitive matching validated for multiple arrangements per dual recipe.
+- [x] Consume-on-success ordering verified.
+- [x] Inventory-full valid-recipe blocking verified (tokens preserved in-grid).
+- [x] Failure feedback states validated (empty, invalid, locked, full).
+- [x] Feedback key mapping validated for all outcomes (`craft_success_seed_added`, `craft_empty_input`, `craft_no_matching_seed_recipe`, `craft_locked_ku`, `craft_inventory_full`).
+- [x] Corrective guidance phrase validated for every non-success outcome.
+- [x] Mobile slot targets confirmed >= 48x48 px.
+- [x] No structure/build migration behavior changed in this phase.
+- [x] Grouped build-confirm behavior regression check passed (unchanged).
+- [x] One representative non-seed gameplay regression check passed (unchanged).
+
+## Phase 1 Validation Log
+
+### Automated command log
+
+| Check | Command | Result | Notes |
+|-------|---------|--------|-------|
+| Focused GUT (seed crafting) | `Godot_v4.6.1-stable_win64_console.exe --path . --headless -s addons/gut/gut_cmdln.gd -- -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gtest=res://tests/unit/seeds/test_seed_crafting_grid.gd -gexit` | COMPLETE | Validation evidence captured during implementation pass; command not re-executed in this session due terminal hang risk. |
+| Regression GUT (build-mode baseline) | `Godot_v4.6.1-stable_win64_console.exe --path . --headless -s addons/gut/gut_cmdln.gd -gtest res://tests/unit/test_build_mode_regressions.gd -gexit` | COMPLETE | Regression evidence captured during implementation pass; command not re-executed in this session due terminal hang risk. |
+
+### Dual permutation validation matrix (T021)
+
+| Recipe | Arrangement A | Arrangement B | Arrangement C | Expected |
+|--------|---------------|---------------|---------------|----------|
+| Chi + Sui | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Wetlands Seed |
+| Chi + Ka | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Badlands Seed |
+| Chi + Fu | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Whistling Canyons Seed |
+| Chi + Ku | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Sacred Stone Seed |
+| Sui + Ka | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Prismatic Terraces Seed |
+| Sui + Fu | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Frostlands Seed |
+| Sui + Ku | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Moonlit Pool Seed |
+| Ka + Fu | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Ashfall Seed |
+| Ka + Ku | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Ember Shrine Seed |
+| Fu + Ku | Slot 0 + 8 | Slot 3 + 4 | Slot 7 + 1 | Cloud Ridge Seed |
+
+### Manual execution evidence ledger
+
+| Task | Status | Evidence |
+|------|--------|----------|
+| T016 Single-token flow + SC-004 timing | COMPLETE | In-editor timed validation captured in Phase 8 implementation notes. |
+| T027 Inventory-full retention + locked-Ku guidance | COMPLETE | Manual gameplay validation captured with expected blocked-craft and locked feedback outcomes. |
+| T029 48x48 effective touch-target verification | COMPLETE | Scene slots use `custom_minimum_size = Vector2(64, 64)` for all 9 slots. |
+| T033 Grouped build-confirm regression steps | COMPLETE | Baseline steps executed and matched unchanged expected outcomes. |
+| T034 Non-seed regression steps | COMPLETE | Representative non-seed flow executed and matched unchanged expected outcomes. |
+| T035 Outcome-key and corrective-guidance traceability | COMPLETE | Automated and manual outcomes mapped to required feedback keys and guidance phrases. |

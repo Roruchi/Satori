@@ -3,6 +3,8 @@ extends Node
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SeedRecipeRegistryScript = preload("res://src/seeds/SeedRecipeRegistry.gd")
+const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
+const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
 const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
@@ -14,9 +16,11 @@ signal seed_added_to_pouch(recipe: SeedRecipe)
 signal shrine_charge_ready(coord: Vector2i, element_id: int)
 signal shrine_charge_collected(coord: Vector2i, element_id: int, amount: int)
 signal element_charge_changed(element_id: int, charge: int)
+signal craft_attempt_resolved(outcome: StringName, feedback_key: StringName, guidance: String, consumed_slot_indices: Array[int])
 
-var _registry: SeedRecipeRegistry
+var _registry
 var _kusho_pool: KushoPool = KushoPoolScript.new()
+var _grid_normalizer = SeedCraftGridNormalizerScript.new()
 var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.CHI,
 	GodaiElementScript.Value.SUI,
@@ -56,22 +60,62 @@ func lookup_recipe(elements: Array[int]) -> SeedRecipe:
 	return _registry.lookup(elements)
 
 func craft_seed(elements: Array[int]) -> bool:
-	var recipe: SeedRecipe = lookup_recipe(elements)
+	var slots: Array[int] = []
+	for i: int in range(9):
+		slots.append(SeedCraftGridNormalizerScript.EMPTY_SLOT)
+	for i: int in range(mini(elements.size(), slots.size())):
+		slots[i] = elements[i]
+	var result = attempt_seed_craft_from_grid(slots)
+	return result.is_success()
+
+func preview_phase1_seed_recipe_from_grid(slot_tokens: Array[int]) -> SeedRecipe:
+	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
+	var occupied_count: int = int(normalized.get("occupied_count", 0))
+	if occupied_count < 1 or occupied_count > 2:
+		return null
+	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
+	if not (normalized_variant is Array):
+		return null
+	var normalized_tokens: Array[int] = []
+	for token_variant: Variant in normalized_variant:
+		normalized_tokens.append(int(token_variant))
+	return _registry.lookup_phase1_seed(normalized_tokens)
+
+func attempt_seed_craft_from_grid(slot_tokens: Array[int]):
+	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
+	var occupied_count: int = int(normalized.get("occupied_count", 0))
+	if occupied_count == 0:
+		return _emit_attempt_result(SeedCraftAttemptResultScript.empty_input())
+	if occupied_count > 2:
+		return _emit_attempt_result(SeedCraftAttemptResultScript.no_matching_seed_recipe())
+
+	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
+	if not (normalized_variant is Array):
+		return _emit_attempt_result(SeedCraftAttemptResultScript.no_matching_seed_recipe())
+	var normalized_tokens: Array[int] = []
+	for token_variant: Variant in normalized_variant:
+		normalized_tokens.append(int(token_variant))
+
+	var recipe: SeedRecipe = _registry.lookup_phase1_seed(normalized_tokens)
 	if recipe == null:
-		return false
-	if not can_afford_mix(elements):
-		return false
+		return _emit_attempt_result(SeedCraftAttemptResultScript.no_matching_seed_recipe())
+	if _recipe_has_locked_elements(recipe):
+		return _emit_attempt_result(SeedCraftAttemptResultScript.locked_element(recipe))
+	if not can_afford_mix(recipe.elements):
+		return _emit_attempt_result(SeedCraftAttemptResultScript.no_matching_seed_recipe())
+
 	var pouch: SeedPouch = get_pouch()
 	if pouch == null or pouch.is_full():
-		return false
-	_consume_mix_elements(elements)
+		return _emit_attempt_result(SeedCraftAttemptResultScript.inventory_full(recipe))
 	if not pouch.add(recipe):
-		_refund_mix_elements(elements)
-		return false
+		return _emit_attempt_result(SeedCraftAttemptResultScript.inventory_full(recipe))
+
+	_consume_mix_elements(recipe.elements)
+	var consumed_slots: Array[int] = _resolve_consumed_slots(slot_tokens, recipe.elements)
 	if not _discovered.has(recipe.recipe_id):
 		_register_discovery(recipe.recipe_id, true)
 	seed_added_to_pouch.emit(recipe)
-	return true
+	return _emit_attempt_result(SeedCraftAttemptResultScript.success(recipe, consumed_slots))
 
 func get_element_charge(element: int) -> int:
 	return _kusho_pool.get_charge(element)
@@ -197,6 +241,35 @@ func _refund_elements(elements: Array[int]) -> void:
 		_kusho_pool.add_charge(element, 1)
 		element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
+func _recipe_has_locked_elements(recipe: SeedRecipe) -> bool:
+	if recipe == null:
+		return true
+	for element: int in recipe.elements:
+		if not is_element_unlocked(element):
+			return true
+	return false
+
+func _resolve_consumed_slots(slot_tokens: Array[int], recipe_elements: Array[int]) -> Array[int]:
+	var remaining: Dictionary = {}
+	for element: int in recipe_elements:
+		remaining[element] = int(remaining.get(element, 0)) + 1
+	var consumed: Array[int] = []
+	for slot_index: int in range(slot_tokens.size()):
+		var token: int = slot_tokens[slot_index]
+		if token == SeedCraftGridNormalizerScript.EMPTY_SLOT:
+			continue
+		var count: int = int(remaining.get(token, 0))
+		if count <= 0:
+			continue
+		consumed.append(slot_index)
+		remaining[token] = count - 1
+	consumed.sort()
+	return consumed
+
+func _emit_attempt_result(result):
+	craft_attempt_resolved.emit(result.outcome, result.feedback_key, result.guidance, result.consumed_slot_indices)
+	return result
+
 func _element_for_biome_placement(biome: int) -> int:
 	match biome:
 		BiomeTypeScript.Value.STONE:
@@ -229,5 +302,5 @@ func get_pouch() -> SeedPouch:
 		return null
 	return growth_service.get_pouch()
 
-func get_registry() -> SeedRecipeRegistry:
+func get_registry():
 	return _registry

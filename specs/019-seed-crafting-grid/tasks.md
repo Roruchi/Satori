@@ -18,11 +18,11 @@
 **Purpose**: Prepare focused test and validation scaffolding for the seed-grid migration.
 
 <!-- sequential -->
-- [ ] T001 Create focused Phase 1 craft-attempt test suite scaffold in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T001 Create focused Phase 1 craft-attempt test suite scaffold in tests/unit/seeds/test_seed_crafting_grid.gd
 <!-- sequential -->
-- [ ] T002 Add Phase 1 validation checklist section for automated/manual execution logging in specs/019-seed-crafting-grid/quickstart.md
+- [X] T002 Add Phase 1 validation checklist section for automated/manual execution logging in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
-- [ ] T003 Add implementation-traceability checklist entries for clarified mandatory behaviors in specs/019-seed-crafting-grid/checklists/requirements.md
+- [X] T003 Add implementation-traceability checklist entries for clarified mandatory behaviors in specs/019-seed-crafting-grid/checklists/requirements.md
 
 ---
 
@@ -33,15 +33,15 @@
 **CRITICAL**: No user story implementation starts before this phase is complete.
 
 <!-- parallel-group: 1 -->
-- [ ] T004 [P] Add craft-attempt outcome value object with typed outcome/reason fields in src/seeds/SeedCraftAttemptResult.gd
-- [ ] T005 [P] Add 3x3 grid normalization helper for one/two-token canonical keys in src/seeds/SeedCraftGridNormalizer.gd
-- [ ] T006 [P] Add Phase 1 seed-recipe catalog helper constrained to FR-005/FR-006 mappings in src/seeds/SeedRecipeCatalogPhase1.gd
+- [X] T004 [P] Add craft-attempt outcome value object with typed outcome/reason fields in src/seeds/SeedCraftAttemptResult.gd
+- [X] T005 [P] Add 3x3 grid normalization helper for one/two-token canonical keys in src/seeds/SeedCraftGridNormalizer.gd
+- [X] T006 [P] Add Phase 1 seed-recipe catalog helper constrained to FR-005/FR-006 mappings in src/seeds/SeedRecipeCatalogPhase1.gd
 <!-- sequential -->
-- [ ] T007 Update recipe lookup rules for seed-only Phase 1 matching (one or two tokens only) in src/seeds/SeedRecipeRegistry.gd
+- [X] T007 Update recipe lookup rules for seed-only Phase 1 matching (one or two tokens only) in src/seeds/SeedRecipeRegistry.gd
 <!-- sequential -->
-- [ ] T008 Implement deterministic craft-attempt pipeline (resolve -> unlock gate -> inventory capacity -> insert -> consume) in src/autoloads/seed_alchemy_service.gd
+- [X] T008 Implement deterministic craft-attempt pipeline (resolve -> unlock gate -> inventory capacity -> insert -> consume) in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
-- [ ] T009 Add craft-attempt feedback signal payload carrying outcome key and consumed slot indices in src/autoloads/seed_alchemy_service.gd
+- [X] T009 Add craft-attempt feedback signal payload carrying outcome key and consumed slot indices in src/autoloads/seed_alchemy_service.gd
 
 **Checkpoint**: Foundation ready; user stories can now be implemented.
 
@@ -56,19 +56,19 @@
 ### Tests for User Story 1
 
 <!-- sequential -->
-- [ ] T010 [US1] Add GUT coverage for all FR-005 single-token mappings and single-output plant inventory insertion in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T010 [US1] Add GUT coverage for all FR-005 single-token mappings and single-output plant inventory insertion in tests/unit/seeds/test_seed_crafting_grid.gd
 
 ### Implementation for User Story 1
 
 <!-- parallel-group: 2 -->
-- [ ] T011 [P] [US1] Refactor panel input state from element list to 9-slot occupancy model in src/ui/SeedAlchemyPanel.gd
-- [ ] T012 [P] [US1] Replace current craft input controls with a 3x3 slot grid and minimum 48x48 slot targets in scenes/UI/SeedAlchemyPanel.tscn
+- [X] T011 [P] [US1] Refactor panel input state from element list to 9-slot occupancy model in src/ui/SeedAlchemyPanel.gd
+- [X] T012 [P] [US1] Replace current craft input controls with a 3x3 slot grid and minimum 48x48 slot targets in scenes/UI/SeedAlchemyPanel.tscn
 <!-- sequential -->
-- [ ] T013 [US1] Wire slot interactions and confirm action to submit full 9-slot craft input in src/ui/SeedAlchemyPanel.gd
+- [X] T013 [US1] Wire slot interactions and confirm action to submit full 9-slot craft input in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T014 [US1] Apply successful-craft slot clearing using consumed slot indices only in src/ui/SeedAlchemyPanel.gd
+- [X] T014 [US1] Apply successful-craft slot clearing using consumed slot indices only in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T015 [US1] Ensure successful craft inserts exactly one seed into plant inventory before any token consumption in src/autoloads/seed_alchemy_service.gd
+- [X] T015 [US1] Ensure successful craft inserts exactly one seed into plant inventory before any token consumption in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
 - [ ] T016 [US1] Record manual single-token flow validation steps and first-attempt timing evidence in specs/019-seed-crafting-grid/quickstart.md
 
@@ -85,17 +85,17 @@
 ### Tests for User Story 2
 
 <!-- sequential -->
-- [ ] T017 [US2] Add permutation-based GUT coverage (>=3 arrangements per dual recipe) for FR-006 mappings in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T017 [US2] Add permutation-based GUT coverage (>=3 arrangements per dual recipe) for FR-006 mappings in tests/unit/seeds/test_seed_crafting_grid.gd
 
 ### Implementation for User Story 2
 
 <!-- parallel-group: 3 -->
-- [ ] T018 [P] [US2] Enforce order-independent dual-token canonicalization and lookup behavior in src/seeds/SeedRecipeRegistry.gd
-- [ ] T019 [P] [US2] Update dual-token preview and confirm-state UI behavior for position-insensitive matches in src/ui/SeedAlchemyPanel.gd
+- [X] T018 [P] [US2] Enforce order-independent dual-token canonicalization and lookup behavior in src/seeds/SeedRecipeRegistry.gd
+- [X] T019 [P] [US2] Update dual-token preview and confirm-state UI behavior for position-insensitive matches in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T020 [US2] Enforce Ku unlock gating for all Ku-including dual recipes in attempt resolution in src/autoloads/seed_alchemy_service.gd
+- [X] T020 [US2] Enforce Ku unlock gating for all Ku-including dual recipes in attempt resolution in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
-- [ ] T021 [US2] Document dual-recipe permutation validation matrix and outcomes in specs/019-seed-crafting-grid/quickstart.md
+- [X] T021 [US2] Document dual-recipe permutation validation matrix and outcomes in specs/019-seed-crafting-grid/quickstart.md
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -110,17 +110,17 @@
 ### Tests for User Story 3
 
 <!-- sequential -->
-- [ ] T022 [US3] Add GUT coverage for empty_input, no_matching_seed_recipe, locked_element, and inventory_full outcomes in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T022 [US3] Add GUT coverage for empty_input, no_matching_seed_recipe, locked_element, and inventory_full outcomes in tests/unit/seeds/test_seed_crafting_grid.gd
 
 ### Implementation for User Story 3
 
 <!-- parallel-group: 4 -->
-- [ ] T023 [P] [US3] Add explicit UI feedback mapping for success/invalid/locked/full states in src/ui/SeedAlchemyPanel.gd
-- [ ] T024 [P] [US3] Return deterministic outcome payload including feedback key and consumed slots for every attempt in src/autoloads/seed_alchemy_service.gd
+- [X] T023 [P] [US3] Add explicit UI feedback mapping for success/invalid/locked/full states in src/ui/SeedAlchemyPanel.gd
+- [X] T024 [P] [US3] Return deterministic outcome payload including feedback key and consumed slots for every attempt in src/autoloads/seed_alchemy_service.gd
 <!-- sequential -->
-- [ ] T025 [US3] Block valid craft completion when plant inventory is full while keeping recipe tokens in-grid in src/ui/SeedAlchemyPanel.gd
+- [X] T025 [US3] Block valid craft completion when plant inventory is full while keeping recipe tokens in-grid in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T026 [US3] Treat 3+ token and legacy structure-like combinations as no-matching seed input in src/seeds/SeedRecipeRegistry.gd
+- [X] T026 [US3] Treat 3+ token and legacy structure-like combinations as no-matching seed input in src/seeds/SeedRecipeRegistry.gd
 <!-- sequential -->
 - [ ] T027 [US3] Add manual verification steps for inventory-full token retention and locked-Ku guidance messaging in specs/019-seed-crafting-grid/quickstart.md
 
@@ -133,20 +133,20 @@
 **Purpose**: Regression hardening and final validation.
 
 <!-- parallel-group: 5 -->
-- [ ] T028 [P] Add regression assertions ensuring token consumption happens only on successful craft in tests/unit/seeds/test_seed_crafting_grid.gd
-- [ ] T029 [P] Add focused manual checklist entries for 48x48 effective slot touch-target verification in specs/019-seed-crafting-grid/quickstart.md
+- [X] T028 [P] Add regression assertions ensuring token consumption happens only on successful craft in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T029 [P] Add focused manual checklist entries for 48x48 effective slot touch-target verification in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
 - [ ] T030 Run focused GUT suite command and record pass/fail evidence in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
 - [ ] T031 Run headless Godot parse check and record validation notes in specs/019-seed-crafting-grid/checklists/requirements.md
 <!-- sequential -->
-- [ ] T032 Remove obsolete two-token-only UI assumptions and dead helper branches in src/ui/SeedAlchemyPanel.gd
+- [X] T032 Remove obsolete two-token-only UI assumptions and dead helper branches in src/ui/SeedAlchemyPanel.gd
 <!-- sequential -->
-- [ ] T033 Add explicit grouped build-confirm regression validation steps and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
+- [X] T033 Add explicit grouped build-confirm regression validation steps and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
-- [ ] T034 Add representative non-seed gameplay regression validation (for example planting flow) and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
+- [X] T034 Add representative non-seed gameplay regression validation (for example planting flow) and expected unchanged outcomes in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
-- [ ] T035 Add GUT/manual traceability assertions that every craft outcome exposes expected feedback key and corrective guidance for non-success cases in tests/unit/seeds/test_seed_crafting_grid.gd
+- [X] T035 Add GUT/manual traceability assertions that every craft outcome exposes expected feedback key and corrective guidance for non-success cases in tests/unit/seeds/test_seed_crafting_grid.gd
 <!-- sequential -->
 - [ ] T036 Execute grouped build-confirm regression validation and record unchanged-behavior evidence in specs/019-seed-crafting-grid/quickstart.md
 <!-- sequential -->
