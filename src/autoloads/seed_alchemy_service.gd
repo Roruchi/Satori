@@ -30,11 +30,24 @@ var _unlocked_elements: Array[int] = [
 var _discovered: Dictionary = {}
 var _pending_shrine_charges: Dictionary = {}
 
+## Origin Shrine grants a random element every SHRINE_GRANT_INTERVAL seconds.
+const SHRINE_GRANT_INTERVAL: float = 300.0  # 5 minutes
+var _shrine_grant_accumulator: float = 0.0
+
+## Coord of the Origin Shrine tile (always at map origin).
+const ORIGIN_SHRINE_COORD: Vector2i = Vector2i(0, 0)
+
 func _ready() -> void:
 	_registry = SeedRecipeRegistryScript.new()
 	for element: int in _unlocked_elements:
 		_kusho_pool.set_charge(element, KushoPoolScript.CAPACITY_PER_ELEMENT)
 	_kusho_pool.set_charge(GodaiElementScript.Value.KU, 0)
+
+func _process(delta: float) -> void:
+	_shrine_grant_accumulator += delta
+	if _shrine_grant_accumulator >= SHRINE_GRANT_INTERVAL:
+		_shrine_grant_accumulator -= SHRINE_GRANT_INTERVAL
+		_grant_origin_shrine_element()
 
 func is_element_unlocked(element: int) -> bool:
 	return _unlocked_elements.has(element)
@@ -304,3 +317,15 @@ func get_pouch() -> SeedPouch:
 
 func get_registry():
 	return _registry
+
+## Grant a random elemental charge to the Origin Shrine every SHRINE_GRANT_INTERVAL.
+## Picks from the four basic elements (not KU) so the player is never fully stuck.
+func _grant_origin_shrine_element() -> void:
+	var basic_elements: Array[int] = [
+		GodaiElementScript.Value.CHI,
+		GodaiElementScript.Value.SUI,
+		GodaiElementScript.Value.KA,
+		GodaiElementScript.Value.FU,
+	]
+	var element: int = basic_elements[randi() % basic_elements.size()]
+	store_shrine_charge(ORIGIN_SHRINE_COORD, element, 1)

@@ -3,6 +3,7 @@ extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
+const _GhostFootprintScene = preload("res://scenes/UI/GhostFootprint.tscn")
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
@@ -75,18 +76,8 @@ const _CLUSTER_THRESHOLDS: Dictionary = {
 # ---------------------------------------------------------------------------
 
 var _discovery_overlays: Dictionary = {}
-const _BUILD_GATED_DISCOVERY_IDS: Dictionary = {
-	"disc_origin_shrine": true,
-	"disc_bridge_of_sighs": true,
-	"disc_lotus_pagoda": true,
-	"disc_monks_rest": true,
-	"disc_star_gazing_deck": true,
-	"disc_sun_dial": true,
-	"disc_whale_bone_arch": true,
-	"disc_echoing_cavern": true,
-	"disc_bamboo_chime": true,
-	"disc_floating_pavilion": true,
-}
+## Ghost footprint overlay for active crafting build mode.
+var _ghost_footprint: Node2D = null
 
 
 # ---------------------------------------------------------------------------
@@ -115,6 +106,13 @@ func _ready() -> void:
 			_satori_cap = int(satori_service.get_current_cap())
 		if satori_service.has_method("get_current_era"):
 			_satori_era = satori_service.get_current_era()
+
+	var crafting_service: Node = get_node_or_null("/root/CraftingService")
+	if crafting_service != null:
+		if crafting_service.has_signal("build_mode_entered"):
+			crafting_service.build_mode_entered.connect(_on_build_mode_entered)
+		if crafting_service.has_signal("build_mode_exited"):
+			crafting_service.build_mode_exited.connect(_on_build_mode_exited)
 
 	_init_background_data()
 	queue_redraw()
@@ -171,6 +169,26 @@ func _on_satori_changed(current: int, cap: int) -> void:
 func _on_era_changed(new_era: StringName) -> void:
 	_satori_era = new_era
 	queue_redraw()
+
+## Spawns the GhostFootprint overlay and wires it to the active BuildMode.
+func _on_build_mode_entered(_recipe: Resource) -> void:
+	if _ghost_footprint != null:
+		_ghost_footprint.queue_free()
+	_ghost_footprint = _GhostFootprintScene.instantiate()
+	add_child(_ghost_footprint)
+	var cs: Node = get_node_or_null("/root/CraftingService")
+	if cs != null:
+		var active_bm: Variant = cs.get("active_build_mode")
+		if active_bm != null and active_bm is Object:
+			var bm: Object = active_bm as Object
+			if bm.has_signal("validation_updated"):
+				bm.validation_updated.connect(_ghost_footprint.update_from_validation)
+
+## Removes the GhostFootprint overlay when build mode ends.
+func _on_build_mode_exited() -> void:
+	if _ghost_footprint != null:
+		_ghost_footprint.queue_free()
+		_ghost_footprint = null
 
 
 ## Called by PlacementController each frame.
@@ -236,8 +254,6 @@ func _draw() -> void:
 	# 3. Named-discovery overlays (shape / proximity / compound patterns)
 	for discovery_id: String in _discovery_overlays:
 		var disc_coords: Array[Vector2i] = _discovery_overlays[discovery_id]
-		if _BUILD_GATED_DISCOVERY_IDS.has(discovery_id) and not _is_any_build_tile_built(disc_coords):
-			continue
 		_draw_discovery_overlay(discovery_id, disc_coords)
 
 	# 3.5 Completed/active structures should remain visually above biome overlays.
@@ -602,15 +618,6 @@ func _draw_satori_overlay() -> void:
 	var pos: Vector2 = Vector2(20.0, 28.0)
 	draw_string(font, pos + Vector2(1.0, 1.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.0, 0.0, 0.0, 0.7))
 	draw_string(font, pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.94, 0.90, 0.78, 0.96))
-
-func _is_any_build_tile_built(coords: Array[Vector2i]) -> bool:
-	for coord: Vector2i in coords:
-		var tile: GardenTile = GameState.grid.get_tile(coord)
-		if tile == null:
-			continue
-		if bool(tile.metadata.get("shrine_built", false)):
-			return true
-	return false
 
 
 # ---------------------------------------------------------------------------

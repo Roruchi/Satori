@@ -2,7 +2,7 @@ class_name KushoPool
 extends RefCounted
 
 const GodaiElement = preload("res://src/seeds/GodaiElement.gd")
-const CAPACITY_PER_ELEMENT: int = 3
+const CAPACITY_PER_ELEMENT: int = 5
 
 var _charges: Dictionary = {
 	GodaiElement.Value.CHI: 0,

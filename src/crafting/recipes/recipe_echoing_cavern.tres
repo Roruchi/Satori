@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/crafting/RecipeDefinition.gd" id="1_echoingcavern"]
+
+[resource]
+script = ExtResource("1_echoingcavern")
+recipe_id = "recipe_echoing_cavern"
+output_type = 1
+output_id = "disc_echoing_cavern"
+shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(2, 0)])
+elements = Array[int]([2, 2, 2, 2])
+display_name = "Echoing Cavern"
+icon_path = ""
+terrain_rules = Array[Dictionary]([])
+min_element_count = 1

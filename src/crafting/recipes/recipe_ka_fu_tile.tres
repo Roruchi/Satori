@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RecipeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/crafting/RecipeDefinition.gd" id="1_kafu"]
+
+[resource]
+script = ExtResource("1_kafu")
+recipe_id = "recipe_ka_fu_tile"
+output_type = 0
+output_id = "9"
+shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(0, 1)])
+elements = Array[int]([2, 3])
+display_name = "The Ashfall"
+icon_path = ""
+terrain_rules = Array[Dictionary]([])
+min_element_count = 1

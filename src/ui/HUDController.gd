@@ -2,6 +2,7 @@ class_name HUDController
 extends CanvasLayer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const _KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 460.0
 const MIX_PANEL_SCREEN_MARGIN: float = 16.0
@@ -189,9 +190,15 @@ func _format_element_meter_text(element: int, charge: int, unlocked: bool) -> St
 	var label: String = str(_ELEMENT_METER_LABELS.get(element, "?"))
 	if not unlocked:
 		return "%s: --" % label
-	return "%s: %d/3" % [label, charge]
+	return "%s: %d/%d" % [label, charge, _KushoPoolScript.CAPACITY_PER_ELEMENT]
 
 func _set_mode(next_mode: int) -> void:
+	# Cancel any active crafting build mode when switching HUD tabs.
+	var cs: Node = get_node_or_null("/root/CraftingService")
+	if cs != null:
+		var active_bm: Variant = cs.get("active_build_mode")
+		if active_bm != null:
+			active_bm.cancel()
 	_mode = next_mode
 	if _tile_selector_hex != null:
 		var selector_active: bool = _mode == Mode.PLANT or _mode == Mode.BUILD
