@@ -2,7 +2,7 @@
 
 **Feature Branch**: `019-seed-crafting-grid`  
 **Created**: 2026-03-31  
-**Status**: Draft  
+**Status**: Archived / Superseded by `022-ritual-menu-slots`  
 **Input**: User description: "Based on proposal.md, start a first specification focused on changing the crafting menu to use a 3x3 grid. The crafting grid creates items in the plant inventory. Start with only the first phase being seed recipes. Migration of structures and builds will happen in a later request and must be explicitly out of scope for this spec."
 
 ## Clarifications

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `020-craft-mode-buildings`  
 **Created**: 2026-04-03  
-**Status**: Draft  
+**Status**: Archived / Superseded by `022-ritual-menu-slots`  
 **Input**: User description: "Now that 019 is in place we need to do the following: Remove the build mode, update the crafting system so that you can now craft buildings in the craft mode each recipe takes 3+ slots. When crafting a building place it in the inventory. Selecting a building in your inventory should allow you to place it on top of tiles. Small buildings taking one tile and bigger buildings can take multiple tiles. When placing a building the user can explicit confirm / cancel it (Which is the way building currently work.) And then since we have one inventory we should update the inventory to 8 slots."
 
 ## Clarifications

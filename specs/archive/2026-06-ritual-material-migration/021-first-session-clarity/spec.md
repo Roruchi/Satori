@@ -2,7 +2,7 @@
 
 **Feature Branch**: `021-first-session-clarity`  
 **Created**: 2026-06-21  
-**Status**: Draft  
+**Status**: Archived / Superseded by `022-ritual-menu-slots`, `023-biome-natural-materials` and `024-spirit-assistants-components`  
 **Input**: User description: "Maak een Speckit-spec, design en tasks voor de grootste verbeterpunten: een duidelijkere eerste sessie, consistente speltermen en betere feedback voor structuurcrafting."
 
 ## User Scenarios & Testing *(mandatory)*
@@ -106,4 +106,3 @@ As a player, I want structure crafting to tell me exactly what is required, what
 - **SC-004**: In acceptance checks, 100% of successful structure craft attempts show the correct output and required-input preview before confirmation.
 - **SC-005**: In regression checks, returning profiles do not see the first-session guide after completion.
 - **SC-006**: In manual validation, all guidance and feedback surfaces remain legible on the project’s mobile-oriented HUD layout.
-
