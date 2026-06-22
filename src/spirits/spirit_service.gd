@@ -64,8 +64,11 @@ func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
 
 func _connect_soundscape() -> void:
+	if not is_inside_tree():
+		return
 	var soundscape: Node = get_node_or_null("/root/SoundscapeEngine")
-	if soundscape != null and soundscape.has_method("on_spirit_summoned"):
+	if soundscape != null and soundscape.has_method("on_spirit_summoned") \
+			and not spirit_summoned.is_connected(soundscape.on_spirit_summoned):
 		spirit_summoned.connect(soundscape.on_spirit_summoned)
 
 func _setup_spawner() -> void:
@@ -80,6 +83,8 @@ func _setup_spawner() -> void:
 	_spawner.set_parent(spirit_layer)
 
 func restore_from_persistence() -> void:
+	if not is_inside_tree():
+		return
 	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
 	if persistence == null:
 		return
@@ -104,9 +109,7 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 		return  # Sky Whale is triggered by tile_placed balance check, not by PatternMatcher
 	var island_id: String = _island_for_coords(triggering_coords)
 	var game_state: Node = get_node_or_null("/root/GameState")
-	var grid: RefCounted = null
-	if game_state != null:
-		grid = game_state.grid
+	var grid: RefCounted = _grid_from_game_state(game_state)
 	if _is_spirit_active_on_island(discovery_id, island_id, grid):
 		return
 	_summon_spirit(discovery_id, triggering_coords, island_id)
@@ -123,11 +126,13 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
 	_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+	if _is_ku_deity_spirit(spirit_id):
+		_maybe_mark_shrine_buildable(instance)
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	_active_wanderers[key] = wanderer
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state != null:
-		var grid: RefCounted = game_state.grid
+		var grid: RefCounted = _grid_from_game_state(game_state)
 		if grid != null and grid.has_method("get_tile"):
 			var spawn_tile: GardenTile = grid.get_tile(spawn)
 			if spawn_tile != null:
@@ -145,10 +150,14 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 		persistence.record_instance(instance)
 
 func _on_tile_placed(coord: Vector2i, _tile: GardenTile) -> void:
+	if not is_inside_tree():
+		return
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state == null:
 		return
-	var grid: RefCounted = game_state.grid
+	var grid: RefCounted = _grid_from_game_state(game_state)
+	if grid == null:
+		return
 	_refresh_active_instance_islands(grid)
 	if _sky_whale_evaluator.evaluate(grid) and not _active_instances.has(SkyWhaleEvaluator.SPIRIT_ID):
 		_summon_sky_whale(grid)
@@ -441,7 +450,7 @@ func _island_for_coords(coords: Array[Vector2i]) -> String:
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state == null:
 		return ""
-	var grid: RefCounted = game_state.grid
+	var grid: RefCounted = _grid_from_game_state(game_state)
 	if grid == null or not grid.has_method("get_island_id"):
 		return ""
 	for coord: Vector2i in coords:
@@ -456,7 +465,7 @@ func _maybe_mark_shrine_buildable(instance: SpiritInstance) -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state == null:
 		return
-	var grid: RefCounted = game_state.grid
+	var grid: RefCounted = _grid_from_game_state(game_state)
 	if grid == null or not grid.has_method("get_tile"):
 		return
 	var tile: GardenTile = grid.get_tile(instance.spawn_coord)
@@ -465,6 +474,14 @@ func _maybe_mark_shrine_buildable(instance: SpiritInstance) -> void:
 	tile.metadata["shrine_buildable"] = true
 	tile.metadata["shrine_built"] = false
 	tile.metadata["shrine_spirit_id"] = instance.spirit_id
+
+func _is_ku_deity_spirit(spirit_id: String) -> bool:
+	return [
+		"spirit_oyamatsumi",
+		"spirit_suijin",
+		"spirit_kagutsuchi",
+		"spirit_fujin",
+	].has(spirit_id)
 
 func _maybe_queue_godai_charge_drop(spirit_id: String, entry: Dictionary) -> void:
 	var elements: Array[int] = _elements_for_spirit_charge(entry)
@@ -681,6 +698,14 @@ func _cleanup_house_bindings(houses_by_island: Dictionary) -> void:
 
 func _coord_to_key(coord: Vector2i) -> String:
 	return "%d,%d" % [coord.x, coord.y]
+
+func _grid_from_game_state(game_state: Node) -> RefCounted:
+	if game_state == null:
+		return null
+	var grid_variant: Variant = game_state.get("grid")
+	if grid_variant is RefCounted:
+		return grid_variant as RefCounted
+	return null
 
 func _finalize_pending_buildings() -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")

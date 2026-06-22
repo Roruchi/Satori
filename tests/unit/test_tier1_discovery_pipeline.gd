@@ -126,9 +126,9 @@ func test_4_second_auto_dismiss_timing() -> void:
 	add_child(queue)
 	queue.set_process(true)
 
-	var dismissed_count: int = 0
+	var dismissed_events: Array[bool] = []
 	queue.notification_dismissed.connect(func() -> void:
-		dismissed_count += 1
+		dismissed_events.append(true)
 	)
 
 	var p := DiscoveryPayload.new()
@@ -137,8 +137,8 @@ func test_4_second_auto_dismiss_timing() -> void:
 	p.duration_seconds = 0.1
 
 	queue.enqueue(p)
-	assert_eq(dismissed_count, 0, "Not yet dismissed")
+	assert_eq(dismissed_events.size(), 0, "Not yet dismissed")
 	# Yield a frame so queue _process starts, then wait slightly above payload duration.
 	await get_tree().process_frame
 	await get_tree().create_timer(AUTO_DISMISS_WAIT_SECONDS).timeout
-	assert_eq(dismissed_count, 1, "Should auto-dismiss after duration")
+	assert_eq(dismissed_events.size(), 1, "Should auto-dismiss after duration")

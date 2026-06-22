@@ -1,12 +1,30 @@
 extends GutTest
 const GridMapScript = preload("res://src/grid/GridMap.gd")
 
+class GameStateStub:
+	extends Node
+	var grid: RefCounted
+
+func _make_game_state() -> Node:
+	var game_state: Node = get_tree().root.get_node_or_null("/root/GameState")
+	if game_state == null:
+		var stub: GameStateStub = GameStateStub.new()
+		stub.name = "GameState"
+		game_state = stub
+		get_tree().root.add_child(game_state)
+	game_state.set("grid", GridMapScript.new())
+	return game_state
+
+func _remove_root_singleton(name: String) -> void:
+	var existing: Node = get_tree().root.get_node_or_null("/root/%s" % name)
+	if existing == null:
+		return
+	get_tree().root.remove_child(existing)
+	existing.free()
+
 func test_ku_deity_spirit_marks_spawn_tile_as_buildable_shrine() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", GridMapScript.new())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 
 	var grid: RefCounted = game_state.get("grid")
 	var spawn_coord: Vector2i = Vector2i(2, 0)
@@ -20,6 +38,7 @@ func test_ku_deity_spirit_marks_spawn_tile_as_buildable_shrine() -> void:
 	service._riddle_evaluator = SpiritRiddleEvaluator.new()
 	service._sky_whale_evaluator = SkyWhaleEvaluator.new()
 	service._spawner = SpiritSpawner.new()
+	service._current_era = SatoriIds.ERA_FLOW
 
 	service._summon_spirit("spirit_oyamatsumi", [spawn_coord], "")
 
@@ -29,7 +48,6 @@ func test_ku_deity_spirit_marks_spawn_tile_as_buildable_shrine() -> void:
 	assert_eq(bool(tile.metadata.get("shrine_built", false)), false)
 	assert_eq(str(tile.metadata.get("shrine_spirit_id", "")), "spirit_oyamatsumi")
 	service.queue_free()
-	game_state.queue_free()
 
 
 func test_store_and_collect_shrine_charge_transfers_to_kusho_pool() -> void:
@@ -89,19 +107,9 @@ func test_spirit_service_maps_fu_spirit_to_fu_and_fu_chi_spirit_to_both() -> voi
 
 func test_water_spirit_prefers_completed_water_house_for_charge_dropoff() -> void:
 	var root: Node = get_tree().root
-	var existing_game_state: Node = root.get_node_or_null("/root/GameState")
-	if existing_game_state != null:
-		existing_game_state.queue_free()
-		await get_tree().process_frame
-	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
-	if existing_alchemy != null:
-		existing_alchemy.queue_free()
-		await get_tree().process_frame
+	_remove_root_singleton("SeedAlchemyService")
 
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", GridMapScript.new())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var origin_coord: Vector2i = Vector2i.ZERO
 	var origin_tile: GardenTile = grid.place_tile(origin_coord, BiomeType.Value.STONE)
@@ -126,23 +134,12 @@ func test_water_spirit_prefers_completed_water_house_for_charge_dropoff() -> voi
 	assert_false(alchemy.has_shrine_charge(origin_coord), "Water spirit essence should not fallback to origin shrine when a water house exists")
 
 	alchemy.queue_free()
-	game_state.queue_free()
 
 func test_mist_stag_essence_drop_restores_only_ku_charge() -> void:
 	var root: Node = get_tree().root
-	var existing_game_state: Node = root.get_node_or_null("/root/GameState")
-	if existing_game_state != null:
-		existing_game_state.queue_free()
-		await get_tree().process_frame
-	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
-	if existing_alchemy != null:
-		existing_alchemy.queue_free()
-		await get_tree().process_frame
+	_remove_root_singleton("SeedAlchemyService")
 
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", GridMapScript.new())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var origin_tile: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.STONE)
 	origin_tile.metadata["is_origin_shrine"] = true
@@ -176,23 +173,12 @@ func test_mist_stag_essence_drop_restores_only_ku_charge() -> void:
 
 	svc.queue_free()
 	alchemy.queue_free()
-	game_state.queue_free()
 
 func test_godai_charge_prefers_origin_shrine_on_spirit_island() -> void:
 	var root: Node = get_tree().root
-	var existing_game_state: Node = root.get_node_or_null("/root/GameState")
-	if existing_game_state != null:
-		existing_game_state.queue_free()
-		await get_tree().process_frame
-	var existing_alchemy: Node = root.get_node_or_null("/root/SeedAlchemyService")
-	if existing_alchemy != null:
-		existing_alchemy.queue_free()
-		await get_tree().process_frame
+	_remove_root_singleton("SeedAlchemyService")
 
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", GridMapScript.new())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 
 	var origin_a: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.STONE)
@@ -216,7 +202,6 @@ func test_godai_charge_prefers_origin_shrine_on_spirit_island() -> void:
 	assert_false(alchemy.has_shrine_charge(Vector2i.ZERO), "Charge should not drop at origin shrine on a different island")
 
 	alchemy.queue_free()
-	game_state.queue_free()
 
 func test_unique_monument_attempt_is_blocked_when_already_built() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()

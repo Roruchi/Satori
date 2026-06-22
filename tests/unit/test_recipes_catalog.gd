@@ -6,7 +6,7 @@
 ## Coverage:
 ##   - 15 seed recipes registered (5 tier‑1 + 10 tier‑2)
 ##   - Each recipe maps to the correct BiomeType
-##   - 12 tier‑1 discovery IDs present in DiscoveryCatalogData
+##   - 13 tier‑1 discovery IDs present in DiscoveryCatalogData
 ##   - 10 tier‑2 discovery IDs present in DiscoveryCatalogData
 ##   - 30 spirit IDs present in SpiritCatalogData
 ##   - Key spirit gift types match the reference table
@@ -101,10 +101,10 @@ func test_tier2_recipe_ids_match_reference_table() -> void:
 # Tier 1 discoveries
 # ---------------------------------------------------------------------------
 
-func test_tier1_catalog_has_exactly_12_entries() -> void:
+func test_tier1_catalog_has_exactly_13_entries() -> void:
 	var data: DiscoveryCatalogData = DiscoveryCatalogData.new()
-	assert_eq(data.get_tier1_entries().size(), 12,
-		"recipes.md lists 12 Tier 1 discoveries")
+	assert_eq(data.get_tier1_entries().size(), 13,
+		"recipes.md lists 13 Tier 1 discoveries including Wayfarer Torii")
 
 
 func test_all_tier1_discovery_ids_present() -> void:
@@ -127,6 +127,7 @@ func test_all_tier1_discovery_ids_present() -> void:
 		"disc_peat_bog",
 		"disc_obsidian_expanse",
 		"disc_waterfall",
+		"disc_wayfarer_torii",
 	]
 	for expected_id: String in expected_ids:
 		assert_true(actual_ids.has(expected_id),

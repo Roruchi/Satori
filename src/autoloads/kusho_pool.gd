@@ -15,6 +15,9 @@ var _charges: Dictionary = {
 func set_charge(element: int, charge: int) -> void:
 	_charges[element] = clampi(charge, 0, CAPACITY_PER_ELEMENT)
 
+func set_charge_for_testing(element: int, charge: int) -> void:
+	_charges[element] = maxi(charge, 0)
+
 func get_charge(element: int) -> int:
 	return int(_charges.get(element, 0))
 

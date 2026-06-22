@@ -434,5 +434,5 @@ func _recipe_display_name(recipe: SeedRecipe) -> String:
 	return str(_BIOME_SEED_NAMES.get(recipe.produces_biome, recipe.recipe_id))
 
 func _on_building_craft_resolved(_building_type_key: StringName, _outcome: StringName, feedback_key: StringName, _guidance: String, _consumed: Array[int], _first_disc: bool) -> void:
-_last_feedback = _feedback_text_for_key(feedback_key)
-_update_ui()
+	_last_feedback = _feedback_text_for_key(feedback_key)
+	_update_ui()

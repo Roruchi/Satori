@@ -16,9 +16,12 @@ func start(type_key: StringName) -> void:
 	is_valid = false
 	invalid_reason = &""
 
-func update_anchor(new_anchor: Vector2i, new_footprint: Array[Vector2i], valid: bool, reason: StringName = &"") -> void:
+func update_anchor(new_anchor: Vector2i, new_footprint: Array, valid: bool, reason: StringName = &"") -> void:
 	anchor_coord = new_anchor
-	footprint_tiles = new_footprint.duplicate()
+	footprint_tiles = []
+	for tile_variant: Variant in new_footprint:
+		if tile_variant is Vector2i:
+			footprint_tiles.append(tile_variant as Vector2i)
 	is_valid = valid
 	invalid_reason = reason
 

@@ -17,8 +17,12 @@ var _tracker: GrowthSlotTracker = GrowthSlotTrackerScript.new()
 var _pouch: SeedPouch = SeedPouchScript.new()
 var _growth_speed_multiplier: float = 1.0
 var _tick_timer: Timer
+var _is_initialized: bool = false
 
 func _ready() -> void:
+	if _is_initialized:
+		return
+	_is_initialized = true
 	_tick_timer = Timer.new()
 	_tick_timer.wait_time = EVALUATION_TICK_SECONDS
 	_tick_timer.one_shot = false
@@ -40,6 +44,8 @@ func _duration_for_tier(tier: int) -> float:
 	return REAL_TIME_GROWTH_SECONDS / maxf(1.0, _growth_speed_multiplier)
 
 func try_plant(coord: Vector2i, recipe: SeedRecipe, as_build_block: bool = false) -> bool:
+	if recipe == null or _tracker.is_full():
+		return false
 	var duration: float = _duration_for_tier(recipe.tier)
 	var seed: SeedInstance = SeedInstanceScript.create(recipe.recipe_id, coord, duration, recipe.produces_biome, as_build_block)
 	_tracker.add(seed)

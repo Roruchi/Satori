@@ -15,14 +15,14 @@ signal satori_cap_changed(cap: int)
 signal era_changed(new_era: StringName)
 signal structure_build_blocked(discovery_id: String, reason: String)
 
-const TICK_INTERVAL_SECONDS: float = 5.0
+const TICK_INTERVAL_SECONDS: float = 60.0
 const PAGODA_PASSIVE_PER_MINUTE: int = 5
 const GREAT_TORII_BURST: int = 500
 const VOID_MIRROR_MULTIPLIER: float = 1.5
 const GUIDANCE_LANTERN_PACIFIED_MAX: int = 3
 const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
-const HOUSED_GAIN_INTERVAL_SECONDS: float = 10.0
-const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 5.0
+const HOUSED_GAIN_INTERVAL_SECONDS: float = 60.0
+const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 30.0
 const DISCOVERY_CAP_PER_UNIQUE: int = 50
 
 var _conditions: Array[SatoriConditionSet] = []
@@ -424,7 +424,11 @@ func _discovery_cap_bonus() -> int:
 	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
 	if persistence == null or not persistence.has_method("get_discovered_ids"):
 		return 0
-	var discovered_ids: Array[String] = persistence.get_discovered_ids()
+	var discovered_ids: Array[String] = []
+	var discovered_variant: Variant = persistence.get_discovered_ids()
+	if discovered_variant is Array:
+		for id_variant: Variant in discovered_variant:
+			discovered_ids.append(str(id_variant))
 	var unique_disc_ids: Dictionary = {}
 	for did: String in discovered_ids:
 		if not did.begins_with("disc_"):

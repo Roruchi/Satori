@@ -166,6 +166,8 @@ func _ready() -> void:
 
 
 func _connect_spirit_service() -> void:
+	if not is_inside_tree():
+		return
 	# Primary wiring: SpiritService._connect_soundscape() already connected.
 	# This fallback catches any scene where that hook is absent.
 	for child: Node in get_tree().root.get_children():
@@ -196,6 +198,7 @@ func _process(delta: float) -> void:
 
 func trigger_keisu_resonance() -> void:
 	_resonance_time_left = RESONANCE_DECAY_SECONDS
+	_resonance_pitch_scale = 1.0 + RESONANCE_MAX_PITCH_DELTA
 	_apply_resonance_pitch()
 
 func get_resonance_pitch_scale() -> float:

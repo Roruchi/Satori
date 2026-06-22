@@ -13,8 +13,8 @@ const _BUILD_COUNTDOWN_SECONDS: float = 10.0
 const _STRUCTURE_PAGODA_ID: String = "disc_lotus_pagoda"
 const _STRUCTURE_WAYFARER_TORII_ID: String = "disc_wayfarer_torii"
 
-@onready var _garden_view: Node2D = $"../GardenView"
-@onready var _camera_pan: Node2D = $"../CameraPanController"
+@onready var _garden_view: Node2D = get_node_or_null("../GardenView")
+@onready var _camera_pan: Node2D = get_node_or_null("../CameraPanController")
 
 # --- long-press state ---
 var _pressing: bool = false
@@ -34,7 +34,8 @@ func _process(_delta: float) -> void:
 	var coord: Vector2i = _world_to_tile(get_global_mouse_position())
 	var valid: bool = GameState.grid.is_placement_valid(coord)
 	var mix: bool = not valid and GameState.grid.has_tile(coord)
-	_garden_view.set_hover(coord, valid, mix)
+	if _garden_view != null and _garden_view.has_method("set_hover"):
+		_garden_view.set_hover(coord, valid, mix)
 
 	# Update active building session anchor for preview rendering.
 	if _building_session != null and _building_session.active:
@@ -53,7 +54,7 @@ func _process(_delta: float) -> void:
 
 	# Long-press detection: fire once threshold is reached on an occupied tile.
 	if _pressing and _press_on_occupied and not _long_press_fired:
-		if _camera_pan._was_drag:
+		if _camera_pan != null and bool(_camera_pan.get("_was_drag")):
 			_pressing = false  # drag started — cancel long-press
 		elif Time.get_ticks_msec() - _press_start_time >= int(LONG_PRESS_THRESHOLD_MS):
 			_long_press_fired = true
@@ -63,7 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT and not mb.pressed:
-			if _camera_pan.is_drag_gesture():
+			if _camera_pan != null and _camera_pan.has_method("is_drag_gesture") and _camera_pan.is_drag_gesture():
 				return
 			# Right-click cancels active building placement session.
 			if _building_session != null and _building_session.active:
@@ -90,7 +91,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_long_press_fired = false
 			else:
 				_pressing = false
-				if _camera_pan.is_drag_gesture():
+				if _camera_pan != null and _camera_pan.has_method("is_drag_gesture") and _camera_pan.is_drag_gesture():
 					return
 				if _long_press_fired:
 					return  # long-press already handled; skip normal tap placement
@@ -160,6 +161,8 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 	var pending_project_id: int = _get_active_pending_project_id()
 	var origin_shrine_build: bool = _is_origin_shrine_build_selection(tile)
 	var torii_build: bool = _is_wayfarer_torii_build_selection(tile)
+	if int(GameState.selected_biome) == BiomeType.Value.KU and not origin_shrine_build:
+		return false
 	if origin_shrine_build and not _can_place_origin_shrine_on_island(coord):
 		return false
 	var recipe_biome: int = int(GameState.selected_biome)
@@ -183,12 +186,18 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 		var project_id: int = int(tile.metadata.get("build_project_id", _NO_PROJECT_ID))
 		if pending_project_id != _NO_PROJECT_ID and project_id != pending_project_id:
 			return false
+		if project_id == _NO_PROJECT_ID:
+			_start_build_countdown(tile)
+			if growth_service.has_method("notify_pouch_updated"):
+				growth_service.notify_pouch_updated()
+			return true
 		if not _try_start_project_countdown(project_id):
 			return false
 		if growth_service.has_method("notify_pouch_updated"):
 			growth_service.notify_pouch_updated()
 			return true
 	var project_id_for_new_block: int = pending_project_id
+	var expanding_existing_project: bool = project_id_for_new_block != _NO_PROJECT_ID
 	if project_id_for_new_block != _NO_PROJECT_ID:
 		if not _is_adjacent_to_project(coord, project_id_for_new_block):
 			return false
@@ -200,7 +209,7 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 	if recipe == null:
 		return false
 	var pending_structure_candidate: String = _resolve_structure_candidate_id(tile, recipe_biome)
-	if project_id_for_new_block != _NO_PROJECT_ID and pending_structure_candidate.is_empty():
+	if expanding_existing_project and pending_structure_candidate.is_empty():
 		# Only structure recipes can expand into multi-tile projects.
 		return false
 	pouch.consume_use_at(recipe_index)
@@ -601,77 +610,79 @@ func _try_build_shrine(coord: Vector2i) -> bool:
 # --- Building placement session API ---
 
 func start_building_placement(type_key: StringName) -> void:
-_building_session = BuildingPlacementSessionScript.new()
-_building_session.start(type_key)
-if not _building_footprint_catalog.has(type_key):
-_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
-var hud: Node = get_node_or_null("../HUD")
-if hud != null and hud.has_method("start_building_placement"):
-hud.start_building_placement(type_key)
-_connect_hud_signal_once(hud, "building_placement_confirm_requested", confirm_building_placement)
-_connect_hud_signal_once(hud, "building_placement_cancel_requested", cancel_building_placement)
-if _garden_view != null and _garden_view.has_method("queue_redraw"):
-_garden_view.queue_redraw()
+	_building_session = BuildingPlacementSessionScript.new()
+	_building_session.start(type_key)
+	if not _building_footprint_catalog.has(type_key):
+		_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
+	var hud: Node = get_node_or_null("../HUD")
+	if hud != null and hud.has_method("start_building_placement"):
+		hud.start_building_placement(type_key)
+	_connect_hud_signal_once(hud, "building_placement_confirm_requested", confirm_building_placement)
+	_connect_hud_signal_once(hud, "building_placement_cancel_requested", cancel_building_placement)
+	if _garden_view != null and _garden_view.has_method("queue_redraw"):
+		_garden_view.queue_redraw()
 
 func confirm_building_placement() -> bool:
-if _building_session == null or not _building_session.can_confirm():
-return false
-var type_key: StringName = _building_session.building_type_key
-var tiles: Array[Vector2i] = _building_session.footprint_tiles
-var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
-if growth_service == null or not growth_service.has_method("get_pouch"):
-return false
-var pouch: SeedPouch = growth_service.get_pouch()
-if pouch == null:
-return false
-var inv_index: int = pouch.find_building_index(type_key)
-if inv_index < 0:
-return false
-if not pouch.consume_building_at(inv_index, 1):
-return false
-for tile_coord: Vector2i in tiles:
-if GameState.grid.has_tile(tile_coord):
-var tile: GardenTile = GameState.grid.get_tile(tile_coord)
-if tile != null:
-tile.metadata["is_building_complete"] = true
-tile.metadata["structure_discovery_id"] = str(type_key)
-_building_session = null
-var hud: Node = get_node_or_null("../HUD")
-if hud != null and hud.has_method("stop_building_placement"):
-hud.stop_building_placement()
-if _garden_view != null and _garden_view.has_method("queue_redraw"):
-_garden_view.queue_redraw()
-return true
+	if _building_session == null or not _building_session.can_confirm():
+		return false
+	var type_key: StringName = _building_session.building_type_key
+	var tiles: Array[Vector2i] = _building_session.footprint_tiles
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service == null or not growth_service.has_method("get_pouch"):
+		return false
+	var pouch: SeedPouch = growth_service.get_pouch()
+	if pouch == null:
+		return false
+	var inv_index: int = pouch.find_building_index(type_key)
+	if inv_index < 0:
+		return false
+	if not pouch.consume_building_at(inv_index, 1):
+		return false
+	for tile_coord: Vector2i in tiles:
+		if GameState.grid.has_tile(tile_coord):
+			var tile: GardenTile = GameState.grid.get_tile(tile_coord)
+			if tile != null:
+				tile.metadata["is_building_complete"] = true
+				tile.metadata["structure_discovery_id"] = str(type_key)
+	_building_session = null
+	var hud: Node = get_node_or_null("../HUD")
+	if hud != null and hud.has_method("stop_building_placement"):
+		hud.stop_building_placement()
+	if _garden_view != null and _garden_view.has_method("queue_redraw"):
+		_garden_view.queue_redraw()
+	return true
 
 func cancel_building_placement() -> void:
-_building_session = null
-var hud: Node = get_node_or_null("../HUD")
-if hud != null and hud.has_method("stop_building_placement"):
-hud.stop_building_placement()
-if _garden_view != null and _garden_view.has_method("queue_redraw"):
-_garden_view.queue_redraw()
+	_building_session = null
+	var hud: Node = get_node_or_null("../HUD")
+	if hud != null and hud.has_method("stop_building_placement"):
+		hud.stop_building_placement()
+	if _garden_view != null and _garden_view.has_method("queue_redraw"):
+		_garden_view.queue_redraw()
 
 func get_active_building_session() -> BuildingPlacementSession:
-return _building_session
+	return _building_session
 
 func _get_or_create_footprint(type_key: StringName) -> BuildingFootprint:
-if not _building_footprint_catalog.has(type_key):
-_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
-var fp_variant: Variant = _building_footprint_catalog.get(type_key, null)
-if fp_variant is BuildingFootprint:
-return fp_variant as BuildingFootprint
-return BuildingFootprintScript.single_tile(type_key)
+	if not _building_footprint_catalog.has(type_key):
+		_building_footprint_catalog[type_key] = BuildingFootprintScript.single_tile(type_key)
+	var fp_variant: Variant = _building_footprint_catalog.get(type_key, null)
+	if fp_variant is BuildingFootprint:
+		return fp_variant as BuildingFootprint
+	return BuildingFootprintScript.single_tile(type_key)
 
 func _connect_hud_signal_once(hud: Node, signal_name: String, target_callable: Callable) -> void:
-if hud.has_signal(signal_name) and not hud.is_connected(signal_name, target_callable):
-hud.connect(signal_name, target_callable)
+	if hud == null:
+		return
+	if hud.has_signal(signal_name) and not hud.is_connected(signal_name, target_callable):
+		hud.connect(signal_name, target_callable)
 
 func _evaluate_footprint_validity(anchor: Vector2i, footprint: BuildingFootprint) -> Dictionary:
-var tiles: Array[Vector2i] = footprint.get_world_tiles(anchor)
-for tile_coord: Vector2i in tiles:
-if not GameState.grid.has_tile(tile_coord):
-return {"valid": false, "reason": StringName("no_tile"), "tiles": tiles}
-var tile: GardenTile = GameState.grid.get_tile(tile_coord)
-if tile != null and bool(tile.metadata.get("is_building_complete", false)):
-return {"valid": false, "reason": StringName("occupied"), "tiles": tiles}
-return {"valid": true, "reason": StringName(""), "tiles": tiles}
+	var tiles: Array[Vector2i] = footprint.get_world_tiles(anchor)
+	for tile_coord: Vector2i in tiles:
+		if not GameState.grid.has_tile(tile_coord):
+			return {"valid": false, "reason": StringName("no_tile"), "tiles": tiles}
+		var tile: GardenTile = GameState.grid.get_tile(tile_coord)
+		if tile != null and bool(tile.metadata.get("is_building_complete", false)):
+			return {"valid": false, "reason": StringName("occupied"), "tiles": tiles}
+	return {"valid": true, "reason": StringName(""), "tiles": tiles}

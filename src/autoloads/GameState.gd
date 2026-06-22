@@ -6,6 +6,7 @@ const _GardenGridScript = preload("res://src/grid/GridMap.gd")
 
 var grid: RefCounted       # GardenGrid instance
 var selected_biome: int = BiomeType.Value.STONE
+var _is_initialized: bool = false
 
 signal tile_placed(coord: Vector2i, tile: GardenTile)
 signal bloom_confirmed(coord: Vector2i, biome: int)
@@ -13,6 +14,9 @@ signal tile_mixed(coord: Vector2i, tile: GardenTile)
 signal mix_rejected(coord: Vector2i, reason: String)
 
 func _ready() -> void:
+	if _is_initialized:
+		return
+	_is_initialized = true
 	grid = _GardenGridScript.new()
 	var origin_tile: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.STONE)
 	origin_tile.metadata["is_origin_shrine"] = true

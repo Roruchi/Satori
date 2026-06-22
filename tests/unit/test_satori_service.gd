@@ -1,12 +1,14 @@
 extends GutTest
 
-const EXPECTED_DEBUG_POUCH_CAPACITY: int = 4
+const EXPECTED_DEFAULT_POUCH_CAPACITY: int = 8
 
 func _setup_game_state_singleton() -> Node:
 	var root: Node = get_tree().root
 	var existing: Node = root.get_node_or_null("/root/GameState")
 	if existing != null:
-		existing.queue_free()
+		existing.set("_is_initialized", false)
+		existing._ready()
+		return existing
 	var gs: Node = Node.new()
 	gs.name = "GameState"
 	gs.set_script(load("res://src/autoloads/GameState.gd"))
@@ -16,7 +18,32 @@ func _setup_game_state_singleton() -> Node:
 
 func _cleanup_game_state_singleton(gs: Node) -> void:
 	if gs != null:
-		gs.queue_free()
+		gs.set("_is_initialized", false)
+		gs._ready()
+
+func _setup_discovery_persistence_singleton() -> Node:
+	var root: Node = get_tree().root
+	var existing: Node = root.get_node_or_null("/root/DiscoveryPersistence")
+	if existing != null:
+		existing._ready()
+		return existing
+	var dp: Node = Node.new()
+	dp.name = "DiscoveryPersistence"
+	dp.set_script(load("res://src/autoloads/discovery_persistence.gd"))
+	root.add_child(dp)
+	dp._ready()
+	return dp
+
+func _setup_seed_growth_singleton() -> SeedGrowthServiceNode:
+	var root: Node = get_tree().root
+	var existing: SeedGrowthServiceNode = root.get_node_or_null("/root/SeedGrowthService") as SeedGrowthServiceNode
+	if existing != null:
+		return existing
+	var growth: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
+	growth.name = "SeedGrowthService"
+	root.add_child(growth)
+	growth._ready()
+	return growth
 
 func test_satori_condition_evaluator_biome_present_true() -> void:
 	var gs: Node = Node.new()
@@ -34,18 +61,19 @@ func test_trigger_debug_safe_call() -> void:
 	var settings: GardenSettingsNode = GardenSettingsNode.new()
 	settings.name = "GardenSettings"
 	add_child(settings)
-	var growth_service: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
-	growth_service.name = "SeedGrowthService"
-	add_child(growth_service)
+	var growth_service: SeedGrowthServiceNode = _setup_seed_growth_singleton()
+	assert_not_null(growth_service)
+	growth_service.get_tracker().capacity = 3
+	growth_service.get_pouch().capacity = EXPECTED_DEFAULT_POUCH_CAPACITY
 	var track_before: int = growth_service.get_tracker().capacity
+	var pouch_before: int = growth_service.get_pouch().capacity
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)
 	service.trigger_debug()
 	service._complete_sequence()
-	assert_eq(growth_service.get_pouch().capacity, EXPECTED_DEBUG_POUCH_CAPACITY)
-	assert_eq(growth_service.get_tracker().capacity, track_before)
+	assert_eq(growth_service.get_pouch().capacity, pouch_before)
+	assert_eq(growth_service.get_tracker().capacity, track_before + 1)
 	service.queue_free()
-	growth_service.queue_free()
 	settings.queue_free()
 
 func test_minute_tick_delta_formula_applies_housed_minus_double_unhoused() -> void:
@@ -145,15 +173,7 @@ func test_tier_cap_contribution_values() -> void:
 	assert_eq(SatoriIds.TIER3_CAP_INCREASE, 1000)
 
 func test_unique_discovery_increases_cap_by_50_once() -> void:
-	var root: Node = get_tree().root
-	var existing_dp: Node = root.get_node_or_null("/root/DiscoveryPersistence")
-	if existing_dp != null:
-		existing_dp.queue_free()
-	var dp: Node = Node.new()
-	dp.name = "DiscoveryPersistence"
-	dp.set_script(load("res://src/autoloads/discovery_persistence.gd"))
-	root.add_child(dp)
-	dp._ready()
+	var dp: Node = _setup_discovery_persistence_singleton()
 
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)
@@ -168,7 +188,6 @@ func test_unique_discovery_increases_cap_by_50_once() -> void:
 	assert_eq(service.get_current_cap(), SatoriIds.BASE_SATORI_CAP + 50)
 
 	service.queue_free()
-	dp.queue_free()
 
 func test_guidance_lantern_reduces_unhoused_penalty_for_up_to_three() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()

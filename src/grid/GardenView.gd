@@ -1844,21 +1844,21 @@ static func _biome_color(biome: int) -> Color:
 	return Color(0.502, 0.502, 0.502)
 
 func _draw_building_placement_preview() -> void:
-var placement_ctrl: Node = get_node_or_null("../PlacementController")
-if placement_ctrl == null or not placement_ctrl.has_method("get_active_building_session"):
-return
-var session_variant: Variant = placement_ctrl.get_active_building_session()
-if not (session_variant is BuildingPlacementSession):
-return
-var session: BuildingPlacementSession = session_variant as BuildingPlacementSession
-if not session.active:
-return
-var overlay_color: Color = Color(0.2, 0.9, 0.2, 0.35) if session.is_valid else Color(0.9, 0.2, 0.2, 0.35)
-var border_color: Color = Color(0.3, 1.0, 0.3, 0.85) if session.is_valid else Color(1.0, 0.3, 0.3, 0.85)
-for tile_coord: Vector2i in session.footprint_tiles:
-var center: Vector2 = _HexUtils.axial_to_pixel(tile_coord, TILE_RADIUS)
-var pts: PackedVector2Array = _hex_polygon(center, TILE_RADIUS)
-draw_colored_polygon(pts, overlay_color)
-var border: PackedVector2Array = PackedVector2Array(pts)
-border.append(pts[0])
-draw_polyline(border, border_color, 2.5)
+	var placement_ctrl: Node = get_node_or_null("../PlacementController")
+	if placement_ctrl == null or not placement_ctrl.has_method("get_active_building_session"):
+		return
+	var session_variant: Variant = placement_ctrl.get_active_building_session()
+	if not (session_variant is BuildingPlacementSession):
+		return
+	var session: BuildingPlacementSession = session_variant as BuildingPlacementSession
+	if not session.active:
+		return
+	var overlay_color: Color = Color(0.2, 0.9, 0.2, 0.35) if session.is_valid else Color(0.9, 0.2, 0.2, 0.35)
+	var border_color: Color = Color(0.3, 1.0, 0.3, 0.85) if session.is_valid else Color(1.0, 0.3, 0.3, 0.85)
+	for tile_coord: Vector2i in session.footprint_tiles:
+		var center: Vector2 = _HexUtils.axial_to_pixel(tile_coord, TILE_RADIUS)
+		var pts: PackedVector2Array = _hex_polygon(center, TILE_RADIUS)
+		draw_colored_polygon(pts, overlay_color)
+		var border: PackedVector2Array = PackedVector2Array(pts)
+		border.append(pts[0])
+		draw_polyline(border, border_color, 2.5)

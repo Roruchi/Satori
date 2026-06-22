@@ -390,58 +390,58 @@ func _layout_mode_tab_indicator(animated: bool = false) -> void:
 		_active_tab_indicator.size = indicator_size
 
 func start_building_placement(type_key: StringName) -> void:
-_init_building_confirm_panel()
-if _building_confirm_panel != null:
-_building_confirm_panel.visible = true
-building_placement_started.emit(type_key)
+	_init_building_confirm_panel()
+	if _building_confirm_panel != null:
+		_building_confirm_panel.visible = true
+	building_placement_started.emit(type_key)
 
 func stop_building_placement() -> void:
-if _building_confirm_panel != null:
-_building_confirm_panel.visible = false
+	if _building_confirm_panel != null:
+		_building_confirm_panel.visible = false
 
 func _init_building_confirm_panel() -> void:
-if _building_confirm_panel != null:
-return
-if _root == null:
-return
-_building_confirm_panel = PanelContainer.new()
-_building_confirm_panel.name = "BuildingPlacementPanel"
-_building_confirm_panel.visible = false
-_building_confirm_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-_building_confirm_panel.z_index = 150
-var anchored: Control = _building_confirm_panel
-anchored.layout_mode = 1
-anchored.anchors_preset = PRESET_CENTER_TOP
-anchored.offset_top = 8.0
-var panel_style: StyleBoxFlat = StyleBoxFlat.new()
-panel_style.bg_color = Color(0.08, 0.10, 0.16, 0.88)
-panel_style.border_color = Color(0.35, 0.75, 0.35, 0.90)
-panel_style.border_width_left = 2
-panel_style.border_width_top = 2
-panel_style.border_width_right = 2
-panel_style.border_width_bottom = 2
-panel_style.corner_radius_top_left = 8
-panel_style.corner_radius_top_right = 8
-panel_style.corner_radius_bottom_right = 8
-panel_style.corner_radius_bottom_left = 8
-panel_style.content_margin_left = 12.0
-panel_style.content_margin_right = 12.0
-panel_style.content_margin_top = 6.0
-panel_style.content_margin_bottom = 6.0
-_building_confirm_panel.add_theme_stylebox_override("panel", panel_style)
-var hbox: HBoxContainer = HBoxContainer.new()
-hbox.add_theme_constant_override("separation", 16)
-_building_confirm_panel.add_child(hbox)
-var label: Label = Label.new()
-label.text = "Place building"
-label.add_theme_color_override("font_color", Color(0.90, 0.95, 0.90, 0.98))
-hbox.add_child(label)
-var confirm_btn: Button = Button.new()
-confirm_btn.text = "✓ Confirm"
-confirm_btn.pressed.connect(func() -> void: building_placement_confirm_requested.emit())
-hbox.add_child(confirm_btn)
-var cancel_btn: Button = Button.new()
-cancel_btn.text = "✗ Cancel"
-cancel_btn.pressed.connect(func() -> void: building_placement_cancel_requested.emit())
-hbox.add_child(cancel_btn)
-_root.add_child(_building_confirm_panel)
+	if _building_confirm_panel != null:
+		return
+	if _root == null:
+		return
+	_building_confirm_panel = PanelContainer.new()
+	_building_confirm_panel.name = "BuildingPlacementPanel"
+	_building_confirm_panel.visible = false
+	_building_confirm_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_building_confirm_panel.z_index = 150
+	var anchored: Control = _building_confirm_panel
+	anchored.layout_mode = 1
+	anchored.anchors_preset = Control.PRESET_CENTER_TOP
+	anchored.offset_top = 8.0
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.10, 0.16, 0.88)
+	panel_style.border_color = Color(0.35, 0.75, 0.35, 0.90)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.corner_radius_top_left = 8
+	panel_style.corner_radius_top_right = 8
+	panel_style.corner_radius_bottom_right = 8
+	panel_style.corner_radius_bottom_left = 8
+	panel_style.content_margin_left = 12.0
+	panel_style.content_margin_right = 12.0
+	panel_style.content_margin_top = 6.0
+	panel_style.content_margin_bottom = 6.0
+	_building_confirm_panel.add_theme_stylebox_override("panel", panel_style)
+	var hbox: HBoxContainer = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 16)
+	_building_confirm_panel.add_child(hbox)
+	var label: Label = Label.new()
+	label.text = "Place building"
+	label.add_theme_color_override("font_color", Color(0.90, 0.95, 0.90, 0.98))
+	hbox.add_child(label)
+	var confirm_btn: Button = Button.new()
+	confirm_btn.text = "✓ Confirm"
+	confirm_btn.pressed.connect(func() -> void: building_placement_confirm_requested.emit())
+	hbox.add_child(confirm_btn)
+	var cancel_btn: Button = Button.new()
+	cancel_btn.text = "✗ Cancel"
+	cancel_btn.pressed.connect(func() -> void: building_placement_cancel_requested.emit())
+	hbox.add_child(cancel_btn)
+	_root.add_child(_building_confirm_panel)

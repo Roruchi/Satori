@@ -13,14 +13,18 @@ func _add_root_singleton(p_name: String, node: Node) -> void:
 	var root: Node = get_tree().root
 	var existing: Node = root.get_node_or_null("/root/%s" % p_name)
 	if existing != null:
-		existing.queue_free()
+		root.remove_child(existing)
+		existing.free()
 	node.name = p_name
 	root.add_child(node)
 
 func _setup_context() -> Dictionary:
-	var game_state: Node = Node.new()
-	game_state.set_script(load("res://src/autoloads/GameState.gd"))
-	_add_root_singleton("GameState", game_state)
+	var game_state: Node = get_tree().root.get_node_or_null("/root/GameState")
+	if game_state == null:
+		game_state = Node.new()
+		game_state.set_script(load("res://src/autoloads/GameState.gd"))
+		_add_root_singleton("GameState", game_state)
+	game_state.set("_is_initialized", false)
 	game_state._ready()
 
 	var discovery: DiscoveryStub = DiscoveryStub.new()
@@ -37,10 +41,13 @@ func _setup_context() -> Dictionary:
 	return {"game_state": game_state, "growth": growth, "alchemy": alchemy, "discovery": discovery}
 
 func _cleanup_context(ctx: Dictionary) -> void:
-	for key: String in ["game_state", "growth", "alchemy", "discovery"]:
+	for key: String in ["growth", "alchemy", "discovery"]:
 		var node_variant: Variant = ctx.get(key, null)
 		if node_variant is Node:
-			(node_variant as Node).queue_free()
+			var node: Node = node_variant as Node
+			if node.get_parent() != null:
+				node.get_parent().remove_child(node)
+			node.free()
 
 # --- Session lifecycle tests (T025, T026) ---
 

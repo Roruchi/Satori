@@ -83,15 +83,22 @@ func test_unique_monument_guard_blocks_duplicate_emission() -> void:
 	grid.place_tile(Vector2i(-1, 1), BiomeType.Value.CLOUD_RIDGE)
 	matcher.set_patterns([pattern])
 
-	var satori_service: SatoriServiceNode = SatoriServiceNode.new()
-	satori_service.name = "SatoriService"
-	get_tree().root.add_child(satori_service)
+	var satori_service: SatoriServiceNode = get_tree().root.get_node_or_null("/root/SatoriService") as SatoriServiceNode
+	var created_service: bool = false
+	if satori_service == null:
+		satori_service = SatoriServiceNode.new()
+		satori_service.name = "SatoriService"
+		get_tree().root.add_child(satori_service)
+		created_service = true
 	satori_service.set_structures_for_testing([{"discovery_id": "disc_great_torii", "is_unique": true}])
 
-	var blocked_count: int = 0
+	var blocked_ids: Array[String] = []
 	matcher.discovery_blocked.connect(func(_id: String, _coords: Array[Vector2i], _reason: String) -> void:
-		blocked_count += 1
+		blocked_ids.append(_id)
 	)
 	matcher.scan_and_emit(grid)
-	assert_eq(blocked_count, 1, "Duplicate unique monument should be blocked by matcher guard")
-	satori_service.queue_free()
+	assert_eq(blocked_ids.size(), 1, "Duplicate unique monument should be blocked by matcher guard")
+	if created_service:
+		satori_service.queue_free()
+	else:
+		satori_service.set_structures_for_testing([])

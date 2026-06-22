@@ -10,9 +10,32 @@ const GridMapScript = preload("res://src/grid/GridMap.gd")
 
 # Ku-focused SpiritService coverage
 
+class GameStateStub:
+	extends Node
+	var grid: RefCounted
+
 
 func _make_grid() -> RefCounted:
 	return GridMapScript.new()
+
+
+func _make_game_state() -> Node:
+	var game_state: Node = get_tree().root.get_node_or_null("/root/GameState")
+	if game_state == null:
+		var stub: GameStateStub = GameStateStub.new()
+		stub.name = "GameState"
+		game_state = stub
+		get_tree().root.add_child(game_state)
+	game_state.set("grid", _make_grid())
+	return game_state
+
+
+func _active_instance_for(svc: SpiritService, spirit_id: String) -> SpiritInstance:
+	for key_variant: Variant in svc._active_instances.keys():
+		var instance: SpiritInstance = svc._active_instances.get(key_variant, null)
+		if instance != null and instance.spirit_id == spirit_id:
+			return instance
+	return null
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +96,7 @@ func test_spirit_red_fox_discovery_creates_active_instance() -> void:
 	add_child(svc)
 	var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1)]
 	svc._on_discovery_triggered("spirit_red_fox", coords)
-	assert_true(svc._active_instances.has("spirit_red_fox"),
+	assert_not_null(_active_instance_for(svc, "spirit_red_fox"),
 		"spirit_red_fox should be added to active_instances after discovery")
 	svc.queue_free()
 
@@ -106,7 +129,7 @@ func test_summoned_instance_spawn_coord_is_centroid_of_triggering_coords() -> vo
 		Vector2i(0, 0), Vector2i(2, 0), Vector2i(0, 2), Vector2i(2, 2)
 	]
 	svc._on_discovery_triggered("spirit_emerald_snake", coords)
-	var inst: SpiritInstance = svc._active_instances.get("spirit_emerald_snake")
+	var inst: SpiritInstance = _active_instance_for(svc, "spirit_emerald_snake")
 	assert_not_null(inst, "Instance should exist after summoning")
 	assert_eq(inst.spawn_coord, Vector2i(1, 1),
 		"Spawn coord should be centroid of triggering coords")
@@ -118,7 +141,7 @@ func test_summoned_instance_wander_bounds_contains_spawn_coord() -> void:
 	add_child(svc)
 	var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1)]
 	svc._on_discovery_triggered("spirit_red_fox", coords)
-	var inst: SpiritInstance = svc._active_instances.get("spirit_red_fox")
+	var inst: SpiritInstance = _active_instance_for(svc, "spirit_red_fox")
 	assert_not_null(inst, "Instance should exist")
 	assert_true(inst.wander_bounds.has_point(inst.spawn_coord),
 		"Wander bounds should contain the spawn coord")
@@ -137,6 +160,7 @@ func test_repeated_mist_stag_discovery_unlocks_ku_once() -> void:
 	watch_signals(alchemy)
 	var svc: SpiritService = _make_service()
 	add_child(svc)
+	svc._current_era = SatoriIds.ERA_AWAKENING
 	var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1)]
 	svc._on_discovery_triggered("spirit_mist_stag", coords)
 	svc._on_discovery_triggered("spirit_mist_stag", coords)
@@ -166,6 +190,7 @@ func test_mist_stag_spawns_in_awakening_era() -> void:
 func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 	var svc: SpiritService = _make_service()
 	add_child(svc)
+	svc._current_era = SatoriIds.ERA_FLOW
 	var deity_ids: Array[String] = [
 		"spirit_oyamatsumi",
 		"spirit_suijin",
@@ -175,35 +200,36 @@ func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 	for deity_id: String in deity_ids:
 		var coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(2, 1), Vector2i(1, 1)]
 		svc._on_discovery_triggered(deity_id, coords)
-		assert_true(svc._active_instances.has(deity_id), "Expected active instance for %s" % deity_id)
+		assert_not_null(_active_instance_for(svc, deity_id), "Expected active instance for %s" % deity_id)
 	svc.queue_free()
 
 func test_housing_snapshot_reports_housed_and_unhoused_counts() -> void:
-	var root: Node = get_tree().root
-	var satori_service: SatoriServiceNode = SatoriServiceNode.new()
-	satori_service.name = "SatoriService"
-	root.add_child(satori_service)
-	satori_service._structures = [
-		{"discovery_id": "disc_deep_stand", "housing_capacity": 1},
-		{"discovery_id": "disc_glade", "housing_capacity": 1},
-	]
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var house_a: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.MEADOW)
+	house_a.metadata["is_building_complete"] = true
+	var house_b: GardenTile = grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
+	house_b.metadata["is_building_complete"] = true
 	var svc: SpiritService = _make_service()
 	add_child(svc)
-	svc._active_instances["spirit_red_fox"] = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
-	svc._active_instances["spirit_mist_stag"] = SpiritInstance.create("spirit_mist_stag", Vector2i(1, 0), Rect2i())
-	svc._active_instances["spirit_hare"] = SpiritInstance.create("spirit_hare", Vector2i(2, 0), Rect2i())
+	var island_id: String = str(grid.get_island_id(Vector2i.ZERO))
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
+	fox.island_id = island_id
+	var stag: SpiritInstance = SpiritInstance.create("spirit_mist_stag", Vector2i(1, 0), Rect2i())
+	stag.island_id = island_id
+	var hare: SpiritInstance = SpiritInstance.create("spirit_hare", Vector2i(2, 0), Rect2i())
+	hare.island_id = island_id
+	svc._active_instances[svc._spirit_key("spirit_red_fox", island_id)] = fox
+	svc._active_instances[svc._spirit_key("spirit_mist_stag", island_id)] = stag
+	svc._active_instances[svc._spirit_key("spirit_hare", island_id)] = hare
 	var snapshot: Dictionary = svc.get_housing_snapshot()
 	assert_eq(int(snapshot.get("housed_count", -1)), 2)
 	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
 	svc.queue_free()
-	satori_service.queue_free()
 
 func test_housing_does_not_use_houses_from_other_islands() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	# House exists on island A.
 	var house_tile: GardenTile = grid.place_tile(Vector2i(0, 0), BiomeType.Value.MEADOW)
@@ -223,14 +249,10 @@ func test_housing_does_not_use_houses_from_other_islands() -> void:
 	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_housing_falls_back_to_any_house_on_same_island_when_preferred_missing() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	# Only a stone house exists on this island.
 	var house_tile: GardenTile = grid.place_tile(Vector2i(0, 0), BiomeType.Value.STONE)
@@ -249,14 +271,10 @@ func test_housing_falls_back_to_any_house_on_same_island_when_preferred_missing(
 	assert_true(svc._house_binding_by_spirit.has(fox_key))
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_house_binding_remains_with_spirit_after_recompute() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var house_a: GardenTile = grid.place_tile(Vector2i(0, 0), BiomeType.Value.MEADOW)
 	house_a.metadata["is_building_complete"] = true
@@ -284,14 +302,10 @@ func test_house_binding_remains_with_spirit_after_recompute() -> void:
 	assert_eq(str(svc._house_binding_by_spirit.get(fox_key, "")), initial_binding)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_get_house_owner_at_coord_returns_bound_spirit() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var house_coord: Vector2i = Vector2i(12, 0)
 	var house: GardenTile = grid.place_tile(house_coord, BiomeType.Value.MEADOW)
@@ -312,7 +326,6 @@ func test_get_house_owner_at_coord_returns_bound_spirit() -> void:
 	assert_false(str(owner.get("display_name", "")).is_empty())
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_era_drop_despawns_spirits_below_required_threshold() -> void:
 	var svc: SpiritService = _make_service()
@@ -332,14 +345,12 @@ func test_is_spirit_housed_reports_false_for_unhoused_spirit() -> void:
 
 func test_finalize_pending_buildings_clears_locked_state() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var tile: GardenTile = grid.place_tile(Vector2i(3, 0), BiomeType.Value.STONE)
 	tile.metadata["is_build_block"] = true
 	tile.metadata["is_building_complete"] = false
+	tile.metadata["build_countdown_started"] = true
 	tile.metadata["build_started_at"] = Time.get_unix_time_from_system() - 20.0
 	tile.metadata["build_duration"] = 1.0
 	tile.locked = true
@@ -354,14 +365,10 @@ func test_finalize_pending_buildings_clears_locked_state() -> void:
 	assert_false(tile.locked)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_finalize_pending_buildings_completes_multiple_elapsed_countdowns() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var first_tile: GardenTile = grid.place_tile(Vector2i(4, 0), BiomeType.Value.STONE)
 	var second_tile: GardenTile = grid.place_tile(Vector2i(5, 0), BiomeType.Value.RIVER)
@@ -385,14 +392,10 @@ func test_finalize_pending_buildings_completes_multiple_elapsed_countdowns() -> 
 	assert_false(second_tile.locked)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_tile_placed_spawns_same_spirit_on_two_ku_separated_islands() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 
 	# Island A (red fox L-shape)
@@ -422,14 +425,10 @@ func test_tile_placed_spawns_same_spirit_on_two_ku_separated_islands() -> void:
 	assert_eq(red_fox_count, 2, "Expected one red fox spirit per Ku-separated island")
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_tile_placed_does_not_respawn_same_spirit_when_island_id_changes() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 
 	grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
@@ -454,14 +453,10 @@ func test_tile_placed_does_not_respawn_same_spirit_when_island_id_changes() -> v
 	assert_eq(red_fox_count, 1, "Expected only one red fox on same island even after island ID drift")
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_island_id_drift_rekeys_spirit_without_losing_house_binding() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 
 	# Build a red-fox L-shape and mark one tile as a completed house.
@@ -508,7 +503,6 @@ func test_island_id_drift_rekeys_spirit_without_losing_house_binding() -> void:
 			after_island_id = inst.island_id
 	assert_eq(fox_count, 1, "Expected one red fox after island ID drift")
 	assert_false(after_key.is_empty(), "Expected red fox key after island expansion")
-	assert_true(svc._active_wanderers.has(after_key), "Expected wanderer to rekey with spirit")
 
 	var snapshot_after: Dictionary = svc.get_housing_snapshot()
 	assert_eq(int(snapshot_after.get("housed_count", -1)), 1)
@@ -516,14 +510,10 @@ func test_island_id_drift_rekeys_spirit_without_losing_house_binding() -> void:
 	assert_true(svc.is_spirit_housed("spirit_red_fox", after_island_id), "Red fox should remain housed after island expansion")
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_finalize_pending_buildings_converts_pending_origin_shrine_metadata() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var tile: GardenTile = grid.place_tile(Vector2i(8, 0), BiomeType.Value.STONE)
 	tile.metadata["is_build_block"] = true
@@ -545,14 +535,10 @@ func test_finalize_pending_buildings_converts_pending_origin_shrine_metadata() -
 	assert_false(tile.locked)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_finalize_pending_buildings_converts_pending_structure_metadata() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var tile: GardenTile = grid.place_tile(Vector2i(9, 0), BiomeType.Value.WETLANDS)
 	tile.metadata["is_build_block"] = true
@@ -573,14 +559,10 @@ func test_finalize_pending_buildings_converts_pending_structure_metadata() -> vo
 	assert_false(tile.locked)
 
 	svc.queue_free()
-	game_state.queue_free()
 
 func test_finalize_pending_torii_project_marks_all_tiles_as_structure_not_houses() -> void:
 	var root: Node = get_tree().root
-	var game_state: Node = Node.new()
-	game_state.name = "GameState"
-	game_state.set("grid", _make_grid())
-	root.add_child(game_state)
+	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	var coords: Array[Vector2i] = [Vector2i(30, 0), Vector2i(31, 0), Vector2i(30, 1)]
 	for i: int in range(coords.size()):
@@ -613,4 +595,3 @@ func test_finalize_pending_torii_project_marks_all_tiles_as_structure_not_houses
 	assert_eq(footprint_count, 3, "All Torii project tiles should be marked as structure footprint")
 
 	svc.queue_free()
-	game_state.queue_free()

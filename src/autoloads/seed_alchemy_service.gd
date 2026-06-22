@@ -26,6 +26,7 @@ var _kusho_pool: KushoPool = KushoPoolScript.new()
 var _grid_normalizer = SeedCraftGridNormalizerScript.new()
 var _building_catalog = null
 var _building_discovered: Dictionary = {}
+var _is_initialized: bool = false
 var _unlocked_elements: Array[int] = [
 	GodaiElementScript.Value.CHI,
 	GodaiElementScript.Value.SUI,
@@ -36,6 +37,9 @@ var _discovered: Dictionary = {}
 var _pending_shrine_charges: Dictionary = {}
 
 func _ready() -> void:
+	if _is_initialized:
+		return
+	_is_initialized = true
 	_registry = SeedRecipeRegistryScript.new()
 	_building_catalog = BuildingRecipeCatalogScript.new()
 	for element: int in _unlocked_elements:
@@ -169,7 +173,10 @@ func refund_for_recipe_placement(recipe: SeedRecipe) -> void:
 	_refund_elements(recipe.elements)
 
 func set_element_charge_for_testing(element: int, charge: int) -> void:
-	_kusho_pool.set_charge(element, charge)
+	if _kusho_pool.has_method("set_charge_for_testing"):
+		_kusho_pool.set_charge_for_testing(element, charge)
+	else:
+		_kusho_pool.set_charge(element, charge)
 	element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
 func store_shrine_charge(coord: Vector2i, element: int, amount: int = 1) -> bool:
