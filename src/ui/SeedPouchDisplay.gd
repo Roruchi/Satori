@@ -46,18 +46,28 @@ func _refresh() -> void:
 	if pouch.size() == 0:
 		text = "Place: 0/%d slots | 0 uses | Hint: Craft placeables" % pouch.capacity
 		return
+	text = _format_place_inventory_status(pouch)
+
+func _format_place_inventory_status(pouch: SeedPouch) -> String:
 	var total_uses: int = pouch.total_uses()
 	var building_parts: Array[String] = []
 	for i: int in range(pouch.size()):
 		if pouch.get_entry_kind_at(i) == &"building_item":
 			var entry: BuildingInventoryEntry = pouch.get_building_at(i)
 			if entry != null:
-				var display_name: String = str(entry.type_key).replace("building_", "").capitalize()
-				building_parts.append("%s x%d" % [display_name, entry.count])
+				building_parts.append("%s x%d" % [_building_display_name(entry.type_key), entry.count])
+	var prefix: String = "Place: %d/%d slots" % [pouch.size(), pouch.capacity]
 	if building_parts.is_empty():
-		text = "Place: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, total_uses]
-	else:
-		text = "Place: %d/%d slots | %d uses | Buildings: %s" % [pouch.size(), pouch.capacity, total_uses, ", ".join(building_parts)]
+		return "%s | %d uses" % [prefix, total_uses]
+	if total_uses > 0:
+		return "%s | %d uses | %s" % [prefix, total_uses, ", ".join(building_parts)]
+	return "%s | %s" % [prefix, ", ".join(building_parts)]
+
+func _building_display_name(type_key: StringName) -> String:
+	var raw: String = str(type_key)
+	if raw.begins_with("building_"):
+		raw = raw.substr("building_".length())
+	return raw.capitalize()
 
 func select_building_item(type_key: StringName) -> void:
 	building_item_selected.emit(type_key)

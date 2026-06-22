@@ -312,7 +312,7 @@ func _update_ui() -> void:
 	if pouch == null:
 		_pouch_status_label.text = "Place: 0/0 slots | 0 uses"
 	else:
-		_pouch_status_label.text = "Place: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, pouch.total_uses()]
+		_pouch_status_label.text = _format_place_inventory_status(pouch)
 	if pouch_full:
 		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL)
 	elif not can_afford_selected and occupied_count > 0:
@@ -433,6 +433,31 @@ func _recipe_display_name(recipe: SeedRecipe) -> String:
 	if recipe == null:
 		return ""
 	return str(_BIOME_SEED_NAMES.get(recipe.produces_biome, recipe.recipe_id))
+
+func _format_place_inventory_status(pouch: SeedPouch) -> String:
+	if pouch == null:
+		return "Place: 0/0 slots | 0 uses"
+	if pouch.size() == 0:
+		return "Place: 0/%d slots | 0 uses" % pouch.capacity
+	var total_uses: int = pouch.total_uses()
+	var building_parts: Array[String] = []
+	for i: int in range(pouch.size()):
+		if pouch.get_entry_kind_at(i) == &"building_item":
+			var entry: BuildingInventoryEntry = pouch.get_building_at(i)
+			if entry != null:
+				building_parts.append("%s x%d" % [_building_display_name(entry.type_key), entry.count])
+	var prefix: String = "Place: %d/%d slots" % [pouch.size(), pouch.capacity]
+	if building_parts.is_empty():
+		return "%s | %d uses" % [prefix, total_uses]
+	if total_uses > 0:
+		return "%s | %d uses | %s" % [prefix, total_uses, ", ".join(building_parts)]
+	return "%s | %s" % [prefix, ", ".join(building_parts)]
+
+func _building_display_name(type_key: StringName) -> String:
+	var raw: String = str(type_key)
+	if raw.begins_with("building_"):
+		raw = raw.substr("building_".length())
+	return raw.capitalize()
 
 func _on_building_craft_resolved(_building_type_key: StringName, _outcome: StringName, feedback_key: StringName, _guidance: String, _consumed: Array[int], _first_disc: bool) -> void:
 	_last_feedback = _feedback_text_for_key(feedback_key)

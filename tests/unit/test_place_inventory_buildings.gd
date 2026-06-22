@@ -1,6 +1,8 @@
 extends GutTest
 
 const TileSelectorHexScript = preload("res://src/ui/tile_selector_hex.gd")
+const SeedPouchDisplayScript = preload("res://src/ui/SeedPouchDisplay.gd")
+const SeedAlchemyPanelScript = preload("res://src/ui/SeedAlchemyPanel.gd")
 
 func _add_root_singleton(p_name: String, node: Node) -> void:
 	var root: Node = get_tree().root
@@ -45,3 +47,31 @@ func test_building_items_show_in_place_selector_and_emit_selection() -> void:
 	if growth.get_parent() != null:
 		growth.get_parent().remove_child(growth)
 	growth.free()
+
+func test_building_items_show_in_pouch_status() -> void:
+	var growth: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
+	_add_root_singleton("SeedGrowthService", growth)
+	growth._ready()
+	assert_true(growth.get_pouch().add_building(&"building_house", 2))
+
+	var display: Label = Label.new()
+	display.set_script(SeedPouchDisplayScript)
+	add_child(display)
+	await get_tree().process_frame
+	display.call("_refresh")
+
+	assert_eq(display.text, "Place: 1/8 slots | House x2")
+	remove_child(display)
+	display.free()
+	if growth.get_parent() != null:
+		growth.get_parent().remove_child(growth)
+	growth.free()
+
+func test_building_items_show_in_craft_panel_pouch_status() -> void:
+	var pouch: SeedPouch = SeedPouch.new()
+	assert_true(pouch.add_building(&"building_house", 2))
+
+	var panel: PanelContainer = PanelContainer.new()
+	panel.set_script(SeedAlchemyPanelScript)
+	assert_eq(panel.call("_format_place_inventory_status", pouch), "Place: 1/8 slots | House x2")
+	panel.free()
