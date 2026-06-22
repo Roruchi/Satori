@@ -6,16 +6,17 @@ class RecipeEntry extends RefCounted:
 	var building_type_key: StringName = &""
 	var footprint_id: StringName = &""
 	var discovery_entry_id: StringName = &""
+	var normalized_tokens: Array[int] = []
 
 var _catalog: Dictionary = {}
 
 func _init() -> void:
 	# CHI=0, SUI=1, KA=2, FU=3, KU=4
-	register(&"building_house", &"building_house", &"fp_single", &"disc_building_house", [0, 0, 0])
-	register(&"building_granary", &"building_granary", &"fp_single", &"disc_building_granary", [3, 3, 3])
-	register(&"building_watchtower", &"building_watchtower", &"fp_single", &"disc_building_watchtower", [0, 0, 1])
-	register(&"building_pavilion", &"building_pavilion", &"fp_single", &"disc_building_pavilion", [1, 1, 2])
-	register(&"building_forge", &"building_forge", &"fp_single", &"disc_building_forge", [2, 2, 2])
+	register(&"building_house", &"building_house", &"fp_single", &"disc_building_house", [0, 0, 3])
+	register(&"building_granary", &"building_granary", &"fp_single", &"disc_building_granary", [1, 1, 0])
+	register(&"building_watchtower", &"building_watchtower", &"fp_single", &"disc_building_watchtower", [3, 3, 0])
+	register(&"building_pavilion", &"building_pavilion", &"fp_single", &"disc_building_pavilion", [3, 3, 1])
+	register(&"building_forge", &"building_forge", &"fp_single", &"disc_building_forge", [2, 2, 0])
 
 func register(recipe_id: StringName, building_type_key: StringName, footprint_id: StringName, discovery_entry_id: StringName, normalized_tokens: Array[int]) -> void:
 	var key: String = _catalog_key(normalized_tokens)
@@ -24,6 +25,7 @@ func register(recipe_id: StringName, building_type_key: StringName, footprint_id
 	entry.building_type_key = building_type_key
 	entry.footprint_id = footprint_id
 	entry.discovery_entry_id = discovery_entry_id
+	entry.normalized_tokens = normalized_tokens.duplicate()
 	_catalog[key] = entry
 
 func lookup(normalized_tokens: Array[int]) -> RecipeEntry:
@@ -35,6 +37,13 @@ func lookup(normalized_tokens: Array[int]) -> RecipeEntry:
 
 func has_recipe(normalized_tokens: Array[int]) -> bool:
 	return lookup(normalized_tokens) != null
+
+func all_recipes() -> Array[RecipeEntry]:
+	var entries: Array[RecipeEntry] = []
+	for value: Variant in _catalog.values():
+		if value is RecipeEntry:
+			entries.append(value as RecipeEntry)
+	return entries
 
 func _catalog_key(tokens: Array[int]) -> String:
 	var sorted: Array[int] = tokens.duplicate()

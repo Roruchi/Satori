@@ -187,7 +187,7 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 		if pending_project_id != _NO_PROJECT_ID and project_id != pending_project_id:
 			return false
 		if project_id == _NO_PROJECT_ID:
-			_start_build_countdown(tile)
+			_start_build_countdown(coord, tile)
 			if growth_service.has_method("notify_pouch_updated"):
 				growth_service.notify_pouch_updated()
 			return true
@@ -333,11 +333,12 @@ func _can_place_origin_shrine_on_island(coord: Vector2i) -> bool:
 			return false
 	return true
 
-func _start_build_countdown(tile: GardenTile) -> void:
+func _start_build_countdown(coord: Vector2i, tile: GardenTile) -> void:
 	tile.metadata["build_countdown_started"] = true
 	tile.metadata["build_started_at"] = Time.get_unix_time_from_system()
 	tile.metadata["build_duration"] = _BUILD_COUNTDOWN_SECONDS
 	tile.metadata["build_completion_pending"] = true
+	_notify_pending_building_started(coord)
 
 func _try_start_project_countdown(project_id: int) -> bool:
 	var project_coords: Array[Vector2i] = _get_project_coords(project_id, false)
@@ -384,6 +385,7 @@ func _start_project_countdown(project_id: int, structure_id: String) -> void:
 		else:
 			tile.metadata.erase("pending_structure_id")
 			tile.metadata.erase("pending_structure_anchor")
+		_notify_pending_building_started(coord)
 
 func _get_active_pending_project_id() -> int:
 	var found_project_id: int = _NO_PROJECT_ID
@@ -646,6 +648,7 @@ func confirm_building_placement() -> bool:
 			if tile != null:
 				tile.metadata["is_building_complete"] = true
 				tile.metadata["structure_discovery_id"] = str(type_key)
+	_notify_housing_dirty()
 	_building_session = null
 	var hud: Node = get_node_or_null("../HUD")
 	if hud != null and hud.has_method("stop_building_placement"):
@@ -678,6 +681,20 @@ func _connect_hud_signal_once(hud: Node, signal_name: String, target_callable: C
 		return
 	if hud.has_signal(signal_name) and not hud.is_connected(signal_name, target_callable):
 		hud.connect(signal_name, target_callable)
+
+func _notify_pending_building_started(coord: Vector2i) -> void:
+	var spirit_service: Node = get_node_or_null("../SpiritService")
+	if spirit_service == null:
+		spirit_service = get_node_or_null("/root/SpiritService")
+	if spirit_service != null and spirit_service.has_method("register_pending_building"):
+		spirit_service.register_pending_building(coord)
+
+func _notify_housing_dirty() -> void:
+	var spirit_service: Node = get_node_or_null("../SpiritService")
+	if spirit_service == null:
+		spirit_service = get_node_or_null("/root/SpiritService")
+	if spirit_service != null and spirit_service.has_method("mark_housing_dirty"):
+		spirit_service.mark_housing_dirty()
 
 func _evaluate_footprint_validity(anchor: Vector2i, footprint: BuildingFootprint) -> Dictionary:
 	var tiles: Array[Vector2i] = footprint.get_world_tiles(anchor)

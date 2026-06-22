@@ -62,15 +62,39 @@ func _make_slots(tokens: Array[int]) -> Array[int]:
 
 # --- T012: Valid pattern matching ---
 
-func test_three_chi_matches_building_house() -> void:
+func test_chi_chi_fu_matches_building_house() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
+	var before_chi: int = alchemy.get_element_charge(GodaiElement.Value.CHI)
+	var before_fu: int = alchemy.get_element_charge(GodaiElement.Value.FU)
+	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
+	assert_true(result.is_success(), "CHI + CHI + FU should match building_house recipe")
+	assert_eq(result.building_type_key, &"building_house")
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), before_chi - 2)
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.FU), before_fu - 1)
+	_cleanup_context(ctx)
+
+func test_three_chi_no_longer_matches_building_house() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
-	var before_chi: int = alchemy.get_element_charge(GodaiElement.Value.CHI)
 	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
-	assert_true(result.is_success(), "3x CHI should match building_house recipe")
-	assert_eq(result.building_type_key, &"building_house")
-	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), before_chi - 3)
+	assert_false(result.is_success(), "3x CHI is pure concentration, not the starter house recipe")
+	assert_eq(result.outcome, BuildingCraftAttemptResult.OUTCOME_NO_MATCH)
+	_cleanup_context(ctx)
+
+func test_successful_building_craft_notifies_pouch_updated_immediately() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	watch_signals(growth)
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
+	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
+	assert_true(result.is_success())
+	assert_signal_emitted(growth, "pouch_updated")
+	var pouch: SeedPouch = growth.get_pouch()
+	assert_true(pouch.find_building_index(&"building_house") >= 0)
 	_cleanup_context(ctx)
 
 func test_two_chi_does_not_match_building_recipe() -> void:
@@ -96,7 +120,7 @@ func test_empty_grid_returns_no_match() -> void:
 func test_first_successful_craft_sets_first_discovery_flag() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
-	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
 	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_true(result.is_success())
 	assert_true(result.is_first_discovery, "First craft should set is_first_discovery=true")
@@ -106,7 +130,8 @@ func test_second_successful_craft_does_not_set_first_discovery_flag() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 6)
-	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.FU, 2)
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
 	alchemy.attempt_building_craft_from_grid(slots)
 	var result2: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_true(result2.is_success())
@@ -117,12 +142,12 @@ func test_building_craft_fails_without_enough_essence_and_does_not_add_inventory
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
-	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 2)
-	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 1)
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
 	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_false(result.is_success())
 	assert_eq(result.outcome, BuildingCraftAttemptResult.OUTCOME_INSUFFICIENT_ESSENCE)
-	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), 2)
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), 1)
 	assert_eq(growth.get_pouch().find_building_index(&"building_house"), -1)
 	_cleanup_context(ctx)
 
@@ -138,7 +163,7 @@ func test_full_inventory_returns_inventory_full_with_no_consumption() -> void:
 	for k: StringName in keys:
 		assert_true(pouch.add_building(k, 1))
 	assert_true(pouch.is_full())
-	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.FU])
 	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_false(result.is_success())
 	assert_eq(result.outcome, BuildingCraftAttemptResult.OUTCOME_INVENTORY_FULL)
@@ -201,7 +226,7 @@ func test_consume_building_at_removes_entry_when_zero() -> void:
 
 func test_preview_returns_entry_for_valid_pattern() -> void:
 	var catalog: BuildingRecipeCatalog = BuildingRecipeCatalog.new()
-	var entry = catalog.lookup([0, 0, 0])
+	var entry = catalog.lookup([0, 0, 3])
 	assert_not_null(entry)
 	assert_eq(entry.building_type_key, &"building_house")
 

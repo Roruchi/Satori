@@ -2,6 +2,7 @@ class_name PatternScanScheduler
 extends Node
 
 const PatternMatcherScript = preload("res://src/biomes/pattern_matcher.gd")
+const MAX_SCANS_PER_PASS: int = 1
 
 signal scan_requested(scan_id: int, placement_coord: Vector2i)
 signal scan_completed(scan_id: int, duration_ms: float)
@@ -107,6 +108,7 @@ func _on_bloom_confirmed(coord: Vector2i, _biome: int) -> void:
 	enqueue_scan(coord)
 
 func enqueue_scan(placement_coord: Vector2i) -> void:
+	_queue.clear()
 	_queue.append(placement_coord)
 	if not _is_scanning:
 		call_deferred("_run_next_scan")
@@ -116,8 +118,10 @@ func _run_next_scan() -> void:
 		return
 
 	_is_scanning = true
-	while not _queue.is_empty():
+	var scans_this_pass: int = 0
+	while not _queue.is_empty() and scans_this_pass < MAX_SCANS_PER_PASS:
 		var placement_coord: Vector2i = _queue.pop_front()
+		scans_this_pass += 1
 		_scan_counter += 1
 		var scan_id := _scan_counter
 

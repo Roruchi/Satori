@@ -1,0 +1,19 @@
+{
+  "entity_id": "origin_shrine",
+  "asset_role": "completed structure sprite for the Shrine of Origin / disc_origin_shrine landmark",
+  "mode": "built-in image_gen with chroma-key removal",
+  "source_image": "res://assets/structures/origin_shrine/source/imagegen/source_chroma.png",
+  "alpha_source": "res://assets/structures/origin_shrine/source/origin_shrine_alpha_full.png",
+  "atlas": "res://assets/structures/origin_shrine/source/origin_shrine_idle_atlas.png",
+  "frame_size": [128, 128],
+  "directions": ["down"],
+  "animations": [
+    {
+      "name": "idle",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ],
+  "prompt": "Use case: stylized-concept. Asset type: top-down game structure sprite source, single completed structure frame. Game style: Satori high top-down hand-painted pixel-art-inspired garden game; readable at small hex-tile scale; refined painted edges; calm spiritual mood; warm stone, weathered wood, muted water-blue and gold accents. Subject: Shrine of Origin, a compact sacred stone-and-water shrine for a hex-grid garden. Central dark stone dais, low circular shrine ring, small golden cross-sigil/core glow, four subtle water channels or droplets implying the Origin water cross, tasteful Japanese-inspired shrine proportions without text. Camera: true high top-down game sprite, not isometric, no horizon. Composition/framing: one centered object with generous padding, designed to fit a 128x128 sprite frame and read at 64x64 in-game; no cropped silhouette. Palette/materials: slate stone, aged cedar wood, pale water-blue, soft warm gold glow; no chroma-key green in the subject. Background: perfectly flat solid #00ff00 chroma-key background for background removal. Constraints: one asset only, no sheet grid, no text, no watermark, no UI, no cast shadow, no contact shadow, no floor plane, background must be a single uniform #00ff00 color with no gradients or texture, crisp separated edges."
+}

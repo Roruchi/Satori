@@ -119,6 +119,7 @@ func attempt_seed_craft_from_grid(slot_tokens: Array[int]):
 		return _emit_attempt_result(SeedCraftAttemptResultScript.inventory_full(recipe))
 	if not pouch.add(recipe):
 		return _emit_attempt_result(SeedCraftAttemptResultScript.inventory_full(recipe))
+	_notify_pouch_updated()
 
 	_consume_mix_elements(recipe.elements)
 	var consumed_slots: Array[int] = _resolve_consumed_slots(slot_tokens, recipe.elements)
@@ -344,6 +345,7 @@ func attempt_building_craft_from_grid(slot_tokens: Array[int]) -> BuildingCraftA
 	var pouch: SeedPouch = get_pouch()
 	if pouch == null or not pouch.add_building(recipe_entry.building_type_key):
 		return BuildingCraftAttemptResultScript.inventory_full(recipe_entry.building_type_key)
+	_notify_pouch_updated()
 	_consume_mix_elements(normalized_tokens)
 
 	var occupied_indices_variant: Variant = normalized.get("occupied_slot_indices", [])
@@ -382,3 +384,8 @@ func preview_building_recipe_from_grid(slot_tokens: Array[int]):
 	for token_variant: Variant in normalized_variant:
 		normalized_tokens.append(int(token_variant))
 	return _building_catalog.lookup(normalized_tokens)
+
+func _notify_pouch_updated() -> void:
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service != null and growth_service.has_method("notify_pouch_updated"):
+		growth_service.notify_pouch_updated()

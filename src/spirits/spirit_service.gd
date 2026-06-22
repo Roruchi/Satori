@@ -17,6 +17,11 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const SatoriConditionEvaluatorScript = preload("res://src/satori/SatoriConditionEvaluator.gd")
 const BUILD_COMPLETION_SECONDS: float = 10.0
 const ESSENCE_CHARGE_SECONDS: float = 60.0
+const BUILD_FINALIZE_TICK_SECONDS: float = 0.25
+const ESSENCE_CHARGE_TICK_SECONDS: float = 1.0
+const STILLNESS_SPIRIT_HOUSING_BUFFER: int = 2
+const AWAKENING_SPIRIT_HOUSING_BUFFER: int = 4
+const SETTLE_HINT_TEXT: String = "A presence lingers at the edge of the island. A dwelling would help it settle."
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -31,9 +36,17 @@ var _riddle_shown: Dictionary = {}
 var _house_binding_by_spirit: Dictionary = {}
 var _spirit_patterns: Array[PatternDefinition] = []
 var _current_era: StringName = &"stillness"
+var _pending_build_coords: Dictionary = {}
+var _building_finalize_timer: Timer = null
+var _essence_charge_timer: Timer = null
+var _uses_global_spirit_discovery_scan: bool = false
+var _housing_cache: Dictionary = {}
+var _housing_cache_dirty: bool = true
+var _housing_recompute_count: int = 0
+var _settle_hint_shown: Dictionary = {}
 
 func _ready() -> void:
-	set_process(true)
+	set_process(false)
 	_catalog = SpiritCatalog.new()
 	_catalog.load_from_data(SpiritCatalogData.new())
 	_riddle_evaluator = SpiritRiddleEvaluator.new()
@@ -44,21 +57,45 @@ func _ready() -> void:
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("discovery_triggered"):
 		scan_service.discovery_triggered.connect(_on_discovery_triggered)
+		_uses_global_spirit_discovery_scan = _is_runtime_garden_service()
 	var game_state: Node = get_node_or_null("/root/GameState")
 	if game_state != null and game_state.has_signal("tile_placed"):
 		game_state.tile_placed.connect(_on_tile_placed)
 	call_deferred("_setup_spawner")
 	call_deferred("restore_from_persistence")
 	call_deferred("_connect_soundscape")
+	if _is_runtime_garden_service():
+		_install_runtime_timers()
+		_collect_pending_building_coords_once()
 	var satori_service: Node = get_node_or_null("/root/SatoriService")
 	if satori_service != null and satori_service.has_signal("era_changed"):
 		satori_service.era_changed.connect(_on_era_changed)
 		if satori_service.has_method("get_current_era"):
 			_current_era = satori_service.get_current_era()
 
-func _process(_delta: float) -> void:
-	_finalize_pending_buildings()
-	_process_essence_charge_timers()
+func _install_runtime_timers() -> void:
+	_building_finalize_timer = Timer.new()
+	_building_finalize_timer.wait_time = BUILD_FINALIZE_TICK_SECONDS
+	_building_finalize_timer.one_shot = false
+	_building_finalize_timer.autostart = true
+	_building_finalize_timer.timeout.connect(_finalize_tracked_pending_buildings)
+	add_child(_building_finalize_timer)
+
+	_essence_charge_timer = Timer.new()
+	_essence_charge_timer.wait_time = ESSENCE_CHARGE_TICK_SECONDS
+	_essence_charge_timer.one_shot = false
+	_essence_charge_timer.autostart = true
+	_essence_charge_timer.timeout.connect(_process_essence_charge_timers)
+	add_child(_essence_charge_timer)
+
+func register_pending_building(coord: Vector2i) -> void:
+	_pending_build_coords[_coord_to_key(coord)] = coord
+
+func _is_runtime_garden_service() -> bool:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return false
+	return parent_node.name == "Garden" or parent_node.name == "VoxelGarden"
 
 func set_spawner_parent(parent: Node) -> void:
 	_spawner.set_parent(parent)
@@ -112,6 +149,9 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	var grid: RefCounted = _grid_from_game_state(game_state)
 	if _is_spirit_active_on_island(discovery_id, island_id, grid):
 		return
+	if not _can_spawn_under_era_pacing(discovery_id, island_id):
+		_emit_settle_hint_once(discovery_id, island_id)
+		return
 	_summon_spirit(discovery_id, triggering_coords, island_id)
 
 func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: String = "") -> void:
@@ -126,6 +166,7 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
 	_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+	mark_housing_dirty()
 	if _is_ku_deity_spirit(spirit_id):
 		_maybe_mark_shrine_buildable(instance)
 	var wanderer: Node = _spawner.spawn(instance, entry)
@@ -158,10 +199,12 @@ func _on_tile_placed(coord: Vector2i, _tile: GardenTile) -> void:
 	var grid: RefCounted = _grid_from_game_state(game_state)
 	if grid == null:
 		return
+	mark_housing_dirty()
 	_refresh_active_instance_islands(grid)
 	if _sky_whale_evaluator.evaluate(grid) and not _active_instances.has(SkyWhaleEvaluator.SPIRIT_ID):
 		_summon_sky_whale(grid)
-	_try_spawn_spirits_for_island(coord, grid)
+	if not _uses_global_spirit_discovery_scan:
+		_try_spawn_spirits_for_island(coord, grid)
 	_evaluate_riddle_hints(grid)
 
 func _refresh_active_instance_islands(grid: RefCounted) -> void:
@@ -196,6 +239,7 @@ func _refresh_active_instance_islands(grid: RefCounted) -> void:
 	_active_wanderers = next_wanderers
 	_next_essence_drop_at = next_drop_times
 	_house_binding_by_spirit = next_bindings
+	mark_housing_dirty()
 
 func _try_spawn_spirits_for_island(coord: Vector2i, grid: RefCounted) -> void:
 	if grid == null or not grid.has_method("get_island_id") or not grid.has_method("get_tile"):
@@ -221,6 +265,9 @@ func _try_spawn_spirits_for_island(coord: Vector2i, grid: RefCounted) -> void:
 		if not spirit_id.begins_with("spirit_") or spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
 			continue
 		if _is_spirit_active_on_island(spirit_id, island_id, grid):
+			continue
+		if not _can_spawn_under_era_pacing(spirit_id, island_id):
+			_emit_settle_hint_once(spirit_id, island_id)
 			continue
 		_summon_spirit(spirit_id, payload.triggering_coords, island_id)
 
@@ -269,6 +316,7 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 	instance.island_id = ""
 	_active_instances[SkyWhaleEvaluator.SPIRIT_ID] = instance
 	_next_essence_drop_at[SkyWhaleEvaluator.SPIRIT_ID] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+	mark_housing_dirty()
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 	if ecology != null and ecology.has_method("register_wanderer"):
@@ -283,7 +331,7 @@ func active_count() -> int:
 	return _active_instances.size()
 
 func get_housing_snapshot() -> Dictionary:
-	var assignment: Dictionary = _compute_housing_assignment()
+	var assignment: Dictionary = _get_housing_assignment()
 	return {
 		"housed_count": int(assignment.get("housed_count", 0)),
 		"unhoused_count": int(assignment.get("unhoused_count", 0)),
@@ -292,13 +340,14 @@ func get_housing_snapshot() -> Dictionary:
 
 func is_spirit_housed(spirit_id: String, island_id: String = "") -> bool:
 	var key: String = _spirit_key(spirit_id, island_id)
-	var assignment: Dictionary = _compute_housing_assignment()
+	var assignment: Dictionary = _get_housing_assignment()
 	var housed_keys_variant: Variant = assignment.get("housed_keys", {})
 	if housed_keys_variant is Dictionary:
 		return bool((housed_keys_variant as Dictionary).get(key, false))
 	return false
 
 func get_house_owner_at_coord(coord: Vector2i) -> Dictionary:
+	_get_housing_assignment()
 	var house_key: String = _coord_to_key(coord)
 	for spirit_key_variant: Variant in _house_binding_by_spirit.keys():
 		var spirit_key: String = str(spirit_key_variant)
@@ -314,6 +363,22 @@ func get_house_owner_at_coord(coord: Vector2i) -> Dictionary:
 			"island_id": instance.island_id,
 		}
 	return {}
+
+func mark_housing_dirty() -> void:
+	_housing_cache_dirty = true
+
+func get_housing_recompute_count() -> int:
+	return _housing_recompute_count
+
+func get_pending_building_count() -> int:
+	return _pending_build_coords.size()
+
+func _get_housing_assignment() -> Dictionary:
+	if _housing_cache_dirty or _housing_cache.is_empty():
+		_housing_cache = _compute_housing_assignment()
+		_housing_cache_dirty = false
+		_housing_recompute_count += 1
+	return _housing_cache
 
 func _compute_housing_assignment() -> Dictionary:
 	var housed_count: int = 0
@@ -391,6 +456,49 @@ func _can_spawn_in_current_era(spirit_id: String) -> bool:
 	var required_era: StringName = StringName(str(entry.get("min_era", "stillness")))
 	return SatoriConditionEvaluatorScript.era_meets_requirement(_current_era, required_era)
 
+func _can_spawn_under_era_pacing(spirit_id: String, island_id: String) -> bool:
+	if spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+		return true
+	var limit: int = _spirit_pacing_limit_for_island(island_id)
+	if limit < 0:
+		return true
+	return _active_non_special_spirit_count_for_island(island_id) < limit
+
+func _spirit_pacing_limit_for_island(island_id: String) -> int:
+	match _current_era:
+		&"stillness":
+			return _completed_house_count_for_island(island_id) + STILLNESS_SPIRIT_HOUSING_BUFFER
+		&"awakening":
+			return _completed_house_count_for_island(island_id) + AWAKENING_SPIRIT_HOUSING_BUFFER
+		_:
+			return -1
+
+func _completed_house_count_for_island(island_id: String) -> int:
+	var houses_by_island: Dictionary = _collect_available_houses_by_island()
+	var houses_variant: Variant = houses_by_island.get(island_id, [])
+	if not (houses_variant is Array):
+		return 0
+	return (houses_variant as Array).size()
+
+func _active_non_special_spirit_count_for_island(island_id: String) -> int:
+	var count: int = 0
+	for key_variant: Variant in _active_instances.keys():
+		var instance: SpiritInstance = _active_instances.get(key_variant, null)
+		if instance == null:
+			continue
+		if instance.spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+			continue
+		if instance.island_id == island_id:
+			count += 1
+	return count
+
+func _emit_settle_hint_once(spirit_id: String, island_id: String) -> void:
+	var key: String = "%s|%s" % [island_id, spirit_id]
+	if bool(_settle_hint_shown.get(key, false)):
+		return
+	_settle_hint_shown[key] = true
+	riddle_hint_triggered.emit(spirit_id, SETTLE_HINT_TEXT)
+
 func _is_spirit_active_on_island(spirit_id: String, island_id: String, grid: RefCounted) -> bool:
 	if island_id.is_empty():
 		return _active_instances.has(_spirit_key(spirit_id, ""))
@@ -440,6 +548,7 @@ func _despawn_by_key(key: String) -> void:
 	_next_essence_drop_at.erase(key)
 	_house_binding_by_spirit.erase(key)
 	_active_instances.erase(key)
+	mark_housing_dirty()
 	spirit_despawned.emit(instance.spirit_id)
 
 ## Look up the island_id for the first valid coord in a triggering-coords array.
@@ -707,67 +816,110 @@ func _grid_from_game_state(game_state: Node) -> RefCounted:
 		return grid_variant as RefCounted
 	return null
 
-func _finalize_pending_buildings() -> void:
+func _collect_pending_building_coords_once() -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
-	if game_state == null:
-		return
-	var grid: RefCounted = game_state.get("grid") as RefCounted
+	var grid: RefCounted = _grid_from_game_state(game_state)
 	if grid == null or not grid.has_method("get_tile"):
 		return
-	var now: float = Time.get_unix_time_from_system()
 	for coord_variant: Variant in grid.tiles.keys():
 		var coord: Vector2i = coord_variant as Vector2i
 		var tile: GardenTile = grid.get_tile(coord)
-		if tile == null:
-			continue
-		if not bool(tile.metadata.get("is_build_block", false)):
-			continue
-		if bool(tile.metadata.get("is_building_complete", false)):
-			continue
-		if not bool(tile.metadata.get("build_countdown_started", false)):
+		if _is_pending_building_tile(tile):
+			register_pending_building(coord)
+
+func _finalize_pending_buildings() -> void:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	var grid: RefCounted = _grid_from_game_state(game_state)
+	if grid == null or not grid.has_method("get_tile"):
+		return
+	var coords: Array[Vector2i] = []
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if _is_pending_building_tile(tile):
+			coords.append(coord)
+	_finalize_pending_buildings_for_coords(coords)
+
+func _finalize_tracked_pending_buildings() -> void:
+	if _pending_build_coords.is_empty():
+		return
+	var coords: Array[Vector2i] = []
+	for coord_variant: Variant in _pending_build_coords.values():
+		if coord_variant is Vector2i:
+			coords.append(coord_variant as Vector2i)
+	_finalize_pending_buildings_for_coords(coords)
+
+func _finalize_pending_buildings_for_coords(coords: Array[Vector2i]) -> void:
+	if coords.is_empty():
+		return
+	var game_state: Node = get_node_or_null("/root/GameState")
+	var grid: RefCounted = _grid_from_game_state(game_state)
+	if grid == null or not grid.has_method("get_tile"):
+		return
+	var now: float = Time.get_unix_time_from_system()
+	for coord: Vector2i in coords:
+		var coord_key: String = _coord_to_key(coord)
+		var tile: GardenTile = grid.get_tile(coord)
+		if not _is_pending_building_tile(tile):
+			_pending_build_coords.erase(coord_key)
 			continue
 		var started_at: float = float(tile.metadata.get("build_started_at", now))
 		var duration: float = float(tile.metadata.get("build_duration", BUILD_COMPLETION_SECONDS))
 		if now - started_at < maxf(0.1, duration):
+			_pending_build_coords[coord_key] = coord
 			continue
-		var pending_structure_id: String = str(tile.metadata.get("pending_structure_id", ""))
-		var pending_structure_anchor: bool = bool(tile.metadata.get("pending_structure_anchor", true))
-		var pending_origin_shrine: bool = bool(tile.metadata.get("pending_origin_shrine", false))
-		var is_special_structure: bool = pending_origin_shrine or not pending_structure_id.is_empty()
-		tile.metadata["is_build_block"] = false
-		tile.metadata["is_building_complete"] = not is_special_structure
-		if not is_special_structure:
-			tile.metadata.erase("structure_discovery_id")
-		if pending_origin_shrine:
-			tile.metadata["is_origin_shrine"] = true
-			tile.metadata["shrine_buildable"] = false
-			tile.metadata["shrine_built"] = true
-			tile.metadata["build_discovery_id"] = "disc_origin_shrine"
-			tile.metadata["structure_discovery_id"] = "disc_origin_shrine"
-		if not pending_structure_id.is_empty():
-			tile.metadata["shrine_buildable"] = false
-			tile.metadata["shrine_built"] = true
-			tile.metadata["structure_discovery_id"] = pending_structure_id
-			if pending_structure_anchor:
-				tile.metadata["build_discovery_id"] = pending_structure_id
-				var satori_service: Node = get_node_or_null("/root/SatoriService")
-				if satori_service != null and satori_service.has_method("apply_monument_on_build"):
-					satori_service.apply_monument_on_build(pending_structure_id)
-				var codex: Node = get_node_or_null("/root/CodexService")
-				if codex != null and codex.has_method("mark_structure_recipe_completed"):
-					codex.mark_structure_recipe_completed(StringName(pending_structure_id))
-			else:
-				tile.metadata.erase("build_discovery_id")
-		tile.metadata["building_completed_at"] = now
-		tile.metadata["build_completion_pending"] = false
-		tile.metadata.erase("build_started_at")
-		tile.metadata.erase("build_duration")
-		tile.metadata["build_countdown_started"] = false
-		tile.metadata.erase("build_recipe_biome")
-		tile.metadata.erase("build_project_id")
-		tile.metadata.erase("pending_origin_shrine")
-		tile.metadata.erase("pending_structure_candidate")
-		tile.metadata.erase("pending_structure_id")
-		tile.metadata.erase("pending_structure_anchor")
-		tile.locked = false
-		building_completed.emit(coord, tile.biome)
+		_complete_pending_building_tile(coord, tile, now)
+		_pending_build_coords.erase(coord_key)
+
+func _is_pending_building_tile(tile: GardenTile) -> bool:
+	if tile == null:
+		return false
+	if not bool(tile.metadata.get("is_build_block", false)):
+		return false
+	if bool(tile.metadata.get("is_building_complete", false)):
+		return false
+	return bool(tile.metadata.get("build_countdown_started", false))
+
+func _complete_pending_building_tile(coord: Vector2i, tile: GardenTile, now: float) -> void:
+	var pending_structure_id: String = str(tile.metadata.get("pending_structure_id", ""))
+	var pending_structure_anchor: bool = bool(tile.metadata.get("pending_structure_anchor", true))
+	var pending_origin_shrine: bool = bool(tile.metadata.get("pending_origin_shrine", false))
+	var is_special_structure: bool = pending_origin_shrine or not pending_structure_id.is_empty()
+	tile.metadata["is_build_block"] = false
+	tile.metadata["is_building_complete"] = not is_special_structure
+	if not is_special_structure:
+		tile.metadata.erase("structure_discovery_id")
+	if pending_origin_shrine:
+		tile.metadata["is_origin_shrine"] = true
+		tile.metadata["shrine_buildable"] = false
+		tile.metadata["shrine_built"] = true
+		tile.metadata["build_discovery_id"] = "disc_origin_shrine"
+		tile.metadata["structure_discovery_id"] = "disc_origin_shrine"
+	if not pending_structure_id.is_empty():
+		tile.metadata["shrine_buildable"] = false
+		tile.metadata["shrine_built"] = true
+		tile.metadata["structure_discovery_id"] = pending_structure_id
+		if pending_structure_anchor:
+			tile.metadata["build_discovery_id"] = pending_structure_id
+			var satori_service: Node = get_node_or_null("/root/SatoriService")
+			if satori_service != null and satori_service.has_method("apply_monument_on_build"):
+				satori_service.apply_monument_on_build(pending_structure_id)
+			var codex: Node = get_node_or_null("/root/CodexService")
+			if codex != null and codex.has_method("mark_structure_recipe_completed"):
+				codex.mark_structure_recipe_completed(StringName(pending_structure_id))
+		else:
+			tile.metadata.erase("build_discovery_id")
+	tile.metadata["building_completed_at"] = now
+	tile.metadata["build_completion_pending"] = false
+	tile.metadata.erase("build_started_at")
+	tile.metadata.erase("build_duration")
+	tile.metadata["build_countdown_started"] = false
+	tile.metadata.erase("build_recipe_biome")
+	tile.metadata.erase("build_project_id")
+	tile.metadata.erase("pending_origin_shrine")
+	tile.metadata.erase("pending_structure_candidate")
+	tile.metadata.erase("pending_structure_id")
+	tile.metadata.erase("pending_structure_anchor")
+	tile.locked = false
+	mark_housing_dirty()
+	building_completed.emit(coord, tile.biome)

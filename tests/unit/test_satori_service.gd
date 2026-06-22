@@ -76,31 +76,52 @@ func test_trigger_debug_safe_call() -> void:
 	service.queue_free()
 	settings.queue_free()
 
-func test_minute_tick_delta_formula_applies_housed_minus_double_unhoused() -> void:
+func test_minute_tick_delta_formula_applies_housed_minus_double_unhoused_after_stillness() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)
-	service.set_cap_for_testing(250)
-	service.set_satori_for_testing(100)
+	service.set_cap_for_testing(1000)
+	service.set_satori_for_testing(SatoriIds.THRESHOLD_AWAKENING_MIN)
 	var result: Dictionary = service.process_minute_tick({
 		"housed_count": 6,
 		"unhoused_count": 2,
 		"housed_by_island": {}
 	})
 	assert_eq(int(result["base_delta"]), 2)
-	assert_eq(int(result["new_satori"]), 102)
+	assert_eq(int(result["new_satori"]), SatoriIds.THRESHOLD_AWAKENING_MIN + 2)
 	service.queue_free()
 
-func test_minute_tick_clamps_to_zero_on_underflow() -> void:
+func test_stillness_unhoused_pressure_is_softened() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)
 	service.set_cap_for_testing(250)
-	service.set_satori_for_testing(3)
+	service.set_satori_for_testing(100)
 	var result: Dictionary = service.process_minute_tick({
 		"housed_count": 0,
 		"unhoused_count": 2,
 		"housed_by_island": {}
 	})
-	assert_eq(int(result["new_satori"]), 0)
+	assert_eq(float(result["base_delta"]), -1.0)
+	assert_eq(int(result["new_satori"]), 99)
+	service.queue_free()
+
+func test_stillness_housed_spirits_remain_better_than_unhoused() -> void:
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	service.set_cap_for_testing(250)
+	service.set_satori_for_testing(100)
+	var housed_result: Dictionary = service.process_minute_tick({
+		"housed_count": 2,
+		"unhoused_count": 0,
+		"housed_by_island": {}
+	})
+	assert_eq(int(housed_result["applied_delta"]), 2)
+	service.set_satori_for_testing(100)
+	var unsettled_result: Dictionary = service.process_minute_tick({
+		"housed_count": 0,
+		"unhoused_count": 2,
+		"housed_by_island": {}
+	})
+	assert_true(int(housed_result["applied_delta"]) > int(unsettled_result["applied_delta"]))
 	service.queue_free()
 
 func test_minute_tick_clamps_to_cap_on_overflow() -> void:
@@ -202,9 +223,9 @@ func test_guidance_lantern_reduces_unhoused_penalty_for_up_to_three() -> void:
 		"unhoused_count": 4,
 		"housed_by_island": {}
 	})
-	# Base -8, pacify +3 => -5.
-	assert_eq(int(result["applied_delta"]), -5)
-	assert_eq(int(result["new_satori"]), 95)
+	# Base -2, pacify +3 => +1 in softened Stillness.
+	assert_eq(int(result["applied_delta"]), 1)
+	assert_eq(int(result["new_satori"]), 101)
 	service.queue_free()
 
 func test_pagoda_passive_adds_five_per_tick() -> void:

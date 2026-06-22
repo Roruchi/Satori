@@ -1,0 +1,33 @@
+{
+  "entity_id": "spirit_red_fox",
+  "frame_width": 64,
+  "frame_height": 64,
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ],
+  "layout": "animation-major",
+  "source": "built-in image_gen outputs post-processed from chroma-key to alpha using per-row sprite detection",
+  "animations": [
+    {
+      "name": "idle",
+      "frames": 4,
+      "fps": 6.0,
+      "loop": true
+    },
+    {
+      "name": "walk",
+      "frames": 6,
+      "fps": 10.0,
+      "loop": true
+    },
+    {
+      "name": "sleep",
+      "frames": 4,
+      "fps": 5.0,
+      "loop": true
+    }
+  ]
+}

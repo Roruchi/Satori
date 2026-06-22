@@ -32,6 +32,19 @@ Use this alongside the catalog data files to verify completeness at a glance.
 Recipes are **order-independent** — `SeedRecipeRegistry` sorts element IDs before lookup.
 Tier 3 recipes are hidden until a spirit grants a `TIER3_RECIPE` gift.
 
+### Resonance Grid Grammar
+
+The crafting grid is treated as a resonance grid. Simple early recipes care about
+essence balance rather than slot position; later advanced recipes may care about
+matrix position.
+
+| Pattern | Meaning | Current Use |
+|---------|---------|-------------|
+| 3 same essences | Pure elemental concentration | Reserved for concentrated elemental structure space, not starter houses |
+| 2 same + 1 support | Structure, function, or intent | Current simple structure recipes |
+| 3 different essences | Ecology, biome, or advanced seed space | Reserved for advanced/ecology recipes |
+| Ku | Sacred modifier | Not early utility; unlocks after Mist Stag |
+
 ### Tier 1 — Single Element (always available)
 
 | `recipe_id`   | Elements        | Produces Biome (ID) | Biome Name    | Codex Hint |
@@ -126,6 +139,19 @@ This means they function as repeatable house-class structure unlocks in progress
 These are the normal houses spirits can bind to. They are separate from shrine/landmark structures.
 In build mode, selecting Meadow/Fu places normal house blocks on any existing non-shrine tile.
 Grouped multi-tile building is recipe-only: generic houses must be confirmed one tile at a time.
+
+### Craftable Simple Structures
+
+These recipes are currently position-insensitive in the resonance grid. They use
+the early structure grammar of **2 same + 1 support**.
+
+| Building Item | Elements | Meaning |
+|---------------|----------|---------|
+| House (`building_house`) | CHI + CHI + FU | A grounded shelter/foundation with breath and open space |
+| Granary (`building_granary`) | SUI + SUI + CHI | Storage; flow held in a container |
+| Watchtower (`building_watchtower`) | FU + FU + CHI | Observation and reach grounded by earth |
+| Pavilion (`building_pavilion`) | FU + FU + SUI | Open rest, harmony, and gentle flow |
+| Forge (`building_forge`) | KA + KA + CHI | Production; fire grounded by earth |
 
 ---
 

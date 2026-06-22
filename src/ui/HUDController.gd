@@ -64,11 +64,16 @@ enum Mode {
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
 @onready var _satori_label: Label = $Root/TopBar/SatoriLabel
 @onready var _era_label: Label = $Root/TopBar/EraLabel
+@onready var _debug_info_label: Label = $Root/DebugInfoLabel
 
 var _mode: int = Mode.PLANT
 var _tile_selector_hex: Node2D = null
 var _mode_tabs_initialized: bool = false
 var _building_confirm_panel: PanelContainer = null
+var _debug_update_elapsed: float = 0.0
+var _last_scan_ms: float = 0.0
+var _max_scan_ms: float = 0.0
+var _scan_count: int = 0
 
 signal building_placement_started(type_key: StringName)
 signal building_placement_confirm_requested()
@@ -109,6 +114,10 @@ func _ready() -> void:
 	else:
 		push_warning("HUDController could not connect to GardenSettings.growth_speed_multiplier_changed")
 		_on_growth_speed_multiplier_changed(1.0)
+	if settings != null and settings.has_signal("debug_info_enabled_changed"):
+		settings.debug_info_enabled_changed.connect(_on_debug_info_enabled_changed)
+		var debug_enabled: Variant = settings.get("debug_info_enabled")
+		_on_debug_info_enabled_changed(debug_enabled is bool and bool(debug_enabled))
 	_set_mode(Mode.PLANT)
 	var satori_service: Node = get_node_or_null("/root/SatoriService")
 	if satori_service != null:
@@ -129,7 +138,19 @@ func _ready() -> void:
 		if alchemy_service.has_signal("shrine_charge_collected"):
 			alchemy_service.shrine_charge_collected.connect(func(_coord: Vector2i, _element_id: int, _amount: int) -> void: _refresh_element_meters())
 	_refresh_element_meters()
+	var scan_service: Node = get_node_or_null("/root/PatternScanService")
+	if scan_service != null and scan_service.has_signal("scan_metrics_updated"):
+		scan_service.scan_metrics_updated.connect(_on_scan_metrics_updated)
 	_init_world_popover()
+
+func _process(delta: float) -> void:
+	if _debug_info_label == null or not _debug_info_label.visible:
+		return
+	_debug_update_elapsed += delta
+	if _debug_update_elapsed < 0.25:
+		return
+	_debug_update_elapsed = 0.0
+	_refresh_debug_info(delta)
 
 func _layout_mix_panel() -> void:
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
@@ -158,6 +179,69 @@ func _on_growth_speed_multiplier_changed(multiplier: float) -> void:
 		return
 	_instant_badge.visible = true
 	_instant_badge.text = "x%d" % rounded
+
+func _on_debug_info_enabled_changed(enabled: bool) -> void:
+	if _debug_info_label == null:
+		return
+	_debug_info_label.visible = enabled
+	_debug_update_elapsed = 0.0
+	if enabled:
+		_refresh_debug_info(0.0)
+
+func _refresh_debug_info(delta: float) -> void:
+	if _debug_info_label == null:
+		return
+	var frame_ms: float = 0.0 if is_zero_approx(delta) else delta * 1000.0
+	var spirit_service: Node = _resolve_spirit_service()
+	var spirit_count: int = 0
+	var housing_count: int = 0
+	var pending_builds: int = 0
+	if spirit_service != null:
+		if spirit_service.has_method("active_count"):
+			spirit_count = int(spirit_service.active_count())
+		if spirit_service.has_method("get_housing_recompute_count"):
+			housing_count = int(spirit_service.get_housing_recompute_count())
+		if spirit_service.has_method("get_pending_building_count"):
+			pending_builds = int(spirit_service.get_pending_building_count())
+	_debug_info_label.text = "FPS %d | %.1f ms | Nodes %d\nScan %.1f/%.1f ms #%d | Spirits %d | Housing %d | Builds %d" % [
+		Engine.get_frames_per_second(),
+		frame_ms,
+		_count_nodes(get_tree().root),
+		_last_scan_ms,
+		_max_scan_ms,
+		_scan_count,
+		spirit_count,
+		housing_count,
+		pending_builds,
+	]
+
+func _count_nodes(root_node: Node) -> int:
+	if root_node == null:
+		return 0
+	var total: int = 1
+	for child: Node in root_node.get_children():
+		total += _count_nodes(child)
+	return total
+
+func _on_scan_metrics_updated(last_duration_ms: float, _average_duration_ms: float, max_duration_ms: float, scan_count: int) -> void:
+	_last_scan_ms = last_duration_ms
+	_max_scan_ms = max_duration_ms
+	_scan_count = scan_count
+
+func _resolve_spirit_service() -> Node:
+	var direct: Node = get_node_or_null("/root/SpiritService")
+	if direct != null:
+		return direct
+	var garden_path: Node = get_node_or_null("/root/Garden/SpiritService")
+	if garden_path != null:
+		return garden_path
+	var voxel_path: Node = get_node_or_null("/root/VoxelGarden/SpiritService")
+	if voxel_path != null:
+		return voxel_path
+	var local_path: Node = get_node_or_null("../SpiritService")
+	if local_path != null:
+		return local_path
+	return null
 
 func _on_satori_changed(current: int, cap: int) -> void:
 	_satori_label.text = "Satori: %d/%d" % [current, cap]

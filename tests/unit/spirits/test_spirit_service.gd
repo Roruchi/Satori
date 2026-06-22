@@ -187,6 +187,41 @@ func test_mist_stag_spawns_in_awakening_era() -> void:
 	assert_true(svc._is_spirit_active_anywhere("spirit_mist_stag"), "Mist Stag should spawn in Awakening era")
 	svc.queue_free()
 
+func test_stillness_spirit_pacing_allows_small_unhoused_buffer() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	grid.place_tile(Vector2i.ZERO, BiomeType.Value.MEADOW)
+	var island_id: String = str(grid.get_island_id(Vector2i.ZERO))
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._current_era = SatoriIds.ERA_STILLNESS
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
+	fox.island_id = island_id
+	var hare: SpiritInstance = SpiritInstance.create("spirit_hare", Vector2i.ZERO, Rect2i())
+	hare.island_id = island_id
+	svc._active_instances[svc._spirit_key("spirit_red_fox", island_id)] = fox
+	svc._active_instances[svc._spirit_key("spirit_hare", island_id)] = hare
+
+	assert_false(svc._can_spawn_under_era_pacing("spirit_tree_frog", island_id), "Stillness should pause a third spirit on an island with no houses")
+
+	var house: GardenTile = grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
+	house.metadata["is_building_complete"] = true
+	svc.mark_housing_dirty()
+	assert_true(svc._can_spawn_under_era_pacing("spirit_tree_frog", island_id), "One completed house should make room for the third Stillness spirit")
+	svc.queue_free()
+
+func test_flow_spirit_pacing_is_open() -> void:
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._current_era = SatoriIds.ERA_FLOW
+	for i: int in range(8):
+		var instance: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(i, 0), Rect2i())
+		instance.island_id = "island_a"
+		svc._active_instances["island_a|spirit_%d" % i] = instance
+	assert_true(svc._can_spawn_under_era_pacing("spirit_tree_frog", "island_a"), "Flow era should keep open spawn behavior")
+	svc.queue_free()
+
 func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 	var svc: SpiritService = _make_service()
 	add_child(svc)
@@ -225,6 +260,31 @@ func test_housing_snapshot_reports_housed_and_unhoused_counts() -> void:
 	var snapshot: Dictionary = svc.get_housing_snapshot()
 	assert_eq(int(snapshot.get("housed_count", -1)), 2)
 	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
+	svc.queue_free()
+
+func test_housing_assignment_is_cached_until_marked_dirty() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var house: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.MEADOW)
+	house.metadata["is_building_complete"] = true
+	grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var island_id: String = str(grid.get_island_id(Vector2i(1, 0)))
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 0), Rect2i())
+	fox.island_id = island_id
+	svc._active_instances[svc._spirit_key("spirit_red_fox", island_id)] = fox
+
+	assert_true(svc.is_spirit_housed("spirit_red_fox", island_id))
+	var recomputes_after_first_lookup: int = svc.get_housing_recompute_count()
+	assert_true(svc.is_spirit_housed("spirit_red_fox", island_id))
+	svc.get_housing_snapshot()
+	assert_eq(svc.get_housing_recompute_count(), recomputes_after_first_lookup)
+
+	svc.mark_housing_dirty()
+	svc.get_housing_snapshot()
+	assert_eq(svc.get_housing_recompute_count(), recomputes_after_first_lookup + 1)
 	svc.queue_free()
 
 func test_housing_does_not_use_houses_from_other_islands() -> void:

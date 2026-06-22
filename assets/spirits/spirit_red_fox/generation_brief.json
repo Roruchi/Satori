@@ -1,0 +1,64 @@
+{
+  "mode": "built-in image_gen",
+  "entity_id": "spirit_red_fox",
+  "camera": "true high top-down game sprite, not isometric",
+  "background_policy": "generated on #00ff00 chroma-key, locally converted to alpha",
+  "post_processing": "per-row sprite detection, alpha cleanup, 64x64 normalization",
+  "detection_log": [
+    "idle_down: detected 4/4",
+    "idle_left: detected 4/4",
+    "idle_right: detected 4/4",
+    "idle_up: detected 4/4",
+    "walk_down: detected 6/6",
+    "walk_left: detected 6/6",
+    "walk_right: detected 6/6",
+    "walk_up: detected 6/6",
+    "sleep_down: detected 4/4",
+    "sleep_left: detected 4/4",
+    "sleep_right: detected 4/4",
+    "sleep_up: detected 4/4"
+  ],
+  "animations": [
+    {
+      "name": "idle",
+      "rows": [
+        "down",
+        "left",
+        "right",
+        "up"
+      ],
+      "columns": 4,
+      "fps": 6.0
+    },
+    {
+      "name": "walk",
+      "rows": [
+        "down",
+        "left",
+        "right",
+        "up"
+      ],
+      "columns": 6,
+      "fps": 10.0
+    },
+    {
+      "name": "sleep",
+      "rows": [
+        "down",
+        "left",
+        "right",
+        "up"
+      ],
+      "columns": 4,
+      "fps": 5.0
+    }
+  ],
+  "style": "hand-painted pixel-art-inspired red fox spirit with amber aura",
+  "constraints": [
+    "no text",
+    "no watermark",
+    "no UI",
+    "same character identity",
+    "centered fixed cells"
+  ]
+}

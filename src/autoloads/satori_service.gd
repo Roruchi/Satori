@@ -23,6 +23,7 @@ const GUIDANCE_LANTERN_PACIFIED_MAX: int = 3
 const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
 const HOUSED_GAIN_INTERVAL_SECONDS: float = 60.0
 const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 30.0
+const STILLNESS_UNHOUSED_LOSS_INTERVAL_SECONDS: float = 120.0
 const DISCOVERY_CAP_PER_UNIQUE: int = 50
 
 var _conditions: Array[SatoriConditionSet] = []
@@ -240,10 +241,11 @@ func process_minute_tick(snapshot_override: Dictionary = {}) -> Dictionary:
 	var snapshot: Dictionary = snapshot_override if not snapshot_override.is_empty() else _snapshot_from_services()
 	var housed_count: int = int(snapshot.get("housed_count", 0))
 	var unhoused_count: int = int(snapshot.get("unhoused_count", 0))
+	var unhoused_loss_interval: float = _unhoused_loss_interval_for_current_era()
 	var base_delta: float = (
 		float(housed_count) * (TICK_INTERVAL_SECONDS / HOUSED_GAIN_INTERVAL_SECONDS)
 	) - (
-		float(unhoused_count) * (TICK_INTERVAL_SECONDS / UNHOUSED_LOSS_INTERVAL_SECONDS)
+		float(unhoused_count) * (TICK_INTERVAL_SECONDS / unhoused_loss_interval)
 	)
 	var modifier_delta: float = _modifier_delta_from_structures(snapshot) * (TICK_INTERVAL_SECONDS / 60.0)
 	_fractional_satori_delta += base_delta + modifier_delta
@@ -262,6 +264,11 @@ func process_minute_tick(snapshot_override: Dictionary = {}) -> Dictionary:
 		"new_satori": _current_satori,
 		"new_era": _current_era,
 	}
+
+func _unhoused_loss_interval_for_current_era() -> float:
+	if _current_era == SatoriIdsScript.ERA_STILLNESS:
+		return STILLNESS_UNHOUSED_LOSS_INTERVAL_SECONDS
+	return UNHOUSED_LOSS_INTERVAL_SECONDS
 
 func _modifier_delta_from_structures(snapshot: Dictionary) -> int:
 	var delta: int = 0

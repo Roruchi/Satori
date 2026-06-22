@@ -4,12 +4,17 @@ extends Node2D
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
 const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacementSession.gd")
+const _HOUSE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/house/frames/idle/down/frame_0000.png")
+const _ORIGIN_SHRINE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/origin_shrine/frames/idle/down/frame_0000.png")
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
 
 ## Depth of the 2.5D voxel side-face in world units (appears as ~7px on screen at zoom=2).
 const VOXEL_DEPTH: float = 3.5
+
+const _HOUSE_STRUCTURE_DRAW_SIZE: float = 32.0
+const _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE: float = 34.0
 
 ## Number of background stars.
 const _STAR_COUNT: int = 150
@@ -214,6 +219,7 @@ func _draw() -> void:
 			build_icons_to_draw.append({
 				"coord": coord,
 				"biome": tile.biome,
+				"structure_id": structure_discovery_id,
 				"under_construction": is_build_block,
 				"completed": is_completed_building or is_built_structure,
 				"is_origin_shrine": bool(tile.metadata.get("is_origin_shrine", false)),
@@ -247,6 +253,7 @@ func _draw() -> void:
 		_draw_build_block_icon(
 			icon_data.get("coord", Vector2i.ZERO),
 			int(icon_data.get("biome", 0)),
+			str(icon_data.get("structure_id", "")),
 			bool(icon_data.get("under_construction", false)),
 			bool(icon_data.get("completed", false)),
 			bool(icon_data.get("is_origin_shrine", false)),
@@ -256,8 +263,6 @@ func _draw() -> void:
 
 	# 4. Shrine build/interact status overlays.
 	_draw_shrine_status_overlays()
-
-	draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
 
 	# 5. Animations
 	if _mix_timer > 0.0:
@@ -530,8 +535,15 @@ func _draw_build_progress_overlays() -> void:
 		var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 		_draw_seed_overlay_text(center + Vector2(-18.0, -18.0), "Build %ds" % remaining, 10, Color(0.96, 0.90, 0.74, 0.92))
 
-func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: bool, completed: bool, is_origin_shrine: bool = false, is_water_dropoff: bool = false, is_wayfarer_torii: bool = false) -> void:
+func _draw_build_block_icon(coord: Vector2i, biome: int, structure_id: String, under_construction: bool, completed: bool, is_origin_shrine: bool = false, is_water_dropoff: bool = false, is_wayfarer_torii: bool = false) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	if completed:
+		if is_origin_shrine:
+			_draw_structure_texture(center, _ORIGIN_SHRINE_STRUCTURE_TEXTURE, _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE)
+			return
+		if not is_water_dropoff and not is_wayfarer_torii and _should_draw_house_structure_sprite(structure_id):
+			_draw_structure_texture(center, _HOUSE_STRUCTURE_TEXTURE, _HOUSE_STRUCTURE_DRAW_SIZE)
+			return
 	var palette: Dictionary = _building_palette_for_biome(biome)
 	var roof_col: Color = Color(palette.get("roof", Color(0.60, 0.34, 0.20, 0.92)))
 	var wall_col: Color = Color(palette.get("wall", Color(0.82, 0.75, 0.62, 0.88)))
@@ -584,6 +596,18 @@ func _draw_build_block_icon(coord: Vector2i, biome: int, under_construction: boo
 		draw_circle(drop_center, 5.6, Color(0.10, 0.20, 0.32, 0.80))
 		draw_circle(drop_center + Vector2(0.0, -1.2), 2.8, Color(0.70, 0.90, 1.0, 0.95))
 		draw_arc(drop_center, 4.9, 0.0, TAU, 20, Color(0.80, 0.95, 1.0, 0.92), 1.4)
+
+func _should_draw_house_structure_sprite(structure_id: String) -> bool:
+	if structure_id.is_empty():
+		return true
+	return structure_id == "building_house"
+
+func _draw_structure_texture(center: Vector2, texture: Texture2D, draw_size: float) -> void:
+	if texture == null:
+		return
+	var size: Vector2 = Vector2(draw_size, draw_size)
+	var top_left: Vector2 = center - Vector2(size.x * 0.5, size.y * 0.68)
+	draw_texture_rect(texture, Rect2(top_left, size), false)
 
 func _building_palette_for_biome(biome: int) -> Dictionary:
 	match biome:

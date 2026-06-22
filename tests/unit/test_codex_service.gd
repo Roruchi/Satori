@@ -28,3 +28,26 @@ func test_ku_guidance_switches_to_discovered_after_mark_discovered() -> void:
 	assert_eq(codex.get_ku_guidance_state(), &"discovered")
 	assert_eq(codex.is_discovered(KU_GUIDANCE_ENTRY_ID), true)
 	codex.queue_free()
+
+func test_structure_crafting_recipes_are_registered_in_codex() -> void:
+	var codex: CodexServiceNode = CodexServiceNode.new()
+	add_child(codex)
+	codex._ready()
+	var entries: Array[CodexEntry] = codex.get_entries_by_category(CodexEntry.Category.STRUCTURE)
+	var by_id: Dictionary = {}
+	for entry: CodexEntry in entries:
+		by_id[entry.entry_id] = entry
+
+	var expected_recipes: Dictionary = {
+		&"disc_building_house": "Chi + Chi + Fu",
+		&"disc_building_granary": "Sui + Sui + Chi",
+		&"disc_building_watchtower": "Fu + Fu + Chi",
+		&"disc_building_pavilion": "Fu + Fu + Sui",
+		&"disc_building_forge": "Ka + Ka + Chi",
+	}
+	for entry_id: StringName in expected_recipes.keys():
+		assert_true(by_id.has(entry_id), "Codex missing structure recipe entry: %s" % entry_id)
+		var entry: CodexEntry = by_id[entry_id] as CodexEntry
+		assert_true(entry.hint_text.contains(str(expected_recipes[entry_id])), "Hint should show recipe for %s" % entry_id)
+		assert_true(entry.full_description.contains(str(expected_recipes[entry_id])), "Full entry should show recipe for %s" % entry_id)
+	codex.queue_free()

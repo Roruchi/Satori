@@ -16,6 +16,7 @@ const BTN_TEXT := Color(0.19, 0.13, 0.08, 1.0)
 @onready var _volume_slider: HSlider = $Root/Center/Panel/VBox/VolumeRow/VolumeSlider
 @onready var _mute_check: CheckButton = $Root/Center/Panel/VBox/MuteRow/MuteCheck
 @onready var _growth_check: CheckButton = $Root/Center/Panel/VBox/GrowthRow/GrowthCheck
+@onready var _debug_check: CheckButton = $Root/Center/Panel/VBox/DebugRow/DebugCheck
 @onready var _close_btn: Button = $Root/Center/Panel/VBox/CloseButton
 
 func _ready() -> void:
@@ -24,6 +25,7 @@ func _ready() -> void:
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	_mute_check.toggled.connect(_on_mute_toggled)
 	_growth_check.toggled.connect(_on_growth_toggled)
+	_debug_check.toggled.connect(_on_debug_toggled)
 	_close_btn.pressed.connect(_on_close)
 
 func _sync_from_settings() -> void:
@@ -40,10 +42,14 @@ func _sync_from_settings() -> void:
 			_growth_check.button_pressed = float(speed_mult) > 1.0
 		elif speed_mult is int:
 			_growth_check.button_pressed = int(speed_mult) > 1
+		var debug_enabled: Variant = gs.get("debug_info_enabled")
+		if debug_enabled is bool:
+			_debug_check.button_pressed = bool(debug_enabled)
 
 func show_menu() -> void:
 	_sync_from_settings()
 	_growth_check.text = "Growth Speedup (x8)"
+	_debug_check.text = ""
 	visible = true
 
 func _on_volume_changed(value: float) -> void:
@@ -60,6 +66,11 @@ func _on_growth_toggled(pressed: bool) -> void:
 	var gs: Node = get_node_or_null("/root/GardenSettings")
 	if gs != null and gs.has_method("set_growth_speed_multiplier"):
 		gs.set_growth_speed_multiplier(8.0 if pressed else 1.0)
+
+func _on_debug_toggled(pressed: bool) -> void:
+	var gs: Node = get_node_or_null("/root/GardenSettings")
+	if gs != null and gs.has_method("set_debug_info_enabled"):
+		gs.set_debug_info_enabled(pressed)
 
 func _on_close() -> void:
 	visible = false

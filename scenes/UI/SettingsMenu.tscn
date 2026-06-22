@@ -85,6 +85,17 @@ size_flags_horizontal = 3
 [node name="GrowthCheck" type="CheckButton" parent="Root/Center/Panel/VBox/GrowthRow"]
 layout_mode = 2
 
+[node name="DebugRow" type="HBoxContainer" parent="Root/Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="DebugLabel" type="Label" parent="Root/Center/Panel/VBox/DebugRow"]
+layout_mode = 2
+text = "Debug Info"
+size_flags_horizontal = 3
+
+[node name="DebugCheck" type="CheckButton" parent="Root/Center/Panel/VBox/DebugRow"]
+layout_mode = 2
+
 [node name="Sep2" type="HSeparator" parent="Root/Center/Panel/VBox"]
 layout_mode = 2
 

@@ -7,6 +7,11 @@ const SPIRIT_RADIUS: float = 8.0
 const HOUSED_LABEL_COLOR: Color = Color(1.0, 1.0, 1.0)
 const UNHOUSED_LABEL_COLOR: Color = Color(1.0, 0.35, 0.35)
 const HOUSING_COLOR_REFRESH_SECONDS: float = 0.5
+const SPRITE_FRAMES_PATH_TEMPLATE: String = "res://assets/spirits/%s/sprite_frames.tres"
+const SPRITE_SCALE: float = 0.62
+const SPRITE_Y_OFFSET: float = -4.0
+const PLACEHOLDER_LABEL_Y: float = -30.0
+const SPRITE_LABEL_Y: float = -48.0
 
 signal moved_to(spirit_id: String, coord: Vector2i)
 
@@ -23,6 +28,10 @@ var _label: Label
 var _preferred_biomes: Array[int] = []
 var _disliked_biomes: Array[int] = []
 var _housing_color_refresh_remaining: float = 0.0
+var _sprite: AnimatedSprite2D = null
+var _last_direction: String = "down"
+var _is_using_sprite_art: bool = false
+var _is_housed: bool = false
 
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
@@ -46,6 +55,7 @@ func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	var display_name: String = str(catalog_entry.get("display_name", spirit_id))
 	if _label != null:
 		_label.text = display_name
+		_load_sprite_art()
 		_update_housing_label_color(true)
 	var start_world: Vector2 = _coord_to_world(instance.spawn_coord)
 	position = start_world
@@ -56,16 +66,20 @@ func _ready() -> void:
 	_label = Label.new()
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_label.position = Vector2(-52.0, -30.0)
+	_label.position = Vector2(-52.0, PLACEHOLDER_LABEL_Y)
 	_label.size = Vector2(104.0, 22.0)
 	_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.9))
 	_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
 	_label.add_theme_constant_override("shadow_offset_x", 1)
 	_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(_label)
+	if not spirit_id.is_empty():
+		_load_sprite_art()
 	queue_redraw()
 
 func _draw() -> void:
+	if _is_using_sprite_art:
+		return
 	var outer_r: float = SPIRIT_RADIUS + 5.5
 	var inner_r: float = SPIRIT_RADIUS
 	var core_r: float = SPIRIT_RADIUS * 0.55
@@ -98,6 +112,7 @@ func _process(delta: float) -> void:
 		_housing_color_refresh_remaining -= delta
 		if _housing_color_refresh_remaining <= 0.0:
 			_update_housing_label_color()
+		_update_sprite_animation(false, Vector2.ZERO)
 		if _wait_time <= 0.0:
 			_pick_new_target()
 		return
@@ -106,6 +121,7 @@ func _process(delta: float) -> void:
 		_update_housing_label_color()
 	var diff: Vector2 = _target_world - position
 	if diff.length() < 0.1:
+		_update_sprite_animation(false, diff)
 		var coord: Vector2i = _world_to_coord(position)
 		if _is_disliked_coord(coord):
 			_pick_new_target()
@@ -113,14 +129,17 @@ func _process(delta: float) -> void:
 		moved_to.emit(spirit_id, coord)
 		_wait_time = randf_range(1.5, 4.0)
 		return
+	_update_sprite_animation(true, diff)
 	position += diff.normalized() * _speed * delta
 
 func _pick_new_target() -> void:
 	var effective_bounds: Rect2i = _get_effective_bounds()
 	if effective_bounds.size == Vector2i.ZERO:
+		_update_sprite_animation(false, Vector2.ZERO)
 		return
 	var candidates: Array[Vector2i] = _get_candidate_coords(effective_bounds)
 	if candidates.is_empty():
+		_update_sprite_animation(false, Vector2.ZERO)
 		return
 	var target_coord: Vector2i = candidates[randi() % candidates.size()]
 	_target_world = _coord_to_world(target_coord)
@@ -201,6 +220,63 @@ func update_bounds(new_bounds: Rect2i) -> void:
 func set_island_id(new_island_id: String) -> void:
 	_island_id = new_island_id
 
+func _load_sprite_art() -> void:
+	if spirit_id.is_empty():
+		return
+	var sprite_path: String = SPRITE_FRAMES_PATH_TEMPLATE % spirit_id
+	if not ResourceLoader.exists(sprite_path, "SpriteFrames"):
+		_set_sprite_art_enabled(false)
+		return
+	var resource: Resource = ResourceLoader.load(sprite_path, "SpriteFrames")
+	var frames: SpriteFrames = resource as SpriteFrames
+	if frames == null:
+		_set_sprite_art_enabled(false)
+		return
+	if _sprite == null:
+		_sprite = AnimatedSprite2D.new()
+		_sprite.name = "SpiritSprite"
+		_sprite.position = Vector2(0.0, SPRITE_Y_OFFSET)
+		_sprite.scale = Vector2.ONE * SPRITE_SCALE
+		add_child(_sprite)
+		move_child(_sprite, 0)
+	_sprite.sprite_frames = frames
+	_set_sprite_art_enabled(true)
+	_update_sprite_animation(false, Vector2.ZERO)
+
+func _set_sprite_art_enabled(enabled: bool) -> void:
+	_is_using_sprite_art = enabled
+	if _sprite != null:
+		_sprite.visible = enabled
+	if _label != null:
+		var label_y: float = SPRITE_LABEL_Y if enabled else PLACEHOLDER_LABEL_Y
+		_label.position = Vector2(_label.position.x, label_y)
+	queue_redraw()
+
+func _update_sprite_animation(is_moving: bool, move_delta: Vector2) -> void:
+	if not _is_using_sprite_art or _sprite == null or _sprite.sprite_frames == null:
+		return
+	if move_delta.length() > 0.01:
+		_last_direction = _direction_for_delta(move_delta)
+	var anim_prefix: String = "walk" if is_moving else "idle"
+	if not is_moving and _is_housed:
+		anim_prefix = "sleep"
+	var animation_name: String = "%s_%s" % [anim_prefix, _last_direction]
+	if not _sprite.sprite_frames.has_animation(animation_name):
+		animation_name = "idle_%s" % _last_direction
+	if not _sprite.sprite_frames.has_animation(animation_name):
+		animation_name = "idle_down"
+	if not _sprite.sprite_frames.has_animation(animation_name):
+		return
+	if _sprite.animation != animation_name:
+		_sprite.play(animation_name)
+	elif not _sprite.is_playing():
+		_sprite.play()
+
+func _direction_for_delta(move_delta: Vector2) -> String:
+	if absf(move_delta.x) > absf(move_delta.y):
+		return "right" if move_delta.x > 0.0 else "left"
+	return "down" if move_delta.y > 0.0 else "up"
+
 func _update_housing_label_color(force_refresh: bool = false) -> void:
 	if _label == null:
 		return
@@ -209,10 +285,11 @@ func _update_housing_label_color(force_refresh: bool = false) -> void:
 	_housing_color_refresh_remaining = HOUSING_COLOR_REFRESH_SECONDS
 	var spirit_service: Node = _resolve_spirit_service()
 	if spirit_service == null or not spirit_service.has_method("is_spirit_housed"):
+		_is_housed = false
 		_label.add_theme_color_override("font_color", HOUSED_LABEL_COLOR)
 		return
-	var is_housed: bool = bool(spirit_service.is_spirit_housed(spirit_id, _island_id))
-	_label.add_theme_color_override("font_color", HOUSED_LABEL_COLOR if is_housed else UNHOUSED_LABEL_COLOR)
+	_is_housed = bool(spirit_service.is_spirit_housed(spirit_id, _island_id))
+	_label.add_theme_color_override("font_color", HOUSED_LABEL_COLOR if _is_housed else UNHOUSED_LABEL_COLOR)
 
 func _resolve_spirit_service() -> Node:
 	var direct: Node = get_node_or_null("/root/SpiritService")

@@ -47,6 +47,8 @@ func _ready() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(func(_recipe: SeedRecipe) -> void: _refresh_from_pouch(true))
+	if alchemy != null and alchemy.has_signal("building_craft_resolved"):
+		alchemy.building_craft_resolved.connect(func(_tk: StringName, _oc: StringName, _fk: StringName, _g: String, _c: Array[int], _fd: bool) -> void: _refresh_from_pouch(true))
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(func() -> void: _refresh_from_pouch(true))

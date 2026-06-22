@@ -1,0 +1,18 @@
+{
+  "entity_id": "origin_shrine",
+  "frame_width": 128,
+  "frame_height": 128,
+  "directions": [
+    "down"
+  ],
+  "layout": "animation-major",
+  "source": "built-in image_gen output post-processed from chroma-key to alpha and centered into a 128x128 idle atlas",
+  "animations": [
+    {
+      "name": "idle",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ]
+}

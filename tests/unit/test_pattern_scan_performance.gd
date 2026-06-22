@@ -2,6 +2,21 @@ extends GutTest
 
 const GridMapScript = preload("res://src/grid/GridMap.gd")
 
+class CountingMatcher:
+	extends RefCounted
+	signal discovery_triggered(discovery_id: String, triggering_coords: Array[Vector2i])
+	signal discovery_blocked(discovery_id: String, triggering_coords: Array[Vector2i], reason: String)
+
+	var calls: int = 0
+	var registry: DiscoveryRegistry = DiscoveryRegistry.new()
+
+	func get_discovery_registry() -> DiscoveryRegistry:
+		return registry
+
+	func scan_and_emit(_grid: RefCounted) -> Array[DiscoverySignal]:
+		calls += 1
+		return []
+
 func _make_cluster_pattern(discovery_id: String, biome: int, threshold: int) -> PatternDefinition:
 	var pattern := PatternDefinition.new()
 	pattern.discovery_id = discovery_id
@@ -50,3 +65,22 @@ func test_1000_tile_scan_stays_under_budget_and_emits_dual_trigger_same_pass() -
 	assert_eq(events.size(), 3, "Two discoveries and one completion event are expected")
 	assert_eq(events[2], "completed", "Both discovery signals should emit during the scan pass before completion")
 	assert_lt(scheduler.get_last_scan_duration_ms(), 16.0, "1,000-tile scan should stay under 16ms budget")
+
+func test_bursty_scan_requests_coalesce_to_one_full_grid_scan() -> void:
+	var scheduler := PatternScanScheduler.new()
+	add_child(scheduler)
+	var matcher := CountingMatcher.new()
+	scheduler.set_matcher_for_testing(matcher)
+	var grid := GridMapScript.new()
+	grid.place_tile(Vector2i.ZERO, BiomeType.Value.MEADOW)
+	scheduler.set_grid_provider(func() -> RefCounted:
+		return grid
+	)
+
+	scheduler.enqueue_scan(Vector2i.ZERO)
+	scheduler.enqueue_scan(Vector2i(1, 0))
+	scheduler.enqueue_scan(Vector2i(2, 0))
+	await get_tree().process_frame
+
+	assert_eq(matcher.calls, 1, "Queued placement bursts should trigger one current-grid scan")
+	assert_eq(scheduler.get_queue_size(), 0)
