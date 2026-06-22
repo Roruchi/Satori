@@ -9,7 +9,7 @@ const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
-const MODE_TAB_TITLES: Array[String] = ["Plant", "Craft", "Interact", "Codex"]
+const MODE_TAB_TITLES: Array[String] = ["Place", "Craft", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
@@ -98,6 +98,10 @@ func _ready() -> void:
 	_codex_button.pressed.connect(func() -> void: _set_mode(Mode.CODEX))
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_tile_selector_hex = get_node_or_null("../TileSelector/TileSelectorHex")
+	if _tile_selector_hex != null and _tile_selector_hex.has_signal("building_selected"):
+		_tile_selector_hex.connect("building_selected", _on_building_item_selected)
+	if _pouch_display != null and _pouch_display.has_signal("building_item_selected"):
+		_pouch_display.building_item_selected.connect(_on_building_item_selected)
 	var settings: Node = get_node_or_null("/root/GardenSettings")
 	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
 		settings.growth_speed_multiplier_changed.connect(_on_growth_speed_multiplier_changed)
@@ -210,6 +214,12 @@ func _set_mode(next_mode: int) -> void:
 
 func is_plant_mode() -> bool:
 	return _mode == Mode.PLANT
+
+func _on_building_item_selected(type_key: StringName) -> void:
+	_set_mode(Mode.PLANT)
+	var placement_controller: Node = get_node_or_null("../PlacementController")
+	if placement_controller != null and placement_controller.has_method("start_building_placement"):
+		placement_controller.start_building_placement(type_key)
 
 func is_build_mode() -> bool:
 	# Build mode has been retired. Returns false for backward compatibility with

@@ -7,6 +7,8 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 
 ## Emitted when the player clicks a biome hex.
 signal biome_selected(biome: int)
+## Emitted when the player clicks a building inventory stack.
+signal building_selected(type_key: StringName)
 
 ## Hex circumradius in screen pixels.
 const _RADIUS: float = 30.0
@@ -23,11 +25,15 @@ const _BOTTOM_SAFE_GAP: float = 10.0
 const _LABEL_SIZE: int = 11
 
 var _selected: int = BiomeType.Value.STONE
+var _selected_entry_kind: StringName = &"plant_recipe"
+var _selected_building_type_key: StringName = &""
 var _hover_idx: int = -1
 var _centers: Array[Vector2] = []
+var _entry_kinds: Array[StringName] = []
 var _seed_biomes: Array[int] = []
 var _seed_labels: Array[String] = []
 var _seed_colors: Array[Color] = []
+var _building_type_keys: Array[StringName] = []
 var _bottom_bar: Control = null
 
 
@@ -55,7 +61,7 @@ func _on_viewport_resized() -> void:
 func _rebuild_centers() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var spacing: float = _RADIUS * 2.0 + _GAP
-	var item_count: int = maxi(1, _seed_biomes.size())
+	var item_count: int = maxi(1, _entry_kinds.size())
 	var total_w: float = spacing * float(maxi(0, item_count - 1))
 	var sx: float = vp.x * 0.5 - total_w * 0.5
 	var cy: float = vp.y - _RADIUS - _DEPTH - _BACKDROP_PAD_BOTTOM
@@ -68,28 +74,48 @@ func _rebuild_centers() -> void:
 
 
 func _refresh_from_pouch(emit_selection: bool) -> void:
+	_entry_kinds.clear()
 	_seed_biomes.clear()
 	_seed_labels.clear()
 	_seed_colors.clear()
+	_building_type_keys.clear()
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_method("get_pouch"):
 		var pouch: SeedPouch = growth.get_pouch()
 		if pouch != null:
 			for i: int in range(pouch.size()):
+				if pouch.get_entry_kind_at(i) == &"building_item":
+					var building_entry: BuildingInventoryEntry = pouch.get_building_at(i)
+					if building_entry == null or building_entry.count <= 0:
+						continue
+					_entry_kinds.append(&"building_item")
+					_seed_biomes.append(BiomeType.Value.NONE)
+					_seed_labels.append("%s x%d" % [_label_for_building(building_entry.type_key), building_entry.count])
+					_seed_colors.append(_color_for_building(building_entry.type_key))
+					_building_type_keys.append(building_entry.type_key)
+					continue
 				var recipe: SeedRecipe = pouch.get_at(i)
 				if recipe == null:
 					continue
 				var uses: int = pouch.get_uses_at(i)
+				_entry_kinds.append(&"plant_recipe")
 				_seed_biomes.append(recipe.produces_biome)
 				_seed_labels.append("%s x%d" % [_label_for_biome(recipe.produces_biome), uses])
 				_seed_colors.append(_color_for_biome(recipe.produces_biome))
-	if _seed_biomes.is_empty():
+				_building_type_keys.append(&"")
+	if _entry_kinds.is_empty():
 		_selected = BiomeType.Value.NONE
+		_selected_entry_kind = &"plant_recipe"
+		_selected_building_type_key = &""
 	else:
-		if not _seed_biomes.has(_selected):
-			_selected = _seed_biomes[0]
-			if emit_selection:
+		var selected_still_available: bool = _has_selected_entry()
+		if not selected_still_available:
+			_select_entry_at(0)
+			if emit_selection and _entry_kinds[0] == &"plant_recipe":
 				biome_selected.emit(_selected)
+		elif emit_selection and _selected_entry_kind == &"plant_recipe" and not _seed_biomes.has(_selected):
+			_selected = _seed_biomes[0]
+			biome_selected.emit(_selected)
 	_rebuild_centers()
 	queue_redraw()
 
@@ -97,14 +123,17 @@ func _refresh_from_pouch(emit_selection: bool) -> void:
 ## Programmatically select a biome without emitting biome_selected.
 func select(biome: int) -> void:
 	_selected = biome
+	_selected_entry_kind = &"plant_recipe"
+	_selected_building_type_key = &""
 	queue_redraw()
 
 
 func get_selected_biome() -> int:
-	if _selected != BiomeType.Value.NONE:
+	if _selected_entry_kind == &"plant_recipe" and _selected != BiomeType.Value.NONE:
 		return _selected
-	if not _seed_biomes.is_empty():
-		return _seed_biomes[0]
+	for biome: int in _seed_biomes:
+		if biome != BiomeType.Value.NONE:
+			return biome
 	return BiomeType.Value.STONE
 
 
@@ -118,9 +147,12 @@ func _input(event: InputEvent) -> void:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 			var idx: int = _hit_test(mb.position)
-			if idx >= 0 and idx < _seed_biomes.size():
-				_selected = _seed_biomes[idx]
-				biome_selected.emit(_selected)
+			if idx >= 0 and idx < _entry_kinds.size():
+				_select_entry_at(idx)
+				if _entry_kinds[idx] == &"building_item":
+					building_selected.emit(_building_type_keys[idx])
+				else:
+					biome_selected.emit(_selected)
 				queue_redraw()
 				get_viewport().set_input_as_handled()
 
@@ -143,7 +175,7 @@ func _draw() -> void:
 	var pad_x: float = 18.0
 	var pad_top: float = _BACKDROP_PAD_TOP
 	var pad_bot: float = _BACKDROP_PAD_BOTTOM   # room for labels
-	var item_count: int = maxi(1, _seed_biomes.size())
+	var item_count: int = maxi(1, _entry_kinds.size())
 	var bw: float = spacing * float(maxi(0, item_count - 1)) + _RADIUS * 2.0 + pad_x * 2.0
 	var bh: float = _RADIUS * 2.0 + _DEPTH + pad_top + pad_bot
 	var bx: float = _centers[0].x - _RADIUS - pad_x
@@ -167,7 +199,7 @@ func _draw() -> void:
 		1.0
 	)
 
-	if _seed_biomes.is_empty():
+	if _entry_kinds.is_empty():
 		var font: Font = ThemeDB.fallback_font
 		var empty_text: String = "Craft placeables"
 		var text_size: Vector2 = font.get_string_size(empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
@@ -176,15 +208,14 @@ func _draw() -> void:
 		return
 
 	# --- Seed tiles ---
-	for i: int in range(_seed_biomes.size()):
+	for i: int in range(_entry_kinds.size()):
 		_draw_hex(i)
 
 
 func _draw_hex(idx: int) -> void:
 	var c: Vector2 = _centers[idx]
 	var base_col: Color = Color(_seed_colors[idx])
-	var biome: int = _seed_biomes[idx]
-	var is_sel: bool = _selected == biome
+	var is_sel: bool = _is_entry_selected(idx)
 	var is_hov: bool = _hover_idx == idx and not is_sel
 
 	var col: Color = base_col if is_sel else base_col.darkened(0.35)
@@ -280,6 +311,13 @@ static func _label_for_biome(biome: int) -> String:
 	return "Seed"
 
 
+static func _label_for_building(type_key: StringName) -> String:
+	var raw: String = str(type_key)
+	if raw.begins_with("building_"):
+		raw = raw.substr("building_".length())
+	return raw.capitalize()
+
+
 static func _color_for_biome(biome: int) -> Color:
 	match biome:
 		BiomeType.Value.STONE:
@@ -313,3 +351,40 @@ static func _color_for_biome(biome: int) -> Color:
 		BiomeType.Value.KU:
 			return Color(0.05, 0.02, 0.10)
 	return Color(0.502, 0.502, 0.502)
+
+
+static func _color_for_building(type_key: StringName) -> Color:
+	match type_key:
+		&"building_house":
+			return Color(0.62, 0.70, 0.58)
+	return Color(0.58, 0.64, 0.62)
+
+
+func _select_entry_at(idx: int) -> void:
+	if idx < 0 or idx >= _entry_kinds.size():
+		return
+	_selected_entry_kind = _entry_kinds[idx]
+	if _selected_entry_kind == &"building_item":
+		_selected_building_type_key = _building_type_keys[idx]
+	else:
+		_selected_building_type_key = &""
+		_selected = _seed_biomes[idx]
+
+
+func _has_selected_entry() -> bool:
+	if _entry_kinds.is_empty():
+		return false
+	for idx: int in range(_entry_kinds.size()):
+		if _is_entry_selected(idx):
+			return true
+	return false
+
+
+func _is_entry_selected(idx: int) -> bool:
+	if idx < 0 or idx >= _entry_kinds.size():
+		return false
+	if _entry_kinds[idx] != _selected_entry_kind:
+		return false
+	if _selected_entry_kind == &"building_item":
+		return _building_type_keys[idx] == _selected_building_type_key
+	return _seed_biomes[idx] == _selected
