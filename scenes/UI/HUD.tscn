@@ -37,39 +37,53 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 16.0
-offset_top = 16.0
+offset_top = 12.0
 offset_right = -16.0
-offset_bottom = 60.0
+offset_bottom = 88.0
 grow_horizontal = 2
+theme_override_constants/separation = 14
 
-[node name="SeedPouchDisplay" type="Label" parent="Root/TopBar"]
+[node name="InventoryStack" type="VBoxContainer" parent="Root/TopBar"]
+custom_minimum_size = Vector2(300, 64)
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="SeedPouchDisplay" type="Label" parent="Root/TopBar/InventoryStack"]
 layout_mode = 2
 script = ExtResource("5")
-text = "Place: 0"
+text = "Placeables: 0/8 | Empty"
+
+[node name="MaterialMeterLabel" type="Label" parent="Root/TopBar/InventoryStack"]
+layout_mode = 2
+text = "Materials: Living Wood x0"
 
 [node name="ElementMeterRow" type="HBoxContainer" parent="Root/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
+
+[node name="EssenceTitle" type="Label" parent="Root/TopBar/ElementMeterRow"]
+layout_mode = 2
+text = "Essence:"
 
 [node name="ChiMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Chi: 3/3"
+text = "Chi 3/3"
 
 [node name="SuiMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Sui: 3/3"
+text = "Sui 3/3"
 
 [node name="KaMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Ka: 3/3"
+text = "Ka 3/3"
 
 [node name="FuMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Fu: 3/3"
+text = "Fu 3/3"
 
 [node name="KuMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Ku: --"
+text = "Ku --"
 
 [node name="Spacer" type="Control" parent="Root/TopBar"]
 layout_mode = 2
@@ -80,13 +94,20 @@ visible = false
 layout_mode = 2
 text = "⚡ INSTANT"
 
-[node name="SatoriLabel" type="Label" parent="Root/TopBar"]
+[node name="StatusStack" type="VBoxContainer" parent="Root/TopBar"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 3
+
+[node name="SatoriLabel" type="Label" parent="Root/TopBar/StatusStack"]
 layout_mode = 2
 text = "Satori: 0/250"
+horizontal_alignment = 2
 
-[node name="EraLabel" type="Label" parent="Root/TopBar"]
+[node name="EraLabel" type="Label" parent="Root/TopBar/StatusStack"]
 layout_mode = 2
 text = "Era: Stillness"
+horizontal_alignment = 2
 
 [node name="SettingsButton" type="Button" parent="Root/TopBar"]
 custom_minimum_size = Vector2(44, 44)
@@ -100,9 +121,9 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -292.0
-offset_top = 66.0
+offset_top = 94.0
 offset_right = -12.0
-offset_bottom = 112.0
+offset_bottom = 140.0
 grow_horizontal = 0
 text = "FPS -- | 0.0 ms | Nodes --\nScan -- ms | Spirits -- | Housing --"
 horizontal_alignment = 2
@@ -153,7 +174,7 @@ text = "⬢\nPlace"
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "✦\nCraft"
+text = "✦\nRitual"
 
 [node name="InteractButton" type="Button" parent="Root/BottomBar"]
 custom_minimum_size = Vector2(0, 72)

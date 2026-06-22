@@ -160,3 +160,81 @@ func test_building_placement_session_cancel_preserves_inventory() -> void:
 
 	controller.queue_free()
 	_cleanup_context(ctx)
+
+func test_warm_hollow_on_meadow_resolves_to_meadow_dwelling() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var pouch: SeedPouch = growth.get_pouch()
+	var coord: Vector2i = Vector2i(120, 0)
+	game_state.place_tile_from_seed(coord, BiomeType.Value.MEADOW, false)
+	assert_true(pouch.add_building(&"form_warm_hollow", 1))
+
+	var controller: Node2D = Node2D.new()
+	controller.set_script(PlacementControllerScript)
+	add_child(controller)
+
+	controller.start_building_placement(&"form_warm_hollow")
+	var session: BuildingPlacementSession = controller.get_active_building_session()
+	assert_not_null(session)
+	session.update_anchor(coord, [coord], true, &"")
+	assert_true(controller.confirm_building_placement())
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	assert_eq(str(tile.metadata.get("structure_discovery_id", "")), "building_meadow_dwelling")
+	assert_eq(str(tile.metadata.get("placed_form_id", "")), "form_warm_hollow")
+	assert_eq(pouch.find_building_index(&"form_warm_hollow"), -1)
+
+	controller.queue_free()
+	_cleanup_context(ctx)
+
+func test_warm_hollow_on_fire_resolves_to_scorched_hollow() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var pouch: SeedPouch = growth.get_pouch()
+	var coord: Vector2i = Vector2i(121, 0)
+	game_state.place_tile_from_seed(coord, BiomeType.Value.EMBER_FIELD, false)
+	assert_true(pouch.add_building(&"form_warm_hollow", 1))
+
+	var controller: Node2D = Node2D.new()
+	controller.set_script(PlacementControllerScript)
+	add_child(controller)
+
+	controller.start_building_placement(&"form_warm_hollow")
+	var session: BuildingPlacementSession = controller.get_active_building_session()
+	assert_not_null(session)
+	session.update_anchor(coord, [coord], true, &"")
+	assert_true(controller.confirm_building_placement())
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	assert_eq(str(tile.metadata.get("structure_discovery_id", "")), "building_scorched_hollow")
+
+	controller.queue_free()
+	_cleanup_context(ctx)
+
+func test_warm_hollow_invalid_context_does_not_consume_inventory() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var pouch: SeedPouch = growth.get_pouch()
+	var coord: Vector2i = Vector2i(122, 0)
+	game_state.place_tile_from_seed(coord, BiomeType.Value.STONE, false)
+	assert_true(pouch.add_building(&"form_warm_hollow", 1))
+
+	var controller: Node2D = Node2D.new()
+	controller.set_script(PlacementControllerScript)
+	add_child(controller)
+
+	controller.start_building_placement(&"form_warm_hollow")
+	var session: BuildingPlacementSession = controller.get_active_building_session()
+	assert_not_null(session)
+	session.update_anchor(coord, [coord], true, &"")
+	assert_false(controller.confirm_building_placement())
+	assert_true(pouch.find_building_index(&"form_warm_hollow") >= 0)
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	assert_false(bool(tile.metadata.get("is_building_complete", false)))
+
+	controller.queue_free()
+	_cleanup_context(ctx)

@@ -4,37 +4,50 @@ extends PanelContainer
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
-const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
-const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
-const BuildingCraftAttemptResultScript = preload("res://src/seeds/BuildingCraftAttemptResult.gd")
+const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
 
-const _ELEMENT_COLORS: Dictionary = {
-	0: Color(0.62, 0.62, 0.62),      # CHI stone-grey
-	1: Color(0.129, 0.588, 0.953),   # SUI river-blue
-	2: Color(0.922, 0.42, 0.18),     # KA  ember-orange
-	3: Color(0.298, 0.686, 0.314),   # FU  meadow-green
-	4: Color(0.55, 0.42, 0.78),      # KU  void-purple
+const SLOT_COUNT: int = 3
+const EMPTY_KEY: String = ""
+const FORM_WARM_HOLLOW: StringName = &"form_warm_hollow"
+
+const _INPUT_COLORS: Dictionary = {
+	"essence:earth": Color(0.62, 0.62, 0.62),
+	"essence:water": Color(0.129, 0.588, 0.953),
+	"essence:fire": Color(0.922, 0.42, 0.18),
+	"essence:wind": Color(0.298, 0.686, 0.314),
+	"essence:ku": Color(0.55, 0.42, 0.78),
+	"material:living_wood": Color(0.56, 0.42, 0.25),
 }
 
-const _ELEMENT_BUTTON_TEXT: Dictionary = {
-	GodaiElementScript.Value.CHI: "Chi / Stone",
-	GodaiElementScript.Value.SUI: "Sui / River",
-	GodaiElementScript.Value.KA: "Ka / Ember",
-	GodaiElementScript.Value.FU: "Fu / Meadow",
-	GodaiElementScript.Value.KU: "Ku / Void",
+const _INPUT_LABELS: Dictionary = {
+	"essence:earth": "Earth Essence",
+	"essence:water": "Water Essence",
+	"essence:fire": "Fire Essence",
+	"essence:wind": "Wind Essence",
+	"essence:ku": "Ku Essence",
+	"material:living_wood": "Living Wood",
+}
+
+const _INPUT_SHORT_LABELS: Dictionary = {
+	"essence:earth": "Earth",
+	"essence:water": "Water",
+	"essence:fire": "Fire",
+	"essence:wind": "Wind",
+	"essence:ku": "Ku",
+	"material:living_wood": "Wood",
 }
 
 const _BIOME_SEED_NAMES: Dictionary = {
 	BiomeTypeScript.Value.STONE: "Stone Seed",
 	BiomeTypeScript.Value.RIVER: "River Seed",
-	BiomeTypeScript.Value.EMBER_FIELD: "Ember Seed",
+	BiomeTypeScript.Value.EMBER_FIELD: "Hearth Seed",
 	BiomeTypeScript.Value.MEADOW: "Meadow Seed",
 	BiomeTypeScript.Value.WETLANDS: "Wetlands Seed",
 	BiomeTypeScript.Value.BADLANDS: "Badlands Seed",
 	BiomeTypeScript.Value.WHISTLING_CANYONS: "Whistling Canyons Seed",
 	BiomeTypeScript.Value.PRISMATIC_TERRACES: "Prismatic Terraces Seed",
 	BiomeTypeScript.Value.FROSTLANDS: "Frostlands Seed",
-	BiomeTypeScript.Value.THE_ASHFALL: "Ashfall Seed",
+	BiomeTypeScript.Value.THE_ASHFALL: "Sungrass Seed",
 	BiomeTypeScript.Value.SACRED_STONE: "Sacred Stone Seed",
 	BiomeTypeScript.Value.MOONLIT_POOL: "Moonlit Pool Seed",
 	BiomeTypeScript.Value.EMBER_SHRINE: "Ember Shrine Seed",
@@ -43,91 +56,72 @@ const _BIOME_SEED_NAMES: Dictionary = {
 }
 
 const _FEEDBACK_MESSAGES: Dictionary = {
-	SeedCraftAttemptResultScript.FEEDBACK_SUCCESS: "Placeable added to place inventory.",
-	SeedCraftAttemptResultScript.FEEDBACK_EMPTY_INPUT: "Craft grid is empty.",
-	SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching seed recipe.",
-	SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU: "Ku is locked for this recipe.",
-	SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Place inventory is full.",
-	BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS: "Building added to place inventory.",
-	BuildingCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching building recipe.",
-	BuildingCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Place inventory is full.",
-	BuildingCraftAttemptResultScript.FEEDBACK_INSUFFICIENT_ESSENCE: "Insufficient essence.",
+	RitualAttemptResultScript.FEEDBACK_SUCCESS: "Ritual shaped a placeable.",
+	RitualAttemptResultScript.FEEDBACK_EMPTY_INPUT: "Choose ritual inputs.",
+	RitualAttemptResultScript.FEEDBACK_DUPLICATE_INPUT: "Each slot must be unique.",
+	RitualAttemptResultScript.FEEDBACK_MISSING_ESSENCE: "Add an essence to give the ritual intent.",
+	RitualAttemptResultScript.FEEDBACK_LOCKED_INPUT: "That input is not available yet.",
+	RitualAttemptResultScript.FEEDBACK_NO_MATCH: "No known form responds to those inputs.",
+	RitualAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Place inventory is full.",
+	RitualAttemptResultScript.FEEDBACK_CONTEXT_BLOCKED: "That form needs a valid place.",
 }
 
 @onready var _preview_label: Label = $VBox/Preview
 @onready var _pouch_status_label: Label = $VBox/PouchStatus
 @onready var _feedback_label: Label = $VBox/Feedback
 @onready var _slots_label: Label = $VBox/Slots
+@onready var _choice_prompt_label: Label = $VBox/ChoicePrompt
 @onready var _slot_buttons: Array[Button] = [
 	$VBox/Grid/Slot0,
 	$VBox/Grid/Slot1,
 	$VBox/Grid/Slot2,
-	$VBox/Grid/Slot3,
-	$VBox/Grid/Slot4,
-	$VBox/Grid/Slot5,
-	$VBox/Grid/Slot6,
-	$VBox/Grid/Slot7,
-	$VBox/Grid/Slot8,
 ]
 @onready var _confirm_button: Button = $VBox/Actions/ConfirmButton
 @onready var _clear_button: Button = $VBox/Actions/ClearButton
-@onready var _chi_button: Button = $VBox/Elements/ChiButton
-@onready var _sui_button: Button = $VBox/Elements/SuiButton
-@onready var _ka_button: Button = $VBox/Elements/KaButton
-@onready var _fu_button: Button = $VBox/Elements/FuButton
+@onready var _earth_button: Button = $VBox/Elements/EarthButton
+@onready var _water_button: Button = $VBox/Elements/WaterButton
+@onready var _fire_button: Button = $VBox/Elements/FireButton
+@onready var _wind_button: Button = $VBox/Elements/WindButton
 @onready var _ku_button: Button = $VBox/Elements/KuButton
+@onready var _living_wood_button: Button = $VBox/Materials/LivingWoodButton
 
-var _slot_tokens: Array[int] = []
-var _active_element: int = SeedCraftGridNormalizerScript.EMPTY_SLOT
+var _slot_keys: Array[String] = []
+var _selected_slot_index: int = 0
 var _last_feedback: String = ""
 
 func _ready() -> void:
-	for _i: int in range(9):
-		_slot_tokens.append(SeedCraftGridNormalizerScript.EMPTY_SLOT)
+	for _i: int in range(SLOT_COUNT):
+		_slot_keys.append(EMPTY_KEY)
 	for i: int in range(_slot_buttons.size()):
 		var button: Button = _slot_buttons[i]
 		button.pressed.connect(func() -> void: _on_slot_pressed(i))
-	_chi_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.CHI))
-	_sui_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.SUI))
-	_ka_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.KA))
-	_fu_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.FU))
-	_ku_button.pressed.connect(func() -> void: _on_element_tapped(GodaiElementScript.Value.KU))
+	_earth_button.pressed.connect(func() -> void: _on_input_tapped("essence:earth"))
+	_water_button.pressed.connect(func() -> void: _on_input_tapped("essence:water"))
+	_fire_button.pressed.connect(func() -> void: _on_input_tapped("essence:fire"))
+	_wind_button.pressed.connect(func() -> void: _on_input_tapped("essence:wind"))
+	_ku_button.pressed.connect(func() -> void: _on_input_tapped("essence:ku"))
+	_living_wood_button.pressed.connect(func() -> void: _on_input_tapped("material:living_wood"))
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_clear_button.pressed.connect(_on_clear_pressed)
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy != null and alchemy.has_signal("element_unlocked"):
-		alchemy.element_unlocked.connect(_on_element_unlocked)
+		alchemy.element_unlocked.connect(func(_element_id: int) -> void: _update_ui())
 	if alchemy != null and alchemy.has_signal("element_charge_changed"):
-		alchemy.element_charge_changed.connect(_on_element_charge_changed)
+		alchemy.element_charge_changed.connect(func(_element_id: int, _charge: int) -> void: _update_ui())
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(_on_seed_added_to_pouch)
-	if alchemy != null and alchemy.has_signal("building_craft_resolved"):
-		alchemy.building_craft_resolved.connect(_on_building_craft_resolved)
+	if alchemy != null and alchemy.has_signal("ritual_attempt_resolved"):
+		alchemy.ritual_attempt_resolved.connect(func(_outcome: StringName, _feedback_key: StringName, _guidance: String, _ritual_id: StringName, _result_kind: StringName, _result_id: StringName) -> void: _update_ui())
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
-	_apply_element_button_labels()
 	_apply_panel_style()
-	_apply_button_styles()
 	_update_ui()
-
-func _apply_element_button_labels() -> void:
-	var btn_map: Dictionary = {
-		GodaiElementScript.Value.CHI: _chi_button,
-		GodaiElementScript.Value.SUI: _sui_button,
-		GodaiElementScript.Value.KA: _ka_button,
-		GodaiElementScript.Value.FU: _fu_button,
-		GodaiElementScript.Value.KU: _ku_button,
-	}
-	for element: int in btn_map:
-		var btn: Button = btn_map[element] as Button
-		if btn != null:
-			btn.text = str(_ELEMENT_BUTTON_TEXT.get(element, "?"))
 
 func _apply_panel_style() -> void:
 	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.05, 0.04, 0.11, 0.90)
-	bg.border_color = Color(0.30, 0.26, 0.50, 0.75)
+	bg.bg_color = Color(0.05, 0.04, 0.11, 0.92)
+	bg.border_color = Color(0.36, 0.32, 0.54, 0.78)
 	bg.border_width_left = 1
 	bg.border_width_right = 1
 	bg.border_width_top = 1
@@ -141,293 +135,296 @@ func _apply_panel_style() -> void:
 	bg.content_margin_top = 10.0
 	bg.content_margin_bottom = 10.0
 	add_theme_stylebox_override("panel", bg)
-	_preview_label.add_theme_color_override("font_color", Color(0.96, 0.92, 0.80))
-	_pouch_status_label.add_theme_color_override("font_color", Color(0.76, 0.84, 0.92))
-	_feedback_label.add_theme_color_override("font_color", Color(0.86, 0.95, 0.78))
-
-func _apply_button_styles() -> void:
-	var buttons: Array[Button] = [_chi_button, _sui_button, _ka_button, _fu_button, _ku_button]
-	var elements: Array[int] = [
-		GodaiElementScript.Value.CHI,
-		GodaiElementScript.Value.SUI,
-		GodaiElementScript.Value.KA,
-		GodaiElementScript.Value.FU,
-		GodaiElementScript.Value.KU,
-	]
-	for i: int in range(buttons.size()):
-		_style_element_button(buttons[i], elements[i], _active_element == elements[i])
-
-func _style_element_button(btn: Button, element: int, selected: bool) -> void:
-	var col: Color = Color(_ELEMENT_COLORS.get(element, Color.WHITE))
-	var normal_style := StyleBoxFlat.new()
-	normal_style.corner_radius_top_left = 4
-	normal_style.corner_radius_top_right = 4
-	normal_style.corner_radius_bottom_left = 4
-	normal_style.corner_radius_bottom_right = 4
-	var hover_style := StyleBoxFlat.new()
-	hover_style.corner_radius_top_left = 4
-	hover_style.corner_radius_top_right = 4
-	hover_style.corner_radius_bottom_left = 4
-	hover_style.corner_radius_bottom_right = 4
-	if selected:
-		normal_style.bg_color = col.darkened(0.10)
-		normal_style.border_color = Color.WHITE
-		normal_style.border_width_left = 3
-		normal_style.border_width_right = 3
-		normal_style.border_width_top = 3
-		normal_style.border_width_bottom = 3
-	else:
-		normal_style.bg_color = col.darkened(0.55)
-		normal_style.border_color = col.darkened(0.20)
-		normal_style.border_width_left = 2
-		normal_style.border_width_right = 2
-		normal_style.border_width_top = 2
-		normal_style.border_width_bottom = 2
-	hover_style.bg_color = col.darkened(0.30)
-	hover_style.border_color = col
-	hover_style.border_width_left = 2
-	hover_style.border_width_right = 2
-	hover_style.border_width_top = 2
-	hover_style.border_width_bottom = 2
-	btn.add_theme_stylebox_override("normal", normal_style)
-	btn.add_theme_stylebox_override("hover", hover_style)
-	btn.add_theme_color_override("font_color", Color.WHITE if selected else Color(0.82, 0.82, 0.82))
-	btn.add_theme_font_size_override("font_size", 13)
-
-func _on_element_unlocked(_element_id: int) -> void:
-	_update_ui()
+	_preview_label.add_theme_color_override("font_color", Color(0.98, 0.93, 0.78))
+	_preview_label.add_theme_font_size_override("font_size", 18)
+	_pouch_status_label.add_theme_color_override("font_color", Color(0.78, 0.86, 0.92))
+	_feedback_label.add_theme_color_override("font_color", Color(0.88, 0.96, 0.78))
+	_slots_label.add_theme_color_override("font_color", Color(0.82, 0.80, 0.90))
+	_choice_prompt_label.add_theme_color_override("font_color", Color(0.95, 0.91, 0.78))
+	_choice_prompt_label.add_theme_font_size_override("font_size", 14)
 
 func _on_seed_added_to_pouch(recipe: SeedRecipe) -> void:
 	if recipe != null:
-		_last_feedback = "Added %s to place inventory" % _recipe_display_name(recipe)
-	_update_ui()
-
-func _on_element_charge_changed(_element_id: int, _charge: int) -> void:
+		_last_feedback = "Shaped %s." % _recipe_display_name(recipe)
 	_update_ui()
 
 func _on_pouch_updated() -> void:
-	_last_feedback = ""
 	_update_ui()
 
-func _on_element_tapped(element_id: int) -> void:
-	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
-	if alchemy == null:
+func _on_input_tapped(input_key: String) -> void:
+	_ensure_selected_slot()
+	var definition: Dictionary = _definition_for_key(input_key)
+	if definition.is_empty():
 		return
-	if not alchemy.is_element_unlocked(element_id):
+	if not bool(definition.get("unlocked", false)) or int(definition.get("available_count", 0)) <= 0:
+		_last_feedback = _feedback_text_for_key(RitualAttemptResultScript.FEEDBACK_LOCKED_INPUT)
+		_update_ui()
 		return
-	if _active_element == element_id:
-		_active_element = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	if _slot_contains_key_elsewhere(input_key, _selected_slot_index):
+		_last_feedback = _feedback_text_for_key(RitualAttemptResultScript.FEEDBACK_DUPLICATE_INPUT)
+		_shake_button(_slot_buttons[_selected_slot_index])
 	else:
-		_active_element = element_id
+		_slot_keys[_selected_slot_index] = input_key
+		_last_feedback = ""
+		_advance_selected_slot()
 	_update_ui()
 
 func _on_slot_pressed(slot_index: int) -> void:
-	if slot_index < 0 or slot_index >= _slot_tokens.size():
+	if slot_index < 0 or slot_index >= _slot_keys.size():
 		return
-	if _active_element == SeedCraftGridNormalizerScript.EMPTY_SLOT:
-		if _slot_tokens[slot_index] != SeedCraftGridNormalizerScript.EMPTY_SLOT:
-			_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
-	else:
-		if _slot_tokens[slot_index] == _active_element:
-			_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
-		else:
-			_slot_tokens[slot_index] = _active_element
+	_selected_slot_index = slot_index
+	_last_feedback = ""
 	_update_ui()
 
 func _on_confirm_pressed() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
-	if alchemy == null:
+	if alchemy == null or not alchemy.has_method("attempt_ritual"):
 		return
-	var occupied_count: int = _count_occupied_slots()
-	if occupied_count >= 3 and alchemy.has_method("attempt_building_craft_from_grid"):
-		var building_result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(_slot_tokens)
-		if building_result.is_success():
-			for slot_index: int in building_result.consumed_slot_indices:
-				if slot_index >= 0 and slot_index < _slot_tokens.size():
-					_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
-			_last_feedback = _feedback_text_for_key(BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS)
-		else:
-			_last_feedback = _feedback_text_for_key(building_result.feedback_key)
-		_update_ui()
+	var result_variant: Variant = alchemy.attempt_ritual(_slot_keys)
+	if not (result_variant is RitualAttemptResultScript):
 		return
-	var result: SeedCraftAttemptResult = alchemy.attempt_seed_craft_from_grid(_slot_tokens)
+	var result: RitualAttemptResultScript = result_variant as RitualAttemptResultScript
 	if result.is_success():
-		for slot_index: int in result.consumed_slot_indices:
-			if slot_index >= 0 and slot_index < _slot_tokens.size():
-				_slot_tokens[slot_index] = SeedCraftGridNormalizerScript.EMPTY_SLOT
+		_clear_consumed_keys(result.consumed_input_keys)
+		_selected_slot_index = 0
 	_last_feedback = _feedback_text_for_result(result)
 	_update_ui()
 
 func _on_clear_pressed() -> void:
-	for i: int in range(_slot_tokens.size()):
-		_slot_tokens[i] = SeedCraftGridNormalizerScript.EMPTY_SLOT
-	_active_element = SeedCraftGridNormalizerScript.EMPTY_SLOT
+	for i: int in range(_slot_keys.size()):
+		_slot_keys[i] = EMPTY_KEY
+	_selected_slot_index = 0
+	_last_feedback = ""
 	_update_ui()
 
 func _update_ui() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
-	if alchemy == null:
-		return
-	_ku_button.disabled = not alchemy.is_element_unlocked(GodaiElementScript.Value.KU)
-	var btn_map: Dictionary = {
-		GodaiElementScript.Value.CHI: _chi_button,
-		GodaiElementScript.Value.SUI: _sui_button,
-		GodaiElementScript.Value.KA: _ka_button,
-		GodaiElementScript.Value.FU: _fu_button,
-		GodaiElementScript.Value.KU: _ku_button,
-	}
-	for element: int in btn_map:
-		var btn: Button = btn_map[element] as Button
-		var unlocked: bool = alchemy.is_element_unlocked(element)
-		var charge: int = alchemy.get_element_charge(element) if unlocked else 0
-		if btn != null:
-			btn.disabled = not unlocked or charge <= 0
-			btn.text = _format_element_button_text(element, charge, unlocked)
-		_style_element_button(btn, element, _active_element == element)
+	_ensure_selected_slot()
+	_update_input_buttons()
 	var occupied_count: int = _count_occupied_slots()
-	_slots_label.text = "Occupied slots: %d/9" % occupied_count
+	_slots_label.text = "Ritual slots: %d/%d" % [occupied_count, SLOT_COUNT]
+	_choice_prompt_label.text = _format_choice_prompt()
 	for i: int in range(_slot_buttons.size()):
 		_update_slot_button(i)
-	var recipe: SeedRecipe = alchemy.preview_phase1_seed_recipe_from_grid(_slot_tokens)
-	if occupied_count >= 3 and alchemy.has_method("preview_building_recipe_from_grid"):
-		var building_entry = alchemy.preview_building_recipe_from_grid(_slot_tokens)
-		if building_entry != null:
-			_preview_label.text = "Preview: Building (%s)" % str(building_entry.building_type_key).replace("building_", "").capitalize()
-		elif recipe == null:
-			_preview_label.text = "Preview: --"
-		else:
-			_preview_label.text = "Preview: %s" % _recipe_display_name(recipe)
-	elif recipe == null:
-		_preview_label.text = "Preview: --"
+	var preview_result: RitualAttemptResultScript = RitualAttemptResultScript.empty_input()
+	if alchemy != null and alchemy.has_method("preview_ritual"):
+		var preview_variant: Variant = alchemy.preview_ritual(_slot_keys)
+		if preview_variant is RitualAttemptResultScript:
+			preview_result = preview_variant as RitualAttemptResultScript
+	if preview_result.is_success():
+		_preview_label.text = "Preview: %s" % _result_display_name(preview_result)
 	else:
-		_preview_label.text = "Preview: %s" % _recipe_display_name(recipe)
-	var craft_elements: Array[int] = []
-	for token: int in _slot_tokens:
-		if token == SeedCraftGridNormalizerScript.EMPTY_SLOT:
-			continue
-		craft_elements.append(token)
-	var can_afford_selected: bool = craft_elements.is_empty() or alchemy.can_afford_mix(craft_elements)
-	var pouch: SeedPouch = alchemy.get_pouch()
-	var pouch_full: bool = pouch != null and pouch.is_full()
+		_preview_label.text = "Preview: --"
+	var pouch: SeedPouch = null
+	if alchemy != null and alchemy.has_method("get_pouch"):
+		var pouch_variant: Variant = alchemy.get_pouch()
+		if pouch_variant is SeedPouch:
+			pouch = pouch_variant as SeedPouch
 	if pouch == null:
-		_pouch_status_label.text = "Place: 0/0 slots | 0 uses"
+		_pouch_status_label.text = "Placeables: 0/0 | Empty"
 	else:
 		_pouch_status_label.text = _format_place_inventory_status(pouch)
-	if pouch_full:
-		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL)
-	elif not can_afford_selected and occupied_count > 0:
-		_feedback_label.text = "Insufficient essence"
-	elif not _last_feedback.is_empty():
+	if not _last_feedback.is_empty():
 		_feedback_label.text = _last_feedback
-	elif recipe != null and _recipe_has_locked_element(alchemy, recipe):
-		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU)
-	elif recipe != null:
-		_feedback_label.text = "Confirm to craft this placeable"
+	elif alchemy == null:
+		_feedback_label.text = "Ritual service unavailable."
 	elif occupied_count == 0:
-		_feedback_label.text = "Place 1 or 2 tokens in the grid"
+		_feedback_label.text = "Tap a slot, then choose an essence or material."
+	elif preview_result.is_success():
+		_feedback_label.text = "Confirm to shape %s." % _result_display_name(preview_result)
 	else:
-		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH)
-	_confirm_button.disabled = false
+		_feedback_label.text = _feedback_text_for_result(preview_result)
+	_confirm_button.disabled = occupied_count == 0
+
+func _update_input_buttons() -> void:
+	var buttons_by_key: Dictionary = {
+		"essence:earth": _earth_button,
+		"essence:water": _water_button,
+		"essence:fire": _fire_button,
+		"essence:wind": _wind_button,
+		"essence:ku": _ku_button,
+		"material:living_wood": _living_wood_button,
+	}
+	for key_variant: Variant in buttons_by_key.keys():
+		var key: String = str(key_variant)
+		var btn: Button = buttons_by_key[key] as Button
+		if btn == null:
+			continue
+		var definition: Dictionary = _definition_for_key(key)
+		var available: int = int(definition.get("available_count", 0))
+		var unlocked: bool = bool(definition.get("unlocked", false))
+		btn.disabled = not unlocked or available <= 0
+		btn.text = _format_input_button_text(key, available, unlocked)
+		_style_input_button(btn, key, _selected_slot_key() == key)
 
 func _update_slot_button(slot_index: int) -> void:
-	var token: int = _slot_tokens[slot_index]
+	var key: String = _slot_keys[slot_index]
 	var btn: Button = _slot_buttons[slot_index]
-	if token == SeedCraftGridNormalizerScript.EMPTY_SLOT:
-		btn.text = "+"
+	btn.custom_minimum_size = Vector2(104.0, 68.0)
+	btn.clip_text = true
+	var selected: bool = slot_index == _selected_slot_index
+	if key.is_empty():
+		btn.text = "Slot %d\nTap to choose" % (slot_index + 1)
 		var empty_style := StyleBoxFlat.new()
-		empty_style.bg_color = Color(0.12, 0.12, 0.16)
-		empty_style.border_color = Color(0.35, 0.35, 0.45)
-		empty_style.border_width_left = 1
-		empty_style.border_width_right = 1
-		empty_style.border_width_top = 1
-		empty_style.border_width_bottom = 1
+		empty_style.bg_color = Color(0.16, 0.14, 0.22) if selected else Color(0.12, 0.12, 0.16)
+		empty_style.border_color = Color(0.86, 0.76, 0.48) if selected else Color(0.37, 0.36, 0.48)
+		empty_style.border_width_left = 3 if selected else 1
+		empty_style.border_width_right = empty_style.border_width_left
+		empty_style.border_width_top = empty_style.border_width_left
+		empty_style.border_width_bottom = empty_style.border_width_left
 		empty_style.corner_radius_top_left = 6
 		empty_style.corner_radius_top_right = 6
 		empty_style.corner_radius_bottom_left = 6
 		empty_style.corner_radius_bottom_right = 6
 		btn.add_theme_stylebox_override("normal", empty_style)
 		btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
+		btn.add_theme_font_size_override("font_size", 13)
 		return
+	var col: Color = Color(_INPUT_COLORS.get(key, Color(0.45, 0.45, 0.45)))
 	var filled_style := StyleBoxFlat.new()
-	filled_style.bg_color = Color(_ELEMENT_COLORS.get(token, Color(0.45, 0.45, 0.45))).darkened(0.35)
-	filled_style.border_color = Color(_ELEMENT_COLORS.get(token, Color(0.65, 0.65, 0.65)))
-	filled_style.border_width_left = 2
-	filled_style.border_width_right = 2
-	filled_style.border_width_top = 2
-	filled_style.border_width_bottom = 2
+	filled_style.bg_color = col.darkened(0.24 if selected else 0.34)
+	filled_style.border_color = Color(0.96, 0.88, 0.58) if selected else col.lightened(0.12)
+	filled_style.border_width_left = 3 if selected else 2
+	filled_style.border_width_right = filled_style.border_width_left
+	filled_style.border_width_top = filled_style.border_width_left
+	filled_style.border_width_bottom = filled_style.border_width_left
 	filled_style.corner_radius_top_left = 6
 	filled_style.corner_radius_top_right = 6
 	filled_style.corner_radius_bottom_left = 6
 	filled_style.corner_radius_bottom_right = 6
 	btn.add_theme_stylebox_override("normal", filled_style)
 	btn.add_theme_color_override("font_color", Color.WHITE)
-	btn.text = _slot_token_short_name(token)
+	btn.add_theme_font_size_override("font_size", 15)
+	btn.text = "Slot %d\n%s" % [slot_index + 1, str(_INPUT_SHORT_LABELS.get(key, "?"))]
 
-func _slot_token_short_name(token: int) -> String:
-	match token:
-		GodaiElementScript.Value.CHI:
-			return "CHI"
-		GodaiElementScript.Value.SUI:
-			return "SUI"
-		GodaiElementScript.Value.KA:
-			return "KA"
-		GodaiElementScript.Value.FU:
-			return "FU"
-		GodaiElementScript.Value.KU:
-			return "KU"
-		_:
-			return "?"
+func _style_input_button(btn: Button, key: String, selected: bool) -> void:
+	var col: Color = Color(_INPUT_COLORS.get(key, Color.WHITE))
+	var normal_style := StyleBoxFlat.new()
+	normal_style.corner_radius_top_left = 4
+	normal_style.corner_radius_top_right = 4
+	normal_style.corner_radius_bottom_left = 4
+	normal_style.corner_radius_bottom_right = 4
+	normal_style.bg_color = col.darkened(0.12 if selected else 0.56)
+	normal_style.border_color = Color.WHITE if selected else col.darkened(0.20)
+	normal_style.border_width_left = 3 if selected else 2
+	normal_style.border_width_right = normal_style.border_width_left
+	normal_style.border_width_top = normal_style.border_width_left
+	normal_style.border_width_bottom = normal_style.border_width_left
+	var hover_style := normal_style.duplicate()
+	hover_style.bg_color = col.darkened(0.30)
+	hover_style.border_color = col.lightened(0.12)
+	btn.add_theme_stylebox_override("normal", normal_style)
+	btn.add_theme_stylebox_override("hover", hover_style)
+	btn.add_theme_stylebox_override("pressed", normal_style)
+	btn.add_theme_color_override("font_color", Color.WHITE if selected else Color(0.86, 0.86, 0.86))
+	btn.add_theme_font_size_override("font_size", 13)
+
+func _format_input_button_text(key: String, available: int, unlocked: bool) -> String:
+	var base: String = str(_INPUT_LABELS.get(key, "?"))
+	if not unlocked:
+		return "%s\nLocked" % base
+	if key.begins_with("essence:"):
+		return "%s\n%d/%d" % [base, available, KushoPoolScript.CAPACITY_PER_ELEMENT]
+	return "%s\nx%d" % [base, available]
+
+func _definition_for_key(input_key: String) -> Dictionary:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("get_ritual_input_definitions"):
+		return {}
+	var definitions_variant: Variant = alchemy.get_ritual_input_definitions()
+	if not (definitions_variant is Array):
+		return {}
+	var definitions: Array = definitions_variant as Array
+	for definition_variant: Variant in definitions:
+		if not (definition_variant is Dictionary):
+			continue
+		var definition: Dictionary = definition_variant as Dictionary
+		if str(definition.get("key", "")) == input_key:
+			return definition
+	return {}
+
+func _slot_contains_key_elsewhere(input_key: String, current_slot: int) -> bool:
+	for i: int in range(_slot_keys.size()):
+		if i == current_slot:
+			continue
+		if _slot_keys[i] == input_key:
+			return true
+	return false
+
+func _clear_consumed_keys(consumed_keys: Array[String]) -> void:
+	for consumed_key: String in consumed_keys:
+		for i: int in range(_slot_keys.size()):
+			if _slot_keys[i] == consumed_key:
+				_slot_keys[i] = EMPTY_KEY
+				break
+
+func _selected_slot_key() -> String:
+	if _selected_slot_index < 0 or _selected_slot_index >= _slot_keys.size():
+		return EMPTY_KEY
+	return _slot_keys[_selected_slot_index]
+
+func _ensure_selected_slot() -> void:
+	if _slot_keys.is_empty():
+		_selected_slot_index = 0
+		return
+	_selected_slot_index = clampi(_selected_slot_index, 0, _slot_keys.size() - 1)
+
+func _advance_selected_slot() -> void:
+	for offset: int in range(1, _slot_keys.size() + 1):
+		var next_index: int = (_selected_slot_index + offset) % _slot_keys.size()
+		if _slot_keys[next_index].is_empty():
+			_selected_slot_index = next_index
+			return
+
+func _format_choice_prompt() -> String:
+	var slot_number: int = _selected_slot_index + 1
+	var selected_key: String = _selected_slot_key()
+	if selected_key.is_empty():
+		return "Slot %d selected: choose essence or material" % slot_number
+	return "Slot %d selected: replace %s" % [slot_number, str(_INPUT_LABELS.get(selected_key, "?"))]
 
 func _count_occupied_slots() -> int:
 	var count: int = 0
-	for token: int in _slot_tokens:
-		if token != SeedCraftGridNormalizerScript.EMPTY_SLOT:
+	for key: String in _slot_keys:
+		if not key.is_empty():
 			count += 1
 	return count
 
-func _feedback_text_for_result(result: SeedCraftAttemptResult) -> String:
+func _feedback_text_for_result(result: RitualAttemptResultScript) -> String:
+	if result == null:
+		return _feedback_text_for_key(RitualAttemptResultScript.FEEDBACK_NO_MATCH)
 	var base_text: String = _feedback_text_for_key(result.feedback_key)
 	if result.guidance.is_empty():
 		return base_text
 	return "%s %s" % [base_text, result.guidance]
 
 func _feedback_text_for_key(feedback_key: StringName) -> String:
-	return str(_FEEDBACK_MESSAGES.get(feedback_key, "Craft attempt processed."))
+	return str(_FEEDBACK_MESSAGES.get(feedback_key, "Ritual resolved."))
 
-func _recipe_has_locked_element(alchemy: Node, recipe: SeedRecipe) -> bool:
-	if alchemy == null or recipe == null:
-		return false
-	for element: int in recipe.elements:
-		if not alchemy.is_element_unlocked(element):
-			return true
-	return false
+func _result_display_name(result: RitualAttemptResultScript) -> String:
+	if result == null:
+		return ""
+	if result.result_kind == &"seed":
+		return _recipe_display_name_by_id(result.result_id)
+	if result.result_id == FORM_WARM_HOLLOW:
+		return "Warm Hollow"
+	var raw: String = str(result.result_id)
+	return raw.replace("form_", "").replace("building_", "").capitalize()
 
-func _format_element_button_text(element: int, charge: int, unlocked: bool) -> String:
-	var base: String = str(_ELEMENT_BUTTON_TEXT.get(element, "?"))
-	if not unlocked:
-		return "%s\nLocked" % base
-	return "%s\n%d/%d" % [base, charge, KushoPoolScript.CAPACITY_PER_ELEMENT]
-
-func _shake_button_for_element(element_id: int) -> void:
-	var target: Button = null
-	match element_id:
-		GodaiElementScript.Value.CHI:
-			target = _chi_button
-		GodaiElementScript.Value.SUI:
-			target = _sui_button
-		GodaiElementScript.Value.KA:
-			target = _ka_button
-		GodaiElementScript.Value.FU:
-			target = _fu_button
-		GodaiElementScript.Value.KU:
-			target = _ku_button
-	if target == null:
-		return
-	var start_pos: Vector2 = target.position
-	var tween: Tween = create_tween()
-	tween.tween_property(target, "position", start_pos + Vector2(4.0, 0.0), 0.04)
-	tween.tween_property(target, "position", start_pos + Vector2(-4.0, 0.0), 0.04)
-	tween.tween_property(target, "position", start_pos, 0.04)
+func _recipe_display_name_by_id(recipe_id: StringName) -> String:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("get_registry"):
+		return str(recipe_id).replace("recipe_", "").capitalize()
+	var registry: SeedRecipeRegistry = null
+	var registry_variant: Variant = alchemy.get_registry()
+	if registry_variant is SeedRecipeRegistry:
+		registry = registry_variant as SeedRecipeRegistry
+	if registry == null:
+		return str(recipe_id).replace("recipe_", "").capitalize()
+	for recipe: SeedRecipe in registry.all_known_recipes():
+		if recipe != null and recipe.recipe_id == recipe_id:
+			return _recipe_display_name(recipe)
+	return str(recipe_id).replace("recipe_", "").capitalize()
 
 func _recipe_display_name(recipe: SeedRecipe) -> String:
 	if recipe == null:
@@ -436,29 +433,46 @@ func _recipe_display_name(recipe: SeedRecipe) -> String:
 
 func _format_place_inventory_status(pouch: SeedPouch) -> String:
 	if pouch == null:
-		return "Place: 0/0 slots | 0 uses"
+		return "Placeables: 0/0 | Empty"
 	if pouch.size() == 0:
-		return "Place: 0/%d slots | 0 uses" % pouch.capacity
-	var total_uses: int = pouch.total_uses()
-	var building_parts: Array[String] = []
+		return "Placeables: 0/%d | Empty" % pouch.capacity
+	var placeable_parts: Array[String] = []
 	for i: int in range(pouch.size()):
 		if pouch.get_entry_kind_at(i) == &"building_item":
 			var entry: BuildingInventoryEntry = pouch.get_building_at(i)
 			if entry != null:
-				building_parts.append("%s x%d" % [_building_display_name(entry.type_key), entry.count])
-	var prefix: String = "Place: %d/%d slots" % [pouch.size(), pouch.capacity]
-	if building_parts.is_empty():
-		return "%s | %d uses" % [prefix, total_uses]
-	if total_uses > 0:
-		return "%s | %d uses | %s" % [prefix, total_uses, ", ".join(building_parts)]
-	return "%s | %s" % [prefix, ", ".join(building_parts)]
+				placeable_parts.append("%s x%d" % [_building_display_name(entry.type_key), entry.count])
+		else:
+			var recipe: SeedRecipe = pouch.get_at(i)
+			var uses: int = pouch.get_uses_at(i)
+			if recipe != null and uses > 0:
+				placeable_parts.append("%s x%d" % [_recipe_display_name(recipe), uses])
+	var prefix: String = "Placeables: %d/%d" % [pouch.size(), pouch.capacity]
+	if placeable_parts.is_empty():
+		return "%s | Empty" % prefix
+	return "%s | %s" % [prefix, ", ".join(placeable_parts)]
 
 func _building_display_name(type_key: StringName) -> String:
-	var raw: String = str(type_key)
-	if raw.begins_with("building_"):
-		raw = raw.substr("building_".length())
-	return raw.capitalize()
+	match type_key:
+		FORM_WARM_HOLLOW:
+			return "Warm Hollow"
+		&"building_meadow_dwelling":
+			return "Meadow Dwelling"
+		&"building_scorched_hollow":
+			return "Scorched Hollow"
+		_:
+			var raw: String = str(type_key)
+			if raw.begins_with("building_"):
+				raw = raw.substr("building_".length())
+			if raw.begins_with("form_"):
+				raw = raw.substr("form_".length())
+			return raw.capitalize()
 
-func _on_building_craft_resolved(_building_type_key: StringName, _outcome: StringName, feedback_key: StringName, _guidance: String, _consumed: Array[int], _first_disc: bool) -> void:
-	_last_feedback = _feedback_text_for_key(feedback_key)
-	_update_ui()
+func _shake_button(target: Button) -> void:
+	if target == null:
+		return
+	var start_pos: Vector2 = target.position
+	var tween: Tween = create_tween()
+	tween.tween_property(target, "position", start_pos + Vector2(4.0, 0.0), 0.04)
+	tween.tween_property(target, "position", start_pos + Vector2(-4.0, 0.0), 0.04)
+	tween.tween_property(target, "position", start_pos, 0.04)

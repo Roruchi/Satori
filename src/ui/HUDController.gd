@@ -9,7 +9,7 @@ const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
-const MODE_TAB_TITLES: Array[String] = ["Place", "Craft", "Interact", "Codex"]
+const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
@@ -53,7 +53,8 @@ enum Mode {
 @onready var _mix_panel: SeedAlchemyPanel = $Root/Panels/SeedAlchemyPanel
 @onready var _codex_panel: CodexPanel = $Root/Panels/CodexPanel
 @onready var _instant_badge: Label = $Root/TopBar/InstantModeBadge
-@onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/SeedPouchDisplay
+@onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/InventoryStack/SeedPouchDisplay
+@onready var _material_meter_label: Label = $Root/TopBar/InventoryStack/MaterialMeterLabel
 @onready var _element_meter_row: HBoxContainer = $Root/TopBar/ElementMeterRow
 @onready var _chi_meter_label: Label = $Root/TopBar/ElementMeterRow/ChiMeterLabel
 @onready var _sui_meter_label: Label = $Root/TopBar/ElementMeterRow/SuiMeterLabel
@@ -62,8 +63,8 @@ enum Mode {
 @onready var _ku_meter_label: Label = $Root/TopBar/ElementMeterRow/KuMeterLabel
 @onready var _settings_button: Button = $Root/TopBar/SettingsButton
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
-@onready var _satori_label: Label = $Root/TopBar/SatoriLabel
-@onready var _era_label: Label = $Root/TopBar/EraLabel
+@onready var _satori_label: Label = $Root/TopBar/StatusStack/SatoriLabel
+@onready var _era_label: Label = $Root/TopBar/StatusStack/EraLabel
 @onready var _debug_info_label: Label = $Root/DebugInfoLabel
 
 var _mode: int = Mode.PLANT
@@ -137,7 +138,10 @@ func _ready() -> void:
 			alchemy_service.element_unlocked.connect(func(_element_id: int) -> void: _refresh_element_meters())
 		if alchemy_service.has_signal("shrine_charge_collected"):
 			alchemy_service.shrine_charge_collected.connect(func(_coord: Vector2i, _element_id: int, _amount: int) -> void: _refresh_element_meters())
+		if alchemy_service.has_signal("ritual_attempt_resolved"):
+			alchemy_service.ritual_attempt_resolved.connect(func(_outcome: StringName, _feedback_key: StringName, _guidance: String, _ritual_id: StringName, _result_kind: StringName, _result_id: StringName) -> void: _refresh_material_meter())
 	_refresh_element_meters()
+	_refresh_material_meter()
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("scan_metrics_updated"):
 		scan_service.scan_metrics_updated.connect(_on_scan_metrics_updated)
@@ -153,13 +157,30 @@ func _process(delta: float) -> void:
 	_refresh_debug_info(delta)
 
 func _layout_mix_panel() -> void:
+	var root_size: Vector2 = _root.size
+	if root_size.x <= 0.0 or root_size.y <= 0.0:
+		root_size = get_viewport().get_visible_rect().size
+	if root_size.x <= 0.0 or root_size.y <= 0.0:
+		call_deferred("_layout_mix_panel")
+		return
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
 	var panel_width: float = max(min_size.x, MIX_PANEL_MIN_WIDTH)
-	var panel_height: float = min_size.y
-	var panel_x: float = (_root.size.x - panel_width) * 0.5
-	var panel_y: float = _bottom_bar.position.y - panel_height - MIX_PANEL_GAP
-	panel_x = clamp(panel_x, MIX_PANEL_SCREEN_MARGIN, _root.size.x - panel_width - MIX_PANEL_SCREEN_MARGIN)
-	panel_y = clamp(panel_y, MIX_PANEL_SCREEN_MARGIN, _root.size.y - panel_height - MIX_PANEL_SCREEN_MARGIN)
+	var panel_height: float = max(min_size.y, _mix_panel.custom_minimum_size.y)
+	var bottom_y: float = _bottom_bar.position.y
+	if bottom_y <= 0.0:
+		bottom_y = root_size.y - 104.0
+	var panel_x: float = (root_size.x - panel_width) * 0.5
+	var panel_y: float = bottom_y - panel_height - MIX_PANEL_GAP
+	var max_panel_x: float = root_size.x - panel_width - MIX_PANEL_SCREEN_MARGIN
+	var max_panel_y: float = root_size.y - panel_height - MIX_PANEL_SCREEN_MARGIN
+	if max_panel_x < MIX_PANEL_SCREEN_MARGIN:
+		panel_x = maxf(0.0, panel_x)
+	else:
+		panel_x = clampf(panel_x, MIX_PANEL_SCREEN_MARGIN, max_panel_x)
+	if max_panel_y < MIX_PANEL_SCREEN_MARGIN:
+		panel_y = maxf(0.0, panel_y)
+	else:
+		panel_y = clampf(panel_y, MIX_PANEL_SCREEN_MARGIN, max_panel_y)
 	_mix_panel.position = Vector2(panel_x, panel_y)
 	_mix_panel.size = Vector2(panel_width, panel_height)
 
@@ -277,8 +298,17 @@ func _refresh_element_meters() -> void:
 func _format_element_meter_text(element: int, charge: int, unlocked: bool) -> String:
 	var label: String = str(_ELEMENT_METER_LABELS.get(element, "?"))
 	if not unlocked:
-		return "%s: --" % label
-	return "%s: %d/3" % [label, charge]
+		return "%s --" % label
+	return "%s %d/3" % [label, charge]
+
+func _refresh_material_meter() -> void:
+	if _material_meter_label == null:
+		return
+	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
+	var living_wood_count: int = 0
+	if alchemy_service != null and alchemy_service.has_method("get_material_count"):
+		living_wood_count = int(alchemy_service.get_material_count(&"living_wood"))
+	_material_meter_label.text = "Materials: Living Wood x%d" % living_wood_count
 
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode
@@ -289,6 +319,9 @@ func _set_mode(next_mode: int) -> void:
 	_mix_panel.visible = _mode == Mode.MIX
 	_codex_panel.visible = _mode == Mode.CODEX
 	_pouch_display.visible = _mode != Mode.CODEX
+	if _mode == Mode.MIX:
+		_layout_mix_panel()
+		call_deferred("_layout_mix_panel")
 	_apply_mode_tab_state(_plant_button, _mode == Mode.PLANT, 0)
 	_apply_mode_tab_state(_mix_button, _mode == Mode.MIX, 1)
 	_apply_mode_tab_state(_interact_button, _mode == Mode.INTERACT, 2)

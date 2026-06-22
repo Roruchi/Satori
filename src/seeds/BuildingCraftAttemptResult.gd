@@ -32,7 +32,7 @@ static func no_match() -> BuildingCraftAttemptResult:
 	var result: BuildingCraftAttemptResult = new()
 	result.outcome = OUTCOME_NO_MATCH
 	result.feedback_key = FEEDBACK_NO_MATCH
-	result.guidance = "Place 3 or more matching tokens in the grid."
+	result.guidance = "Use distinct ritual inputs to shape a known form."
 	return result
 
 static func inventory_full(type_key: StringName) -> BuildingCraftAttemptResult:

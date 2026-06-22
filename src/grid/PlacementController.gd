@@ -629,6 +629,9 @@ func confirm_building_placement() -> bool:
 		return false
 	var type_key: StringName = _building_session.building_type_key
 	var tiles: Array[Vector2i] = _building_session.footprint_tiles
+	var final_type_key: StringName = _resolve_placement_type_key(type_key, tiles)
+	if final_type_key == &"":
+		return false
 	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth_service == null or not growth_service.has_method("get_pouch"):
 		return false
@@ -647,7 +650,9 @@ func confirm_building_placement() -> bool:
 			var tile: GardenTile = GameState.grid.get_tile(tile_coord)
 			if tile != null:
 				tile.metadata["is_building_complete"] = true
-				tile.metadata["structure_discovery_id"] = str(type_key)
+				tile.metadata["structure_discovery_id"] = str(final_type_key)
+				if final_type_key != type_key:
+					tile.metadata["placed_form_id"] = str(type_key)
 	_notify_housing_dirty()
 	_building_session = null
 	var hud: Node = get_node_or_null("../HUD")
@@ -704,4 +709,26 @@ func _evaluate_footprint_validity(anchor: Vector2i, footprint: BuildingFootprint
 		var tile: GardenTile = GameState.grid.get_tile(tile_coord)
 		if tile != null and bool(tile.metadata.get("is_building_complete", false)):
 			return {"valid": false, "reason": StringName("occupied"), "tiles": tiles}
+		if tile != null and _building_session != null:
+			var form_type_key: StringName = _building_session.building_type_key
+			var resolved_key: StringName = _resolve_form_type_for_biome(form_type_key, tile.biome)
+			if resolved_key == &"":
+				return {"valid": false, "reason": StringName("context_blocked"), "tiles": tiles}
 	return {"valid": true, "reason": StringName(""), "tiles": tiles}
+
+func _resolve_placement_type_key(type_key: StringName, tiles: Array[Vector2i]) -> StringName:
+	if tiles.is_empty():
+		return &""
+	var tile: GardenTile = GameState.grid.get_tile(tiles[0])
+	if tile == null:
+		return &""
+	return _resolve_form_type_for_biome(type_key, tile.biome)
+
+func _resolve_form_type_for_biome(type_key: StringName, biome: int) -> StringName:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_method("resolve_form_placement"):
+		var resolved_variant: Variant = alchemy.resolve_form_placement(type_key, biome)
+		if resolved_variant is StringName:
+			return resolved_variant as StringName
+		return StringName(str(resolved_variant))
+	return type_key

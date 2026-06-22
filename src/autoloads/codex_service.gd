@@ -140,9 +140,9 @@ func _register_craftable_structure_entries() -> void:
 		_register_dynamic_entry(
 			discovery_id,
 			CodexEntryScript.Category.STRUCTURE,
-			"%s recipe: %s." % [building_name, recipe_text],
+			"%s ritual memory: %s." % [building_name, recipe_text],
 			building_name,
-			"Recipe: %s.\nCrafts a %s placeable structure." % [recipe_text, building_name]
+			"Ritual memory: %s.\nShapes a %s placeable structure." % [recipe_text, building_name]
 		)
 
 func _register_dynamic_entry(entry_id: StringName, category: int, hint: String, full_name: String, description: String) -> void:

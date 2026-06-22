@@ -391,7 +391,7 @@ func _draw_interact_hover_popover() -> void:
 		return
 	var lines: Array[String] = []
 	if is_house:
-		lines.append("Type: House (%s)" % _biome_label(tile.biome))
+		lines.append("Type: %s" % _structure_label_for_tile(tile))
 		var owner_label: String = "Owner: Unbound"
 		var spirit_service: Node = _resolve_spirit_service()
 		if spirit_service != null and spirit_service.has_method("get_house_owner_at_coord"):
@@ -417,6 +417,14 @@ func _structure_label_for_tile(tile: GardenTile) -> String:
 		return "Structure"
 	if bool(tile.metadata.get("is_origin_shrine", false)):
 		return "Origin Shrine"
+	var structure_id: String = str(tile.metadata.get("structure_discovery_id", ""))
+	match structure_id:
+		"building_meadow_dwelling":
+			return "Meadow Dwelling"
+		"building_scorched_hollow":
+			return "Scorched Hollow"
+		"building_house":
+			return "House (%s)" % _biome_label(tile.biome)
 	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
 	if not discovery_id.is_empty():
 		return _humanize_discovery_id(discovery_id)
@@ -600,7 +608,7 @@ func _draw_build_block_icon(coord: Vector2i, biome: int, structure_id: String, u
 func _should_draw_house_structure_sprite(structure_id: String) -> bool:
 	if structure_id.is_empty():
 		return true
-	return structure_id == "building_house"
+	return ["building_house", "building_meadow_dwelling"].has(structure_id)
 
 func _draw_structure_texture(center: Vector2, texture: Texture2D, draw_size: float) -> void:
 	if texture == null:

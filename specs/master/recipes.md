@@ -328,6 +328,8 @@ Design implication: Fox Den should not be the base Meadow house. Meadow Dwelling
 
 These are registered in `BuildingRecipeCatalog.gd`. They are current implementation unlockables, but their token patterns use duplicates and therefore conflict with the target ritual rule that no slot can duplicate another slot. Treat this table as migration input, not final ritual grammar.
 
+As of `022-ritual-menu-slots`, player-facing creation uses the ritual menu instead of accepting these duplicate-token patterns. The catalog remains available as migration/reference data, but duplicate-token building attempts do not produce inventory items through the playable ritual path.
+
 | `recipe_id` | Building | Current Tokens | Discovery Entry | Migration Note |
 |-------------|----------|----------------|-----------------|----------------|
 | `building_house` | House | CHI + CHI + FU | `disc_building_house` | replace with distinct ritual inputs |
@@ -335,6 +337,12 @@ These are registered in `BuildingRecipeCatalog.gd`. They are current implementat
 | `building_watchtower` | Watchtower | FU + FU + CHI | `disc_building_watchtower` | replace with distinct ritual inputs |
 | `building_pavilion` | Pavilion | FU + FU + SUI | `disc_building_pavilion` | replace with distinct ritual inputs |
 | `building_forge` | Forge | KA + KA + CHI | `disc_building_forge` | replace with distinct ritual inputs |
+
+### Current Ritual Form Recipes
+
+| `ritual_id` | Inputs | Produces | Inventory Key | Placement Outcome |
+|-------------|--------|----------|---------------|-------------------|
+| `ritual_warm_hollow` | Living Wood + Fire Essence | Warm Hollow | `form_warm_hollow` | Meadow -> `building_meadow_dwelling`; Ember/Hearth -> `building_scorched_hollow` |
 
 ### Current Discovery Unlocks
 

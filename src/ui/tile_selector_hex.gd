@@ -63,7 +63,7 @@ func _on_viewport_resized() -> void:
 func _rebuild_centers() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var spacing: float = _RADIUS * 2.0 + _GAP
-	var item_count: int = maxi(1, _entry_kinds.size())
+	var item_count: int = 3 if _entry_kinds.is_empty() else maxi(1, _entry_kinds.size())
 	var total_w: float = spacing * float(maxi(0, item_count - 1))
 	var sx: float = vp.x * 0.5 - total_w * 0.5
 	var cy: float = vp.y - _RADIUS - _DEPTH - _BACKDROP_PAD_BOTTOM
@@ -203,10 +203,15 @@ func _draw() -> void:
 
 	if _entry_kinds.is_empty():
 		var font: Font = ThemeDB.fallback_font
-		var empty_text: String = "Craft placeables"
-		var text_size: Vector2 = font.get_string_size(empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
-		var text_pos: Vector2 = Vector2(_centers[0].x - text_size.x * 0.5, _centers[0].y + 5.0)
-		draw_string(font, text_pos, empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.86, 0.86, 0.90))
+		var title_text: String = "No placeables yet"
+		var hint_text: String = "Open Ritual to shape one"
+		var title_size: Vector2 = font.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
+		var hint_size: Vector2 = font.get_string_size(hint_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12)
+		var center_x: float = bx + bw * 0.5
+		var title_pos: Vector2 = Vector2(center_x - title_size.x * 0.5, _centers[0].y - 2.0)
+		var hint_pos: Vector2 = Vector2(center_x - hint_size.x * 0.5, _centers[0].y + 17.0)
+		draw_string(font, title_pos, title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.96, 0.94, 0.88, 0.96))
+		draw_string(font, hint_pos, hint_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.78, 0.76, 0.84, 0.88))
 		return
 
 	for i: int in range(_entry_kinds.size()):
@@ -376,9 +381,18 @@ static func _label_for_biome(biome: int) -> String:
 
 
 static func _label_for_building(type_key: StringName) -> String:
+	match type_key:
+		&"form_warm_hollow":
+			return "Warm Hollow"
+		&"building_meadow_dwelling":
+			return "Meadow Dwelling"
+		&"building_scorched_hollow":
+			return "Scorched Hollow"
 	var raw: String = str(type_key)
 	if raw.begins_with("building_"):
 		raw = raw.substr("building_".length())
+	if raw.begins_with("form_"):
+		raw = raw.substr("form_".length())
 	return raw.capitalize()
 
 
@@ -419,6 +433,12 @@ static func _color_for_biome(biome: int) -> Color:
 
 static func _color_for_building(type_key: StringName) -> Color:
 	match type_key:
+		&"form_warm_hollow":
+			return Color(0.74, 0.52, 0.32)
+		&"building_meadow_dwelling":
+			return Color(0.54, 0.70, 0.48)
+		&"building_scorched_hollow":
+			return Color(0.82, 0.42, 0.24)
 		&"building_house":
 			return Color(0.62, 0.70, 0.58)
 	return Color(0.58, 0.64, 0.62)

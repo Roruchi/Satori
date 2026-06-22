@@ -60,7 +60,7 @@ func test_building_items_show_in_pouch_status() -> void:
 	await get_tree().process_frame
 	display.call("_refresh")
 
-	assert_eq(display.text, "Place: 1/8 slots | House x2")
+	assert_eq(display.text, "Placeables: 1/8 | House x2")
 	remove_child(display)
 	display.free()
 	if growth.get_parent() != null:
@@ -73,5 +73,5 @@ func test_building_items_show_in_craft_panel_pouch_status() -> void:
 
 	var panel: PanelContainer = PanelContainer.new()
 	panel.set_script(SeedAlchemyPanelScript)
-	assert_eq(panel.call("_format_place_inventory_status", pouch), "Place: 1/8 slots | House x2")
+	assert_eq(panel.call("_format_place_inventory_status", pouch), "Placeables: 1/8 | House x2")
 	panel.free()
