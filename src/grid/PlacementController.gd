@@ -638,6 +638,8 @@ func confirm_building_placement() -> bool:
 		return false
 	if not pouch.consume_building_at(inv_index, 1):
 		return false
+	if growth_service.has_method("notify_pouch_updated"):
+		growth_service.notify_pouch_updated()
 	for tile_coord: Vector2i in tiles:
 		if GameState.grid.has_tile(tile_coord):
 			var tile: GardenTile = GameState.grid.get_tile(tile_coord)

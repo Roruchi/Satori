@@ -207,9 +207,11 @@ func _draw() -> void:
 		draw_string(font, text_pos, empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.86, 0.86, 0.86, 0.90))
 		return
 
-	# --- Seed tiles ---
 	for i: int in range(_entry_kinds.size()):
-		_draw_hex(i)
+		if _entry_kinds[i] == &"building_item":
+			_draw_building_badge(i)
+		else:
+			_draw_hex(i)
 
 
 func _draw_hex(idx: int) -> void:
@@ -265,6 +267,66 @@ func _draw_hex(idx: int) -> void:
 	draw_string(font, lpos + Vector2(1.0, 1.0), label,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, Color(0.0, 0.0, 0.0, 0.55))
 	var text_col: Color = Color.WHITE if is_sel else Color(0.72, 0.72, 0.72, 0.85)
+	draw_string(font, lpos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, text_col)
+
+func _draw_building_badge(idx: int) -> void:
+	var c: Vector2 = _centers[idx]
+	var base_col: Color = Color(_seed_colors[idx])
+	var is_sel: bool = _is_entry_selected(idx)
+	var is_hov: bool = _hover_idx == idx and not is_sel
+	var col: Color = base_col if is_sel else base_col.darkened(0.22)
+	if is_hov:
+		col = base_col.darkened(0.08)
+
+	var r: float = _RADIUS
+	var pts: PackedVector2Array = PackedVector2Array([
+		c + Vector2(-r * 0.62, -r * 0.82),
+		c + Vector2(r * 0.62, -r * 0.82),
+		c + Vector2(r * 0.82, -r * 0.62),
+		c + Vector2(r * 0.82, r * 0.62),
+		c + Vector2(r * 0.62, r * 0.82),
+		c + Vector2(-r * 0.62, r * 0.82),
+		c + Vector2(-r * 0.82, r * 0.62),
+		c + Vector2(-r * 0.82, -r * 0.62),
+	])
+	var lowered: PackedVector2Array = PackedVector2Array()
+	for p: Vector2 in pts:
+		lowered.append(p + Vector2(0.0, _DEPTH))
+	for edge: int in [3, 4, 5]:
+		draw_colored_polygon(PackedVector2Array([
+			pts[edge],
+			pts[(edge + 1) % pts.size()],
+			lowered[(edge + 1) % pts.size()],
+			lowered[edge],
+		]), col.darkened(0.50))
+	draw_colored_polygon(pts, col)
+
+	var border: PackedVector2Array = PackedVector2Array(pts)
+	border.append(pts[0])
+	var border_col: Color = Color(0.96, 0.95, 0.86, 0.96) if is_sel else Color(0.78, 0.76, 0.68, 0.78)
+	draw_polyline(border, border_col, 2.5 if is_sel else 1.6)
+	draw_arc(c, _RADIUS + 3.5, 0.0, TAU, 24, Color(0.96, 0.95, 0.86, 0.24) if is_sel else Color(0.0, 0.0, 0.0, 0.0), 1.5)
+
+	var roof: PackedVector2Array = PackedVector2Array([
+		c + Vector2(-15.0, -4.0),
+		c + Vector2(0.0, -16.0),
+		c + Vector2(15.0, -4.0),
+	])
+	draw_colored_polygon(roof, Color(0.32, 0.24, 0.16, 0.96))
+	draw_line(roof[0], roof[1], Color(0.95, 0.88, 0.62, 0.95), 2.0)
+	draw_line(roof[1], roof[2], Color(0.95, 0.88, 0.62, 0.95), 2.0)
+	var body_rect: Rect2 = Rect2(c + Vector2(-12.0, -3.0), Vector2(24.0, 17.0))
+	draw_rect(body_rect, Color(0.86, 0.78, 0.60, 0.96))
+	draw_rect(body_rect, Color(0.30, 0.22, 0.15, 0.95), false, 1.5)
+	draw_rect(Rect2(c + Vector2(-3.0, 4.0), Vector2(6.0, 10.0)), Color(0.34, 0.24, 0.15, 0.96))
+
+	var font: Font = ThemeDB.fallback_font
+	var label: String = _seed_labels[idx]
+	var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE).x
+	var lpos: Vector2 = Vector2(c.x - tw * 0.5, c.y + _RADIUS + _DEPTH + 13.0)
+	draw_string(font, lpos + Vector2(1.0, 1.0), label,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, Color(0.0, 0.0, 0.0, 0.55))
+	var text_col: Color = Color(1.0, 0.96, 0.76, 1.0) if is_sel else Color(0.82, 0.79, 0.68, 0.92)
 	draw_string(font, lpos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, text_col)
 
 

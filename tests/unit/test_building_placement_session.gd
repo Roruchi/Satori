@@ -112,6 +112,7 @@ func test_building_placement_session_confirm_consumes_inventory_item() -> void:
 	var pouch: SeedPouch = growth.get_pouch()
 	game_state.place_tile_from_seed(Vector2i(95, 0), BiomeType.Value.STONE, false)
 	assert_true(pouch.add_building(&"building_house", 2))
+	watch_signals(growth)
 
 	var controller: Node2D = Node2D.new()
 	controller.set_script(PlacementControllerScript)
@@ -122,6 +123,7 @@ func test_building_placement_session_confirm_consumes_inventory_item() -> void:
 	assert_not_null(session)
 	session.update_anchor(Vector2i(95, 0), [Vector2i(95, 0)], true, &"")
 	assert_true(controller.confirm_building_placement())
+	assert_signal_emitted(growth, "pouch_updated")
 	assert_null(controller.get_active_building_session())
 	var idx: int = pouch.find_building_index(&"building_house")
 	if idx >= 0:
