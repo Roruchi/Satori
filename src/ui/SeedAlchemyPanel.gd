@@ -43,14 +43,15 @@ const _BIOME_SEED_NAMES: Dictionary = {
 }
 
 const _FEEDBACK_MESSAGES: Dictionary = {
-	SeedCraftAttemptResultScript.FEEDBACK_SUCCESS: "Seed added to plant inventory.",
+	SeedCraftAttemptResultScript.FEEDBACK_SUCCESS: "Placeable added to place inventory.",
 	SeedCraftAttemptResultScript.FEEDBACK_EMPTY_INPUT: "Craft grid is empty.",
 	SeedCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching seed recipe.",
 	SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU: "Ku is locked for this recipe.",
-	SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Plant inventory is full.",
-	BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS: "Building added to inventory.",
+	SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Place inventory is full.",
+	BuildingCraftAttemptResultScript.FEEDBACK_SUCCESS: "Building added to place inventory.",
 	BuildingCraftAttemptResultScript.FEEDBACK_NO_MATCH: "No matching building recipe.",
-	BuildingCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Building inventory is full.",
+	BuildingCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL: "Place inventory is full.",
+	BuildingCraftAttemptResultScript.FEEDBACK_INSUFFICIENT_ESSENCE: "Insufficient essence.",
 }
 
 @onready var _preview_label: Label = $VBox/Preview
@@ -198,7 +199,7 @@ func _on_element_unlocked(_element_id: int) -> void:
 
 func _on_seed_added_to_pouch(recipe: SeedRecipe) -> void:
 	if recipe != null:
-		_last_feedback = "Added %s to pouch" % _recipe_display_name(recipe)
+		_last_feedback = "Added %s to place inventory" % _recipe_display_name(recipe)
 	_update_ui()
 
 func _on_element_charge_changed(_element_id: int, _charge: int) -> void:
@@ -309,9 +310,9 @@ func _update_ui() -> void:
 	var pouch: SeedPouch = alchemy.get_pouch()
 	var pouch_full: bool = pouch != null and pouch.is_full()
 	if pouch == null:
-		_pouch_status_label.text = "Pouch: 0/0 slots | 0 uses"
+		_pouch_status_label.text = "Place: 0/0 slots | 0 uses"
 	else:
-		_pouch_status_label.text = "Pouch: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, pouch.total_uses()]
+		_pouch_status_label.text = "Place: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, pouch.total_uses()]
 	if pouch_full:
 		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_INVENTORY_FULL)
 	elif not can_afford_selected and occupied_count > 0:
@@ -321,7 +322,7 @@ func _update_ui() -> void:
 	elif recipe != null and _recipe_has_locked_element(alchemy, recipe):
 		_feedback_label.text = _feedback_text_for_key(SeedCraftAttemptResultScript.FEEDBACK_LOCKED_KU)
 	elif recipe != null:
-		_feedback_label.text = "Confirm to craft this seed"
+		_feedback_label.text = "Confirm to craft this placeable"
 	elif occupied_count == 0:
 		_feedback_label.text = "Place 1 or 2 tokens in the grid"
 	else:

@@ -131,8 +131,12 @@ func get_element_charge(element: int) -> int:
 	return _kusho_pool.get_charge(element)
 
 func can_afford_mix(elements: Array[int]) -> bool:
+	var required_counts: Dictionary = {}
 	for element: int in elements:
-		if _kusho_pool.get_charge(element) < 1:
+		required_counts[element] = int(required_counts.get(element, 0)) + 1
+	for element_variant: Variant in required_counts.keys():
+		var element: int = int(element_variant)
+		if _kusho_pool.get_charge(element) < int(required_counts[element_variant]):
 			return false
 	return true
 
@@ -334,10 +338,13 @@ func attempt_building_craft_from_grid(slot_tokens: Array[int]) -> BuildingCraftA
 	var recipe_entry = _building_catalog.lookup(normalized_tokens)
 	if recipe_entry == null:
 		return BuildingCraftAttemptResultScript.no_match()
+	if not can_afford_mix(normalized_tokens):
+		return BuildingCraftAttemptResultScript.insufficient_essence(recipe_entry.building_type_key)
 
 	var pouch: SeedPouch = get_pouch()
 	if pouch == null or not pouch.add_building(recipe_entry.building_type_key):
 		return BuildingCraftAttemptResultScript.inventory_full(recipe_entry.building_type_key)
+	_consume_mix_elements(normalized_tokens)
 
 	var occupied_indices_variant: Variant = normalized.get("occupied_slot_indices", [])
 	var consumed_slots: Array[int] = []

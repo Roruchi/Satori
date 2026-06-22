@@ -45,7 +45,7 @@ grow_horizontal = 2
 [node name="SeedPouchDisplay" type="Label" parent="Root/TopBar"]
 layout_mode = 2
 script = ExtResource("5")
-text = "Pouch: 0"
+text = "Place: 0"
 
 [node name="ElementMeterRow" type="HBoxContainer" parent="Root/TopBar"]
 layout_mode = 2

@@ -57,7 +57,7 @@ static func inventory_full(recipe: SeedRecipe):
 	var result = new()
 	result.outcome = OUTCOME_INVENTORY_FULL
 	result.feedback_key = FEEDBACK_INVENTORY_FULL
-	result.guidance = "Free plant inventory space and try again."
+	result.guidance = "Free place inventory space and try again."
 	if recipe != null:
 		result.matched_recipe_id = recipe.recipe_id
 	return result

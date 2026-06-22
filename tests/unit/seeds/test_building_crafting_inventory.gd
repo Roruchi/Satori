@@ -66,9 +66,11 @@ func test_three_chi_matches_building_house() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	var before_chi: int = alchemy.get_element_charge(GodaiElement.Value.CHI)
 	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_true(result.is_success(), "3x CHI should match building_house recipe")
 	assert_eq(result.building_type_key, &"building_house")
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), before_chi - 3)
 	_cleanup_context(ctx)
 
 func test_two_chi_does_not_match_building_recipe() -> void:
@@ -103,11 +105,25 @@ func test_first_successful_craft_sets_first_discovery_flag() -> void:
 func test_second_successful_craft_does_not_set_first_discovery_flag() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 6)
 	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
 	alchemy.attempt_building_craft_from_grid(slots)
 	var result2: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
 	assert_true(result2.is_success())
 	assert_false(result2.is_first_discovery, "Second craft of same type should not be first_discovery")
+	_cleanup_context(ctx)
+
+func test_building_craft_fails_without_enough_essence_and_does_not_add_inventory() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.CHI, 2)
+	var slots: Array[int] = _make_slots([GodaiElement.Value.CHI, GodaiElement.Value.CHI, GodaiElement.Value.CHI])
+	var result: BuildingCraftAttemptResult = alchemy.attempt_building_craft_from_grid(slots)
+	assert_false(result.is_success())
+	assert_eq(result.outcome, BuildingCraftAttemptResult.OUTCOME_INSUFFICIENT_ESSENCE)
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.CHI), 2)
+	assert_eq(growth.get_pouch().find_building_index(&"building_house"), -1)
 	_cleanup_context(ctx)
 
 # --- T015: Full inventory failure is non-destructive ---

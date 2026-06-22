@@ -37,14 +37,14 @@ func _on_seed_added(_recipe: SeedRecipe) -> void:
 func _refresh() -> void:
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth == null or not growth.has_method("get_pouch"):
-		text = "Pouch: 0/0 uses | Hint: Craft seeds"
+		text = "Place: 0/0 uses | Hint: Craft placeables"
 		return
 	var pouch: SeedPouch = growth.get_pouch()
 	if pouch == null:
-		text = "Pouch: 0/0 uses | Hint: Craft seeds"
+		text = "Place: 0/0 uses | Hint: Craft placeables"
 		return
 	if pouch.size() == 0:
-		text = "Pouch: 0/%d slots | 0 uses | Hint: Craft seeds" % pouch.capacity
+		text = "Place: 0/%d slots | 0 uses | Hint: Craft placeables" % pouch.capacity
 		return
 	var total_uses: int = pouch.total_uses()
 	var building_parts: Array[String] = []
@@ -55,9 +55,9 @@ func _refresh() -> void:
 				var display_name: String = str(entry.type_key).replace("building_", "").capitalize()
 				building_parts.append("%s x%d" % [display_name, entry.count])
 	if building_parts.is_empty():
-		text = "Pouch: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, total_uses]
+		text = "Place: %d/%d slots | %d uses" % [pouch.size(), pouch.capacity, total_uses]
 	else:
-		text = "Pouch: %d/%d slots | %d uses | Buildings: %s" % [pouch.size(), pouch.capacity, total_uses, ", ".join(building_parts)]
+		text = "Place: %d/%d slots | %d uses | Buildings: %s" % [pouch.size(), pouch.capacity, total_uses, ", ".join(building_parts)]
 
 func select_building_item(type_key: StringName) -> void:
 	building_item_selected.emit(type_key)

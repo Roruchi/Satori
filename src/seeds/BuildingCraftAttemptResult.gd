@@ -4,10 +4,12 @@ extends RefCounted
 const OUTCOME_SUCCESS: StringName = &"building_success"
 const OUTCOME_NO_MATCH: StringName = &"building_no_match"
 const OUTCOME_INVENTORY_FULL: StringName = &"building_inventory_full"
+const OUTCOME_INSUFFICIENT_ESSENCE: StringName = &"building_insufficient_essence"
 
 const FEEDBACK_SUCCESS: StringName = &"building_craft_success"
 const FEEDBACK_NO_MATCH: StringName = &"building_craft_no_match"
 const FEEDBACK_INVENTORY_FULL: StringName = &"building_craft_inventory_full"
+const FEEDBACK_INSUFFICIENT_ESSENCE: StringName = &"building_craft_insufficient_essence"
 
 var outcome: StringName = OUTCOME_NO_MATCH
 var feedback_key: StringName = FEEDBACK_NO_MATCH
@@ -37,7 +39,15 @@ static func inventory_full(type_key: StringName) -> BuildingCraftAttemptResult:
 	var result: BuildingCraftAttemptResult = new()
 	result.outcome = OUTCOME_INVENTORY_FULL
 	result.feedback_key = FEEDBACK_INVENTORY_FULL
-	result.guidance = "Free building inventory space and try again."
+	result.guidance = "Free place inventory space and try again."
+	result.building_type_key = type_key
+	return result
+
+static func insufficient_essence(type_key: StringName) -> BuildingCraftAttemptResult:
+	var result: BuildingCraftAttemptResult = new()
+	result.outcome = OUTCOME_INSUFFICIENT_ESSENCE
+	result.feedback_key = FEEDBACK_INSUFFICIENT_ESSENCE
+	result.guidance = "Gather more essence and try again."
 	result.building_type_key = type_key
 	return result
 
