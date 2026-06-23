@@ -23,6 +23,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.local/share/godot/export_templates/4.6.stable ~/.local/share/godot/export_templates/4.6.stable
+
       - name: Import project resources
         run: godot --path . --headless --audio-driver Dummy --import --quit
 
