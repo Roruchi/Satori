@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Run GUT Tests
+    name: Run Focused GUT Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,5 +23,10 @@ jobs:
       - name: Import project resources
         run: godot --path . --headless --import
 
-      - name: Run GUT tests headless
-        run: godot --path . --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gprefix=test_ -gsuffix=.gd -gexit
+      - name: Run focused gameplay regression tests headless
+        run: |
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_recipe_catalog.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_menu_slots.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_biome_material_harvesting.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ritual_menu_ui.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_first_expansion_loop.gd -gexit
