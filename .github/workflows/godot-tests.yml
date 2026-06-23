@@ -25,6 +25,7 @@ jobs:
 
       - name: Run focused gameplay regression tests headless
         run: |
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_discovery_editor_runtime_data.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_recipe_catalog.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_menu_slots.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_biome_material_harvesting.gd -gexit

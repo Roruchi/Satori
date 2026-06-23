@@ -4,8 +4,8 @@ extends RefCounted
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 
-const DEFAULT_RITUAL_CSV_PATH: String = "res://data/discovery_editor/rituals.csv"
-const DEFAULT_MATERIAL_CSV_PATH: String = "res://data/discovery_editor/materials.csv"
+const DEFAULT_RITUAL_CSV_PATH: String = "res://data/discovery_editor/runtime/rituals.csv.txt"
+const DEFAULT_MATERIAL_CSV_PATH: String = "res://data/discovery_editor/runtime/materials.csv.txt"
 
 class RitualEntry extends RefCounted:
 	var ritual_id: StringName = &""

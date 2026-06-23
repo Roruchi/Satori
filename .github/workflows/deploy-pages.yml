@@ -35,6 +35,9 @@ jobs:
         run: |
           mkdir -v -p build/web
           godot --path . --headless --audio-driver Dummy --verbose --export-release "Web" build/web/index.html
+          grep -a -q "Friendly Name,Type,Ritual ID" build/web/index.pck
+          grep -a -q "ritual_fu" build/web/index.pck
+          grep -a -q "form_warm_hollow" build/web/index.pck
           touch build/web/.nojekyll
 
       - name: Upload GitHub Pages artifact
