@@ -29,6 +29,24 @@ func test_form_rituals_load_from_csv() -> void:
 	assert_eq(basin_entry.required_material_counts.get(&"spirit_stone", 0), 1)
 	assert_true(basin_entry.required_elements.has(GodaiElement.Value.SUI))
 
+func test_seed_rituals_load_from_csv_with_bare_godai_components() -> void:
+	var catalog = RitualRecipeCatalogScript.new()
+	var meadow_entry = catalog.lookup_seed(["essence:wind"])
+	assert_not_null(meadow_entry)
+	assert_eq(meadow_entry.ritual_id, &"ritual_fu")
+	assert_eq(meadow_entry.result_kind, &"seed")
+	assert_eq(meadow_entry.result_id, &"recipe_fu")
+	assert_eq(meadow_entry.discovery_id, &"recipe_fu")
+	assert_eq(meadow_entry.input_keys, ["essence:wind"])
+	assert_true(meadow_entry.required_elements.has(GodaiElement.Value.FU))
+
+	var ashfall_entry = catalog.lookup_seed(["essence:wind", "essence:fire"])
+	assert_not_null(ashfall_entry)
+	assert_eq(ashfall_entry.ritual_id, &"ritual_ka_fu")
+	assert_eq(ashfall_entry.result_id, &"recipe_ka_fu")
+	assert_true(ashfall_entry.required_elements.has(GodaiElement.Value.KA))
+	assert_true(ashfall_entry.required_elements.has(GodaiElement.Value.FU))
+
 func test_form_placement_rules_are_data_driven() -> void:
 	var catalog = RitualRecipeCatalogScript.new()
 	assert_true(catalog.is_placeable_form(&"form_warm_hollow"))

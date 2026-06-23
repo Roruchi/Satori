@@ -22,6 +22,7 @@ class RitualEntry extends RefCounted:
 	var assets_folder: String = ""
 
 var _form_entries: Array[RitualEntry] = []
+var _seed_entries: Array[RitualEntry] = []
 var _forms_by_result_id: Dictionary = {}
 var _material_name_to_id: Dictionary = {}
 
@@ -31,6 +32,9 @@ func _init(ritual_csv_path: String = DEFAULT_RITUAL_CSV_PATH, material_csv_path:
 
 func get_form_entries() -> Array[RitualEntry]:
 	return _form_entries.duplicate()
+
+func get_seed_entries() -> Array[RitualEntry]:
+	return _seed_entries.duplicate()
 
 func get_required_material_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
@@ -45,10 +49,16 @@ func get_required_material_ids() -> Array[StringName]:
 	return ids
 
 func lookup_form(input_keys: Array[String]) -> RitualEntry:
+	return _lookup_entry(_form_entries, input_keys)
+
+func lookup_seed(input_keys: Array[String]) -> RitualEntry:
+	return _lookup_entry(_seed_entries, input_keys)
+
+func _lookup_entry(entries: Array[RitualEntry], input_keys: Array[String]) -> RitualEntry:
 	var normalized: Array[String] = input_keys.duplicate()
 	normalized.sort()
 	var key: String = _key_for_inputs(normalized)
-	for entry: RitualEntry in _form_entries:
+	for entry: RitualEntry in entries:
 		if _key_for_inputs(entry.input_keys) == key:
 			return entry
 	return null
@@ -98,13 +108,14 @@ func _load_rituals(path: String) -> void:
 		var row: Dictionary = _row_from_csv(headers, values)
 		var result_kind: StringName = StringName(str(row.get("Result Kind", "")).strip_edges())
 		var type_name: String = str(row.get("Type", "")).strip_edges()
-		if result_kind != &"form" and type_name.to_lower() != "structure":
-			continue
 		var entry: RitualEntry = _entry_from_row(row)
 		if entry == null or entry.result_id == &"":
 			continue
-		_form_entries.append(entry)
-		_forms_by_result_id[entry.result_id] = entry
+		if result_kind == &"seed" or type_name.to_lower() == "seed":
+			_seed_entries.append(entry)
+		elif result_kind == &"form" or type_name.to_lower() == "structure":
+			_form_entries.append(entry)
+			_forms_by_result_id[entry.result_id] = entry
 	file.close()
 
 func _entry_from_row(row: Dictionary) -> RitualEntry:
@@ -149,9 +160,12 @@ func _row_from_csv(headers: PackedStringArray, values: PackedStringArray) -> Dic
 
 func _input_key_for_component(component: String) -> String:
 	var lower: String = component.to_lower()
+	var essence_name: String = lower.replace(" essence", "") if lower.ends_with(" essence") else lower
+	var essence_key: String = _essence_key_name(essence_name)
+	if _is_known_essence_key(essence_key):
+		return "essence:%s" % essence_key
 	if lower.ends_with(" essence"):
-		var essence_name: String = lower.replace(" essence", "")
-		return "essence:%s" % _essence_key_name(essence_name)
+		return ""
 	var material_variant: Variant = _material_name_to_id.get(lower, null)
 	if material_variant != null:
 		return "material:%s" % str(material_variant)
@@ -187,6 +201,9 @@ func _essence_key_name(name: String) -> String:
 			return "ku"
 		_:
 			return name
+
+func _is_known_essence_key(key: String) -> bool:
+	return key == "earth" or key == "water" or key == "fire" or key == "wind" or key == "ku"
 
 func _parse_placement_rules(raw: String) -> Dictionary:
 	var rules: Dictionary = {}

@@ -111,7 +111,7 @@ func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	panel.free()
 	_cleanup_context(ctx)
 
-func test_ritual_panel_keeps_depleted_essence_available_for_single_seed() -> void:
+func test_ritual_panel_blocks_depleted_essence_for_single_seed() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.FU, 0)
@@ -123,12 +123,12 @@ func test_ritual_panel_keeps_depleted_essence_available_for_single_seed() -> voi
 
 	var wind_button: Button = panel.get_node("VBox/Elements/WindButton") as Button
 	assert_eq(wind_button.text, "Wind Essence\n0/3")
-	assert_false(wind_button.disabled)
+	assert_true(wind_button.disabled)
 	panel.call("_on_input_tapped", "essence:wind")
 	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
-	assert_eq(slot0.text, "Slot 1\nWind")
+	assert_eq(slot0.text, "Slot 1\nTap to choose")
 	var preview: Label = panel.get_node("VBox/Preview") as Label
-	assert_eq(preview.text, "Preview: Meadow Seed")
+	assert_eq(preview.text, "Preview: --")
 
 	remove_child(panel)
 	panel.free()

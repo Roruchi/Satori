@@ -234,10 +234,9 @@ func _resolve_ritual(slot_keys: Array[String], confirm: bool) -> RitualAttemptRe
 			return RitualAttemptResultScript.locked_input(key)
 		if StringName(str(input_def.get("kind", &""))) == INPUT_KIND_ESSENCE:
 			has_essence = true
-		else:
-			var available_count: int = int(input_def.get("available_count", 0))
-			if available_count <= 0:
-				return RitualAttemptResultScript.locked_input(key)
+		var available_count: int = int(input_def.get("available_count", 0))
+		if available_count <= 0:
+			return RitualAttemptResultScript.locked_input(key)
 	if not has_essence:
 		return RitualAttemptResultScript.missing_essence()
 
@@ -259,30 +258,35 @@ func _resolve_seed_ritual(normalized_keys: Array[String], confirm: bool) -> Ritu
 		elements.append(element)
 	if elements.size() < 1 or elements.size() > 2:
 		return RitualAttemptResultScript.no_match()
-	var recipe: SeedRecipe = _registry.lookup_phase1_seed(elements)
+	if _ritual_catalog == null:
+		return RitualAttemptResultScript.no_match()
+	var entry = _ritual_catalog.lookup_seed(normalized_keys)
+	if entry == null:
+		return RitualAttemptResultScript.no_match()
+	var recipe: SeedRecipe = _registry.lookup_phase1_seed(entry.required_elements)
 	if recipe == null:
+		return RitualAttemptResultScript.no_match()
+	if recipe.recipe_id != entry.result_id:
 		return RitualAttemptResultScript.no_match()
 	if _recipe_has_locked_elements(recipe):
 		return RitualAttemptResultScript.locked_input(_key_for_element(recipe.elements[0]))
-	var requires_essence_charge: bool = recipe.elements.size() > 1
-	if requires_essence_charge and not can_afford_mix(recipe.elements):
+	if not can_afford_mix(recipe.elements):
 		var no_energy: RitualAttemptResultScript = RitualAttemptResultScript.no_match()
 		no_energy.guidance = "Gather more essence before shaping this seed."
 		return no_energy
 	if not confirm:
-		return RitualAttemptResultScript.success(_ritual_id_for_seed(recipe), &"seed", recipe.recipe_id, _keys_for_elements(recipe.elements), recipe.recipe_id)
+		return RitualAttemptResultScript.success(entry.ritual_id, entry.result_kind, entry.result_id, entry.input_keys, entry.discovery_id)
 	var pouch: SeedPouch = get_pouch()
 	if pouch == null or pouch.is_full():
 		return RitualAttemptResultScript.inventory_full(&"seed", recipe.recipe_id)
 	if not pouch.add(recipe):
 		return RitualAttemptResultScript.inventory_full(&"seed", recipe.recipe_id)
 	_notify_pouch_updated()
-	if requires_essence_charge:
-		_consume_mix_elements(recipe.elements)
-	if not _discovered.has(recipe.recipe_id):
-		_register_discovery(recipe.recipe_id, true)
+	_consume_mix_elements(recipe.elements)
+	if entry.discovery_id != &"" and not _discovered.has(entry.discovery_id):
+		_register_discovery(entry.discovery_id, true)
 	seed_added_to_pouch.emit(recipe)
-	return RitualAttemptResultScript.success(_ritual_id_for_seed(recipe), &"seed", recipe.recipe_id, _keys_for_elements(recipe.elements), recipe.recipe_id)
+	return RitualAttemptResultScript.success(entry.ritual_id, entry.result_kind, entry.result_id, entry.input_keys, entry.discovery_id)
 
 func _resolve_form_ritual(normalized_keys: Array[String], confirm: bool) -> RitualAttemptResultScript:
 	if _ritual_catalog == null:
@@ -448,7 +452,7 @@ func _essence_input(id: StringName, element: int, display_name: String) -> Dicti
 		"element": element,
 		"display_name": display_name,
 		"available_count": charge,
-		"available_for_selection": unlocked,
+		"available_for_selection": unlocked and charge > 0,
 		"unlocked": unlocked,
 	}
 

@@ -85,24 +85,23 @@ func test_wind_essence_shapes_meadow_seed_through_ritual_path() -> void:
 	assert_true(result.is_success())
 	assert_eq(result.result_kind, &"seed")
 	assert_eq(result.result_id, &"recipe_fu")
-	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), before_wind)
+	assert_eq(result.ritual_id, &"ritual_fu")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), before_wind - 1)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
 	assert_true(pouch.find_index_by_biome(BiomeTypeScript.Value.MEADOW) >= 0)
 	_cleanup_context(ctx)
 
-func test_single_essence_seed_ritual_works_without_charge() -> void:
+func test_single_essence_seed_ritual_blocks_without_charge() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.FU, 0)
 	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["essence:wind"])
-	assert_true(result.is_success())
-	assert_eq(result.result_kind, &"seed")
-	assert_eq(result.result_id, &"recipe_fu")
+	assert_eq(result.outcome, RitualAttemptResultScript.OUTCOME_LOCKED_INPUT)
 	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), 0)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
-	assert_true(pouch.find_index_by_biome(BiomeTypeScript.Value.MEADOW) >= 0)
+	assert_eq(pouch.find_index_by_biome(BiomeTypeScript.Value.MEADOW), -1)
 	_cleanup_context(ctx)
 
 func test_dual_essence_seed_ritual_still_consumes_charges() -> void:
