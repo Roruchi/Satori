@@ -1,0 +1,44 @@
+extends GutTest
+
+const RitualRecipeCatalogScript = preload("res://src/seeds/RitualRecipeCatalog.gd")
+
+func test_form_rituals_load_from_csv() -> void:
+	var catalog = RitualRecipeCatalogScript.new()
+	var entry = catalog.lookup_form(["material:living_wood", "essence:fire"])
+	assert_not_null(entry)
+	assert_eq(entry.ritual_id, &"ritual_warm_hollow")
+	assert_eq(entry.result_kind, &"form")
+	assert_eq(entry.result_id, &"form_warm_hollow")
+	assert_eq(entry.discovery_id, &"disc_warm_hollow")
+	assert_eq(entry.required_material_counts.get(&"living_wood", 0), 1)
+	assert_true(entry.required_elements.has(GodaiElement.Value.KA))
+
+	var reed_entry = catalog.lookup_form(["material:reed_fiber", "essence:water"])
+	assert_not_null(reed_entry)
+	assert_eq(reed_entry.ritual_id, &"ritual_reed_nest")
+	assert_eq(reed_entry.result_id, &"form_reed_nest")
+	assert_eq(reed_entry.discovery_id, &"disc_reed_nest")
+	assert_eq(reed_entry.required_material_counts.get(&"reed_fiber", 0), 1)
+	assert_true(reed_entry.required_elements.has(GodaiElement.Value.SUI))
+
+	var basin_entry = catalog.lookup_form(["material:spirit_stone", "essence:water"])
+	assert_not_null(basin_entry)
+	assert_eq(basin_entry.ritual_id, &"ritual_stone_basin")
+	assert_eq(basin_entry.result_id, &"form_stone_basin")
+	assert_eq(basin_entry.discovery_id, &"disc_stone_basin")
+	assert_eq(basin_entry.required_material_counts.get(&"spirit_stone", 0), 1)
+	assert_true(basin_entry.required_elements.has(GodaiElement.Value.SUI))
+
+func test_form_placement_rules_are_data_driven() -> void:
+	var catalog = RitualRecipeCatalogScript.new()
+	assert_true(catalog.is_placeable_form(&"form_warm_hollow"))
+	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.MEADOW), &"building_meadow_dwelling")
+	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.EMBER_FIELD), &"building_scorched_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.RIVER), &"")
+	assert_true(catalog.is_placeable_form(&"form_reed_nest"))
+	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.RIVER), &"building_reed_nest")
+	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.WETLANDS), &"building_reed_nest")
+	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.MOONLIT_POOL), &"building_reed_nest")
+	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.MEADOW), &"")
+	assert_true(catalog.is_placeable_form(&"form_stone_basin"))
+	assert_eq(catalog.resolve_form_placement(&"form_stone_basin", BiomeType.Value.RIVER), &"building_stone_basin")

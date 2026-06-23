@@ -9,6 +9,12 @@ class DiscoveryStub:
 	var discovered_ids: Array[StringName] = []
 	func get_discovered_ids() -> Array[StringName]:
 		return discovered_ids
+	func record_discovery(payload: DiscoveryPayload) -> void:
+		if payload == null:
+			return
+		var discovery_id: StringName = StringName(payload.discovery_id)
+		if discovery_id != &"" and not discovered_ids.has(discovery_id):
+			discovered_ids.append(discovery_id)
 
 func _add_root_singleton(p_name: String, node: Node) -> void:
 	var root: Node = get_tree().root
@@ -88,6 +94,7 @@ func test_wind_essence_shapes_meadow_seed_through_ritual_path() -> void:
 func test_living_wood_and_fire_shape_warm_hollow() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
 	var before_fire: int = alchemy.get_element_charge(GodaiElementScript.Value.KA)
 	var before_wood: int = alchemy.get_material_count(&"living_wood")
 	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
@@ -101,9 +108,46 @@ func test_living_wood_and_fire_shape_warm_hollow() -> void:
 	assert_true(pouch.find_building_index(&"form_warm_hollow") >= 0)
 	_cleanup_context(ctx)
 
+func test_reed_fiber_and_water_shape_reed_nest_and_record_discovery() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var discovery: DiscoveryStub = ctx["discovery"]
+	alchemy.add_material_for_testing(&"reed_fiber", 1)
+	var before_water: int = alchemy.get_element_charge(GodaiElementScript.Value.SUI)
+	var before_reed: int = alchemy.get_material_count(&"reed_fiber")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:reed_fiber", "essence:water"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_reed_nest")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.SUI), before_water - 1)
+	assert_eq(alchemy.get_material_count(&"reed_fiber"), before_reed - 1)
+	assert_true(discovery.discovered_ids.has(&"disc_reed_nest"))
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_reed_nest") >= 0)
+	_cleanup_context(ctx)
+
+func test_spirit_stone_and_water_shape_stone_basin() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"spirit_stone", 1)
+	var before_water: int = alchemy.get_element_charge(GodaiElementScript.Value.SUI)
+	var before_stone: int = alchemy.get_material_count(&"spirit_stone")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:spirit_stone", "essence:water"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_stone_basin")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.SUI), before_water - 1)
+	assert_eq(alchemy.get_material_count(&"spirit_stone"), before_stone - 1)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_stone_basin") >= 0)
+	_cleanup_context(ctx)
+
 func test_ritual_without_essence_preserves_materials() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
 	var before_wood: int = alchemy.get_material_count(&"living_wood")
 	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood"])
 	assert_eq(result.outcome, RitualAttemptResultScript.OUTCOME_MISSING_ESSENCE)
@@ -113,6 +157,7 @@ func test_ritual_without_essence_preserves_materials() -> void:
 func test_inventory_full_warm_hollow_attempt_is_non_destructive() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
 	var filler_keys: Array[StringName] = [&"type_a", &"type_b", &"type_c", &"type_d", &"type_e", &"type_f", &"type_g", &"type_h"]

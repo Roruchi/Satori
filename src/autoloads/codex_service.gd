@@ -6,8 +6,7 @@ signal entry_discovered(entry_id: StringName)
 const CodexEntryScript = preload("res://src/codex/CodexEntry.gd")
 const SpiritCatalogDataScript = preload("res://src/spirits/spirit_catalog_data.gd")
 const DiscoveryCatalogDataScript = preload("res://src/biomes/discovery_catalog_data.gd")
-const BuildingRecipeCatalogScript = preload("res://src/seeds/BuildingRecipeCatalog.gd")
-const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const RitualRecipeCatalogScript = preload("res://src/seeds/RitualRecipeCatalog.gd")
 const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 const _STRUCTURE_RECIPE_HINTS: Dictionary = {
 	"disc_lotus_pagoda": "Where still waters breathe mud, let four breaths of wind rest as one quiet square.",
@@ -22,7 +21,7 @@ func _ready() -> void:
 	_register_discovery_entries()
 	_register_spirit_entries()
 	_register_structure_entries()
-	_register_craftable_structure_entries()
+	_register_form_ritual_entries()
 
 func _load_static_entries() -> void:
 	var dir: DirAccess = DirAccess.open("res://src/codex/entries/")
@@ -124,25 +123,25 @@ func _register_structure_entries_from_dir(dir_path: String) -> void:
 		filename = dir.get_next()
 	dir.list_dir_end()
 
-func _register_craftable_structure_entries() -> void:
-	var building_catalog: BuildingRecipeCatalog = BuildingRecipeCatalogScript.new()
-	for recipe_entry in building_catalog.all_recipes():
+func _register_form_ritual_entries() -> void:
+	var ritual_catalog = RitualRecipeCatalogScript.new()
+	for recipe_entry in ritual_catalog.get_form_entries():
 		if recipe_entry == null:
 			continue
-		var discovery_id: StringName = recipe_entry.discovery_entry_id
+		var discovery_id: StringName = recipe_entry.discovery_id
 		if discovery_id == StringName(""):
 			continue
 		_structure_ids[discovery_id] = true
 		if _entries.has(discovery_id):
 			continue
-		var building_name: String = _humanize_building_type(str(recipe_entry.building_type_key))
-		var recipe_text: String = _format_structure_recipe(recipe_entry.normalized_tokens)
+		var form_name: String = recipe_entry.friendly_name
+		var recipe_text: String = " + ".join(recipe_entry.input_keys)
 		_register_dynamic_entry(
 			discovery_id,
 			CodexEntryScript.Category.STRUCTURE,
-			"%s ritual memory: %s." % [building_name, recipe_text],
-			building_name,
-			"Ritual memory: %s.\nShapes a %s placeable structure." % [recipe_text, building_name]
+			recipe_entry.codex_hint if not recipe_entry.codex_hint.is_empty() else "%s ritual memory: %s." % [form_name, recipe_text],
+			form_name,
+			recipe_entry.unlock_text if not recipe_entry.unlock_text.is_empty() else "Ritual memory: %s.\nShapes a %s placeable form." % [recipe_text, form_name]
 		)
 
 func _register_dynamic_entry(entry_id: StringName, category: int, hint: String, full_name: String, description: String) -> void:
@@ -157,33 +156,6 @@ func _register_dynamic_entry(entry_id: StringName, category: int, hint: String, 
 
 func _humanize_id(raw_id: String) -> String:
 	return raw_id.replace("_", " ").capitalize()
-
-func _humanize_building_type(raw_id: String) -> String:
-	var display_id: String = raw_id
-	if display_id.begins_with("building_"):
-		display_id = display_id.substr("building_".length())
-	return _humanize_id(display_id)
-
-func _format_structure_recipe(tokens: Array[int]) -> String:
-	var parts: Array[String] = []
-	for token: int in tokens:
-		parts.append(_element_recipe_name(token))
-	return " + ".join(parts)
-
-func _element_recipe_name(element: int) -> String:
-	match element:
-		GodaiElementScript.Value.CHI:
-			return "Chi"
-		GodaiElementScript.Value.SUI:
-			return "Sui"
-		GodaiElementScript.Value.KA:
-			return "Ka"
-		GodaiElementScript.Value.FU:
-			return "Fu"
-		GodaiElementScript.Value.KU:
-			return "Ku"
-		_:
-			return "Unknown"
 
 func _infer_category_for_unknown_entry(entry_id: StringName) -> int:
 	if str(entry_id).begins_with("spirit_"):

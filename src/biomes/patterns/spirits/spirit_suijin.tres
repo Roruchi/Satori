@@ -6,9 +6,9 @@
 script = ExtResource("1_sp_suijin")
 discovery_id = "spirit_suijin"
 pattern_type = 0
-required_biomes = Array[int]([11])
+required_biomes = Array[int]([1])
 forbidden_biomes = Array[int]([])
-size_threshold = 5
+size_threshold = 3
 shape_recipe = Array[Dictionary]([])
 neighbour_requirements = {}
-prerequisite_ids = Array[String](["disc_misogi_spring_shrine"])
+prerequisite_ids = Array[String](["disc_reed_nest"])

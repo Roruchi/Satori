@@ -47,8 +47,6 @@ func _ready() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(func(_recipe: SeedRecipe) -> void: _refresh_from_pouch(true))
-	if alchemy != null and alchemy.has_signal("building_craft_resolved"):
-		alchemy.building_craft_resolved.connect(func(_tk: StringName, _oc: StringName, _fk: StringName, _g: String, _c: Array[int], _fd: bool) -> void: _refresh_from_pouch(true))
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(func() -> void: _refresh_from_pouch(true))
@@ -380,20 +378,22 @@ static func _label_for_biome(biome: int) -> String:
 	return "Seed"
 
 
-static func _label_for_building(type_key: StringName) -> String:
-	match type_key:
-		&"form_warm_hollow":
-			return "Warm Hollow"
-		&"building_meadow_dwelling":
-			return "Meadow Dwelling"
-		&"building_scorched_hollow":
-			return "Scorched Hollow"
+func _label_for_building(type_key: StringName) -> String:
+	var form_name: String = _form_display_name(type_key)
+	if not form_name.is_empty():
+		return form_name
 	var raw: String = str(type_key)
 	if raw.begins_with("building_"):
 		raw = raw.substr("building_".length())
 	if raw.begins_with("form_"):
 		raw = raw.substr("form_".length())
 	return raw.capitalize()
+
+func _form_display_name(type_key: StringName) -> String:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_method("get_form_display_name"):
+		return str(alchemy.get_form_display_name(type_key))
+	return ""
 
 
 static func _color_for_biome(biome: int) -> Color:
@@ -432,13 +432,18 @@ static func _color_for_biome(biome: int) -> Color:
 
 
 static func _color_for_building(type_key: StringName) -> Color:
+	var raw_key: String = str(type_key)
+	if raw_key.begins_with("form_"):
+		return Color(0.74, 0.52, 0.32)
 	match type_key:
-		&"form_warm_hollow":
-			return Color(0.74, 0.52, 0.32)
 		&"building_meadow_dwelling":
 			return Color(0.54, 0.70, 0.48)
 		&"building_scorched_hollow":
 			return Color(0.82, 0.42, 0.24)
+		&"building_reed_nest":
+			return Color(0.42, 0.70, 0.66)
+		&"building_stone_basin":
+			return Color(0.54, 0.58, 0.66)
 		&"building_house":
 			return Color(0.62, 0.70, 0.58)
 	return Color(0.58, 0.64, 0.62)

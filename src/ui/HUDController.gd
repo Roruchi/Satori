@@ -2,12 +2,22 @@ class_name HUDController
 extends CanvasLayer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const _MATERIAL_ICON_TEXTURE: Texture2D = preload("res://assets/materials/material_icon_spritesheet.png")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 460.0
 const MIX_PANEL_SCREEN_MARGIN: float = 16.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
+const MATERIAL_ICON_CELL_SIZE: float = 32.0
+const MATERIAL_SLOT_ICON_SIZE: float = 18.0
+const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(68.0, 24.0)
+const _MATERIAL_ICON_INDEX: Dictionary = {
+	&"living_wood": 0,
+	&"reed_fiber": 1,
+	&"spirit_stone": 2,
+	&"ember_clay": 3,
+}
 const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
 const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
@@ -53,6 +63,7 @@ enum Mode {
 @onready var _mix_panel: SeedAlchemyPanel = $Root/Panels/SeedAlchemyPanel
 @onready var _codex_panel: CodexPanel = $Root/Panels/CodexPanel
 @onready var _instant_badge: Label = $Root/TopBar/InstantModeBadge
+@onready var _inventory_stack: VBoxContainer = $Root/TopBar/InventoryStack
 @onready var _pouch_display: SeedPouchDisplay = $Root/TopBar/InventoryStack/SeedPouchDisplay
 @onready var _material_meter_label: Label = $Root/TopBar/InventoryStack/MaterialMeterLabel
 @onready var _element_meter_row: HBoxContainer = $Root/TopBar/ElementMeterRow
@@ -75,6 +86,8 @@ var _debug_update_elapsed: float = 0.0
 var _last_scan_ms: float = 0.0
 var _max_scan_ms: float = 0.0
 var _scan_count: int = 0
+var _material_slot_row: HBoxContainer = null
+var _material_slot_count_labels: Dictionary = {}
 
 signal building_placement_started(type_key: StringName)
 signal building_placement_confirm_requested()
@@ -108,6 +121,7 @@ func _ready() -> void:
 		_tile_selector_hex.connect("building_selected", _on_building_item_selected)
 	if _pouch_display != null and _pouch_display.has_signal("building_item_selected"):
 		_pouch_display.building_item_selected.connect(_on_building_item_selected)
+	_init_material_slots()
 	var settings: Node = get_node_or_null("/root/GardenSettings")
 	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
 		settings.growth_speed_multiplier_changed.connect(_on_growth_speed_multiplier_changed)
@@ -140,6 +154,8 @@ func _ready() -> void:
 			alchemy_service.shrine_charge_collected.connect(func(_coord: Vector2i, _element_id: int, _amount: int) -> void: _refresh_element_meters())
 		if alchemy_service.has_signal("ritual_attempt_resolved"):
 			alchemy_service.ritual_attempt_resolved.connect(func(_outcome: StringName, _feedback_key: StringName, _guidance: String, _ritual_id: StringName, _result_kind: StringName, _result_id: StringName) -> void: _refresh_material_meter())
+		if alchemy_service.has_signal("material_count_changed"):
+			alchemy_service.material_count_changed.connect(func(_material_id: StringName, _count: int) -> void: _refresh_material_meter())
 	_refresh_element_meters()
 	_refresh_material_meter()
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
@@ -305,10 +321,111 @@ func _refresh_material_meter() -> void:
 	if _material_meter_label == null:
 		return
 	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
-	var living_wood_count: int = 0
-	if alchemy_service != null and alchemy_service.has_method("get_material_count"):
-		living_wood_count = int(alchemy_service.get_material_count(&"living_wood"))
-	_material_meter_label.text = "Materials: Living Wood x%d" % living_wood_count
+	if alchemy_service == null or not alchemy_service.has_method("get_material_count"):
+		_material_meter_label.text = "Materials: --"
+		return
+	var material_ids: Array[StringName] = [&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"]
+	if alchemy_service.has_method("get_material_display_order"):
+		var ordered_variant: Variant = alchemy_service.get_material_display_order()
+		if ordered_variant is Array:
+			material_ids.clear()
+			for id_variant: Variant in ordered_variant:
+				material_ids.append(StringName(str(id_variant)))
+	_ensure_material_slots(material_ids)
+	for material_id: StringName in material_ids:
+		var count: int = int(alchemy_service.get_material_count(material_id))
+		var label_variant: Variant = _material_slot_count_labels.get(material_id, null)
+		if label_variant is Label:
+			var slot_label: Label = label_variant as Label
+			slot_label.text = str(count)
+	_material_meter_label.text = "Materials:"
+
+func _init_material_slots() -> void:
+	var row_variant: Variant = get_node_or_null("Root/TopBar/InventoryStack/MaterialSlotRow")
+	if row_variant is HBoxContainer:
+		_material_slot_row = row_variant as HBoxContainer
+	else:
+		_material_slot_row = HBoxContainer.new()
+		_material_slot_row.name = "MaterialSlotRow"
+		_material_slot_row.add_theme_constant_override("separation", 4)
+		_inventory_stack.add_child(_material_slot_row)
+	_material_slot_row.visible = true
+	_ensure_material_slots([&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"])
+
+func _ensure_material_slots(material_ids: Array[StringName]) -> void:
+	if _material_slot_row == null:
+		return
+	for material_id: StringName in material_ids:
+		if _material_slot_count_labels.has(material_id):
+			continue
+		var slot: PanelContainer = _create_material_slot(material_id)
+		_material_slot_row.add_child(slot)
+
+func _create_material_slot(material_id: StringName) -> PanelContainer:
+	var slot: PanelContainer = PanelContainer.new()
+	slot.name = "MaterialSlot_%s" % str(material_id)
+	slot.custom_minimum_size = MATERIAL_SLOT_MIN_SIZE
+	slot.tooltip_text = _material_display_name(material_id)
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.08, 0.06, 0.72)
+	style.border_color = Color(0.52, 0.42, 0.28, 0.88)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+	style.content_margin_left = 4.0
+	style.content_margin_top = 2.0
+	style.content_margin_right = 5.0
+	style.content_margin_bottom = 2.0
+	slot.add_theme_stylebox_override("panel", style)
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Contents"
+	row.add_theme_constant_override("separation", 4)
+	slot.add_child(row)
+	var icon: TextureRect = TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(MATERIAL_SLOT_ICON_SIZE, MATERIAL_SLOT_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = _material_icon_texture(material_id)
+	row.add_child(icon)
+	var count_label: Label = Label.new()
+	count_label.name = "CountLabel"
+	count_label.text = "0"
+	count_label.custom_minimum_size = Vector2(24.0, 18.0)
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count_label.add_theme_color_override("font_color", Color(0.96, 0.91, 0.78, 0.98))
+	count_label.add_theme_font_size_override("font_size", 13)
+	row.add_child(count_label)
+	_material_slot_count_labels[material_id] = count_label
+	return slot
+
+func _material_icon_texture(material_id: StringName) -> Texture2D:
+	if _MATERIAL_ICON_TEXTURE == null or not _MATERIAL_ICON_INDEX.has(material_id):
+		return null
+	var icon_index: int = int(_MATERIAL_ICON_INDEX.get(material_id, 0))
+	var atlas_texture: AtlasTexture = AtlasTexture.new()
+	atlas_texture.atlas = _MATERIAL_ICON_TEXTURE
+	atlas_texture.region = Rect2(Vector2(float(icon_index) * MATERIAL_ICON_CELL_SIZE, 0.0), Vector2(MATERIAL_ICON_CELL_SIZE, MATERIAL_ICON_CELL_SIZE))
+	return atlas_texture
+
+func _material_display_name(material_id: StringName) -> String:
+	match material_id:
+		&"living_wood":
+			return "Living Wood"
+		&"reed_fiber":
+			return "Reed Fiber"
+		&"spirit_stone":
+			return "Spirit Stone"
+		&"ember_clay":
+			return "Ember Clay"
+		_:
+			return str(material_id).replace("_", " ").capitalize()
 
 func _set_mode(next_mode: int) -> void:
 	_mode = next_mode

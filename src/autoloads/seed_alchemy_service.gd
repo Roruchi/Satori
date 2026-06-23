@@ -5,20 +5,17 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SeedRecipeRegistryScript = preload("res://src/seeds/SeedRecipeRegistry.gd")
 const SeedCraftAttemptResultScript = preload("res://src/seeds/SeedCraftAttemptResult.gd")
 const SeedCraftGridNormalizerScript = preload("res://src/seeds/SeedCraftGridNormalizer.gd")
-const BuildingCraftAttemptResultScript = preload("res://src/seeds/BuildingCraftAttemptResult.gd")
-const BuildingRecipeCatalogScript = preload("res://src/seeds/BuildingRecipeCatalog.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
+const RitualRecipeCatalogScript = preload("res://src/seeds/RitualRecipeCatalog.gd")
 const SatoriIds = preload("res://src/satori/SatoriIds.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const INVALID_ELEMENT: int = -1
 const INPUT_KIND_ESSENCE: StringName = &"essence"
 const INPUT_KIND_MATERIAL: StringName = &"material"
-const FORM_WARM_HOLLOW: StringName = &"form_warm_hollow"
-const STRUCTURE_MEADOW_DWELLING: StringName = &"building_meadow_dwelling"
-const STRUCTURE_SCORCHED_HOLLOW: StringName = &"building_scorched_hollow"
-const DISC_WARM_HOLLOW: StringName = &"disc_warm_hollow"
-const STARTING_LIVING_WOOD: int = 3
+const STARTING_LIVING_WOOD: int = 0
+const DEFAULT_MATERIAL_CAPACITY: int = 99
+const MATERIAL_DISPLAY_ORDER: Array[StringName] = [&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"]
 
 signal element_unlocked(element_id: int)
 signal recipe_discovered(recipe_id: StringName)
@@ -27,13 +24,13 @@ signal shrine_charge_ready(coord: Vector2i, element_id: int)
 signal shrine_charge_collected(coord: Vector2i, element_id: int, amount: int)
 signal element_charge_changed(element_id: int, charge: int)
 signal craft_attempt_resolved(outcome: StringName, feedback_key: StringName, guidance: String, consumed_slot_indices: Array[int])
-signal building_craft_resolved(building_type_key: StringName, outcome: StringName, feedback_key: StringName, guidance: String, consumed_slot_indices: Array[int], is_first_discovery: bool)
 signal ritual_attempt_resolved(outcome: StringName, feedback_key: StringName, guidance: String, ritual_id: StringName, result_kind: StringName, result_id: StringName)
+signal material_count_changed(material_id: StringName, count: int)
 
 var _registry
 var _kusho_pool: KushoPool = KushoPoolScript.new()
 var _grid_normalizer = SeedCraftGridNormalizerScript.new()
-var _building_catalog = null
+var _ritual_catalog = null
 var _building_discovered: Dictionary = {}
 var _material_counts: Dictionary = {}
 var _is_initialized: bool = false
@@ -51,7 +48,9 @@ func _ready() -> void:
 		return
 	_is_initialized = true
 	_registry = SeedRecipeRegistryScript.new()
-	_building_catalog = BuildingRecipeCatalogScript.new()
+	_ritual_catalog = RitualRecipeCatalogScript.new()
+	for material_id: StringName in MATERIAL_DISPLAY_ORDER:
+		_material_counts[material_id] = 0
 	_material_counts[&"living_wood"] = STARTING_LIVING_WOOD
 	for element: int in _unlocked_elements:
 		_kusho_pool.set_charge(element, KushoPoolScript.CAPACITY_PER_ELEMENT)
@@ -96,24 +95,43 @@ func get_ritual_input_definitions() -> Array[Dictionary]:
 	inputs.append(_essence_input(&"fire", GodaiElementScript.Value.KA, "Fire Essence"))
 	inputs.append(_essence_input(&"wind", GodaiElementScript.Value.FU, "Wind Essence"))
 	inputs.append(_essence_input(&"ku", GodaiElementScript.Value.KU, "Ku Essence"))
-	inputs.append({
-		"kind": INPUT_KIND_MATERIAL,
-		"id": &"living_wood",
-		"key": "material:living_wood",
-		"display_name": "Living Wood",
-		"available_count": get_material_count(&"living_wood"),
-		"unlocked": true,
-	})
+	for material_id: StringName in _ritual_material_input_ids():
+		inputs.append({
+			"kind": INPUT_KIND_MATERIAL,
+			"id": material_id,
+			"key": "material:%s" % str(material_id),
+			"display_name": _material_display_name(material_id),
+			"available_count": get_material_count(material_id),
+			"unlocked": true,
+		})
 	return inputs
 
 func get_material_count(material_id: StringName) -> int:
 	return int(_material_counts.get(material_id, 0))
+
+func get_material_display_order() -> Array[StringName]:
+	return MATERIAL_DISPLAY_ORDER.duplicate()
+
+func get_material_capacity(_material_id: StringName) -> int:
+	return DEFAULT_MATERIAL_CAPACITY
+
+func try_add_material(material_id: StringName, amount: int) -> bool:
+	if amount <= 0:
+		return false
+	var current: int = get_material_count(material_id)
+	var capacity: int = get_material_capacity(material_id)
+	if current + amount > capacity:
+		return false
+	_material_counts[material_id] = current + amount
+	material_count_changed.emit(material_id, get_material_count(material_id))
+	return true
 
 func add_material_for_testing(material_id: StringName, amount: int) -> void:
 	if amount == 0:
 		return
 	var current: int = int(_material_counts.get(material_id, 0))
 	_material_counts[material_id] = maxi(0, current + amount)
+	material_count_changed.emit(material_id, get_material_count(material_id))
 
 func preview_ritual(slot_keys: Array[String]) -> RitualAttemptResultScript:
 	return _resolve_ritual(slot_keys, false)
@@ -131,18 +149,20 @@ func attempt_ritual(slot_keys: Array[String]) -> RitualAttemptResultScript:
 	return result
 
 func resolve_form_placement(type_key: StringName, target_biome: int) -> StringName:
-	if type_key != FORM_WARM_HOLLOW:
+	if _ritual_catalog == null or not _ritual_catalog.is_placeable_form(type_key):
 		return type_key
-	match target_biome:
-		BiomeTypeScript.Value.MEADOW:
-			return STRUCTURE_MEADOW_DWELLING
-		BiomeTypeScript.Value.EMBER_FIELD, BiomeTypeScript.Value.EMBER_SHRINE:
-			return STRUCTURE_SCORCHED_HOLLOW
-		_:
-			return &""
+	return _ritual_catalog.resolve_form_placement(type_key, target_biome)
 
 func is_placeable_form(type_key: StringName) -> bool:
-	return type_key == FORM_WARM_HOLLOW
+	return _ritual_catalog != null and _ritual_catalog.is_placeable_form(type_key)
+
+func get_form_display_name(type_key: StringName) -> String:
+	if _ritual_catalog == null:
+		return ""
+	var entry = _ritual_catalog.get_form_entry(type_key)
+	if entry == null:
+		return ""
+	return entry.friendly_name
 
 func preview_phase1_seed_recipe_from_grid(slot_tokens: Array[int]) -> SeedRecipe:
 	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
@@ -221,7 +241,7 @@ func _resolve_ritual(slot_keys: Array[String], confirm: bool) -> RitualAttemptRe
 
 	var normalized_keys: Array[String] = keys.duplicate()
 	normalized_keys.sort()
-	var form_result: RitualAttemptResultScript = _resolve_warm_hollow_ritual(normalized_keys, confirm)
+	var form_result: RitualAttemptResultScript = _resolve_form_ritual(normalized_keys, confirm)
 	if form_result != null:
 		return form_result
 	return _resolve_seed_ritual(normalized_keys, confirm)
@@ -260,27 +280,41 @@ func _resolve_seed_ritual(normalized_keys: Array[String], confirm: bool) -> Ritu
 	seed_added_to_pouch.emit(recipe)
 	return RitualAttemptResultScript.success(_ritual_id_for_seed(recipe), &"seed", recipe.recipe_id, _keys_for_elements(recipe.elements), recipe.recipe_id)
 
-func _resolve_warm_hollow_ritual(normalized_keys: Array[String], confirm: bool) -> RitualAttemptResultScript:
-	if normalized_keys != ["essence:fire", "material:living_wood"]:
+func _resolve_form_ritual(normalized_keys: Array[String], confirm: bool) -> RitualAttemptResultScript:
+	if _ritual_catalog == null:
 		return null
-	if not can_afford_mix([GodaiElementScript.Value.KA]):
+	var entry = _ritual_catalog.lookup_form(normalized_keys)
+	if entry == null:
+		return null
+	var required_elements: Array[int] = []
+	for element: int in entry.required_elements:
+		required_elements.append(element)
+	if not can_afford_mix(required_elements):
 		var no_energy: RitualAttemptResultScript = RitualAttemptResultScript.no_match()
-		no_energy.guidance = "Gather Fire Essence before warming the hollow."
+		no_energy.guidance = "Gather more essence before shaping this form."
 		return no_energy
-	if get_material_count(&"living_wood") <= 0:
-		return RitualAttemptResultScript.locked_input("material:living_wood")
+	for material_variant: Variant in entry.required_material_counts.keys():
+		var material_id: StringName = StringName(str(material_variant))
+		var required_count: int = int(entry.required_material_counts.get(material_variant, 0))
+		if get_material_count(material_id) < required_count:
+			return RitualAttemptResultScript.locked_input("material:%s" % str(material_id))
 	if not confirm:
-		return RitualAttemptResultScript.success(&"ritual_warm_hollow", &"form", FORM_WARM_HOLLOW, ["essence:fire", "material:living_wood"], DISC_WARM_HOLLOW)
+		return RitualAttemptResultScript.success(entry.ritual_id, entry.result_kind, entry.result_id, entry.input_keys, entry.discovery_id)
 	var pouch: SeedPouch = get_pouch()
-	if pouch == null or not pouch.add_building(FORM_WARM_HOLLOW):
-		return RitualAttemptResultScript.inventory_full(&"form", FORM_WARM_HOLLOW)
+	if pouch == null or not pouch.add_building(entry.result_id):
+		return RitualAttemptResultScript.inventory_full(entry.result_kind, entry.result_id)
 	_notify_pouch_updated()
-	_consume_mix_elements([GodaiElementScript.Value.KA])
-	_material_counts[&"living_wood"] = maxi(0, get_material_count(&"living_wood") - 1)
-	if not _building_discovered.has(DISC_WARM_HOLLOW):
-		_building_discovered[DISC_WARM_HOLLOW] = true
-		_register_discovery(DISC_WARM_HOLLOW, true)
-	return RitualAttemptResultScript.success(&"ritual_warm_hollow", &"form", FORM_WARM_HOLLOW, ["essence:fire", "material:living_wood"], DISC_WARM_HOLLOW)
+	_consume_mix_elements(required_elements)
+	for material_variant_confirm: Variant in entry.required_material_counts.keys():
+		var consumed_material_id: StringName = StringName(str(material_variant_confirm))
+		var consumed_count: int = int(entry.required_material_counts.get(material_variant_confirm, 0))
+		_material_counts[consumed_material_id] = maxi(0, get_material_count(consumed_material_id) - consumed_count)
+		material_count_changed.emit(consumed_material_id, get_material_count(consumed_material_id))
+	if entry.discovery_id != &"" and not _building_discovered.has(entry.discovery_id):
+		_building_discovered[entry.discovery_id] = true
+		_register_discovery(entry.discovery_id, true)
+		_record_persistent_discovery(entry.discovery_id, entry.friendly_name, entry.codex_hint)
+	return RitualAttemptResultScript.success(entry.ritual_id, entry.result_kind, entry.result_id, entry.input_keys, entry.discovery_id)
 
 func get_element_charge(element: int) -> int:
 	return _kusho_pool.get_charge(element)
@@ -412,6 +446,33 @@ func _essence_input(id: StringName, element: int, display_name: String) -> Dicti
 		"available_count": charge,
 		"unlocked": unlocked,
 	}
+
+func _ritual_material_input_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	var seen: Dictionary = {}
+	if _ritual_catalog != null:
+		for material_id: StringName in _ritual_catalog.get_required_material_ids():
+			seen[material_id] = true
+			ids.append(material_id)
+	for material_id_ordered: StringName in MATERIAL_DISPLAY_ORDER:
+		if seen.has(material_id_ordered):
+			continue
+		seen[material_id_ordered] = true
+		ids.append(material_id_ordered)
+	return ids
+
+func _material_display_name(material_id: StringName) -> String:
+	match material_id:
+		&"living_wood":
+			return "Living Wood"
+		&"reed_fiber":
+			return "Reed Fiber"
+		&"spirit_stone":
+			return "Spirit Stone"
+		&"ember_clay":
+			return "Ember Clay"
+		_:
+			return str(material_id).replace("_", " ").capitalize()
 
 func _ritual_input_defs_by_key() -> Dictionary:
 	var defs: Dictionary = {}
@@ -545,6 +606,20 @@ func _mark_codex_discovered(entry_id: StringName) -> void:
 	if codex_service != null and codex_service.has_method("mark_discovered"):
 		codex_service.mark_discovered(entry_id)
 
+func _record_persistent_discovery(entry_id: StringName, display_name: String = "", flavor_text: String = "") -> void:
+	if entry_id == &"":
+		return
+	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
+	if persistence == null or not persistence.has_method("record_discovery"):
+		return
+	var safe_display_name: String = display_name if not display_name.is_empty() else str(entry_id)
+	var payload: DiscoveryPayload = DiscoveryPayload.create(str(entry_id), [], {
+		"display_name": safe_display_name,
+		"flavor_text": flavor_text,
+		"audio_key": "",
+	})
+	persistence.record_discovery(payload)
+
 func get_pouch() -> SeedPouch:
 	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth_service == null or not growth_service.has_method("get_pouch"):
@@ -554,81 +629,7 @@ func get_pouch() -> SeedPouch:
 func get_registry():
 	return _registry
 
-func attempt_building_craft_from_grid(slot_tokens: Array[int]) -> BuildingCraftAttemptResult:
-	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
-	var occupied_count: int = int(normalized.get("occupied_count", 0))
-	if occupied_count < 3:
-		return BuildingCraftAttemptResultScript.no_match()
-
-	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
-	if not (normalized_variant is Array):
-		return BuildingCraftAttemptResultScript.no_match()
-	var normalized_tokens: Array[int] = []
-	for token_variant: Variant in normalized_variant:
-		normalized_tokens.append(int(token_variant))
-	if _has_duplicate_ints(normalized_tokens):
-		return BuildingCraftAttemptResultScript.no_match()
-
-	var recipe_entry = _building_catalog.lookup(normalized_tokens)
-	if recipe_entry == null:
-		return BuildingCraftAttemptResultScript.no_match()
-	if not can_afford_mix(normalized_tokens):
-		return BuildingCraftAttemptResultScript.insufficient_essence(recipe_entry.building_type_key)
-
-	var pouch: SeedPouch = get_pouch()
-	if pouch == null or not pouch.add_building(recipe_entry.building_type_key):
-		return BuildingCraftAttemptResultScript.inventory_full(recipe_entry.building_type_key)
-	_notify_pouch_updated()
-	_consume_mix_elements(normalized_tokens)
-
-	var occupied_indices_variant: Variant = normalized.get("occupied_slot_indices", [])
-	var consumed_slots: Array[int] = []
-	if occupied_indices_variant is Array:
-		for idx_variant: Variant in occupied_indices_variant:
-			consumed_slots.append(int(idx_variant))
-
-	var is_first: bool = not _building_discovered.has(recipe_entry.discovery_entry_id)
-	if is_first:
-		_building_discovered[recipe_entry.discovery_entry_id] = true
-		_register_discovery(recipe_entry.discovery_entry_id, true)
-
-	var result: BuildingCraftAttemptResult = BuildingCraftAttemptResultScript.success(
-		recipe_entry.building_type_key, consumed_slots, is_first
-	)
-	building_craft_resolved.emit(
-		result.building_type_key,
-		result.outcome,
-		result.feedback_key,
-		result.guidance,
-		result.consumed_slot_indices,
-		result.is_first_discovery
-	)
-	return result
-
-func preview_building_recipe_from_grid(slot_tokens: Array[int]):
-	var normalized: Dictionary = _grid_normalizer.normalize_slots(slot_tokens)
-	var occupied_count: int = int(normalized.get("occupied_count", 0))
-	if occupied_count < 3:
-		return null
-	var normalized_variant: Variant = normalized.get("normalized_tokens", [])
-	if not (normalized_variant is Array):
-		return null
-	var normalized_tokens: Array[int] = []
-	for token_variant: Variant in normalized_variant:
-		normalized_tokens.append(int(token_variant))
-	if _has_duplicate_ints(normalized_tokens):
-		return null
-	return _building_catalog.lookup(normalized_tokens)
-
 func _notify_pouch_updated() -> void:
 	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth_service != null and growth_service.has_method("notify_pouch_updated"):
 		growth_service.notify_pouch_updated()
-
-func _has_duplicate_ints(values: Array[int]) -> bool:
-	var seen: Dictionary = {}
-	for value: int in values:
-		if seen.has(value):
-			return true
-		seen[value] = true
-	return false

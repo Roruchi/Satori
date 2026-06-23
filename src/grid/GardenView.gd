@@ -103,6 +103,10 @@ func _ready() -> void:
 	GameState.tile_placed.connect(_on_tile_placed)
 	GameState.tile_mixed.connect(_on_tile_mixed)
 	GameState.mix_rejected.connect(_on_mix_rejected)
+	if GameState.has_signal("material_node_spawned"):
+		GameState.material_node_spawned.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: queue_redraw())
+	if GameState.has_signal("material_node_harvested"):
+		GameState.material_node_harvested.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: queue_redraw())
 
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("discovery_triggered"):
@@ -262,6 +266,7 @@ func _draw() -> void:
 		)
 
 	# 4. Shrine build/interact status overlays.
+	_draw_material_nodes()
 	_draw_shrine_status_overlays()
 
 	# 5. Animations
@@ -375,6 +380,129 @@ func _draw_shrine_status_overlays() -> void:
 			var ready_label: String = "Water Essence Ready" if is_water_dropoff and not is_origin_shrine else "Essence Ready"
 			_draw_seed_overlay_text(ring_center + Vector2(-34.0, -16.0), ready_label, 10, indicator_col)
 
+func _draw_material_nodes() -> void:
+	var hud: Node = get_node_or_null("../HUD")
+	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
+	for coord: Vector2i in GameState.grid.tiles:
+		var tile: GardenTile = GameState.grid.tiles[coord]
+		if tile == null:
+			continue
+		if bool(tile.metadata.get("is_building_complete", false)):
+			continue
+		var node_variant: Variant = tile.metadata.get("material_node", null)
+		if not (node_variant is Dictionary):
+			continue
+		var material_node: Dictionary = node_variant as Dictionary
+		if StringName(str(material_node.get("state", &""))) != &"ready":
+			continue
+		var material_id: StringName = StringName(str(material_node.get("material_id", &"")))
+		_draw_material_node_visual(coord, material_id, interact_mode)
+
+func _draw_material_node_visual(coord: Vector2i, material_id: StringName, interact_mode: bool) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	_draw_collect_ring(center, _material_color(material_id), coord)
+	match material_id:
+		&"living_wood":
+			_draw_living_wood_node(coord)
+		&"reed_fiber":
+			_draw_reed_fiber_node(coord)
+		&"spirit_stone":
+			_draw_spirit_stone_node(coord)
+		&"ember_clay":
+			_draw_ember_clay_node(coord)
+		_:
+			draw_circle(center, 6.0, _material_color(material_id))
+	var label: String = "Tap: %s" % _material_label(material_id) if interact_mode else _material_label(material_id)
+	_draw_seed_overlay_text(center + Vector2(-36.0, -29.0), label, 10, _material_color(material_id).lightened(0.35))
+
+func _draw_collect_ring(center: Vector2, color: Color, coord: Vector2i) -> void:
+	var pulse: float = 0.5 + 0.5 * sin(_anim_time * 2.4 + float(hash(coord) % 19))
+	var ring_radius: float = TILE_RADIUS * (0.70 + pulse * 0.05)
+	var ring_color: Color = Color(color.r, color.g, color.b, 0.36 + pulse * 0.24)
+	draw_arc(center, ring_radius, 0.0, TAU, 32, ring_color, 2.4)
+	draw_arc(center, ring_radius + 3.2, deg_to_rad(28.0), deg_to_rad(134.0), 10, Color(1.0, 1.0, 1.0, 0.34 + pulse * 0.22), 1.5)
+
+func _draw_living_wood_node(coord: Vector2i) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	var in_large_cluster: bool = _is_in_large_cluster(coord, BiomeType.Value.MEADOW)
+	var scale: float = 1.22 if in_large_cluster else 1.0
+	var trunk_base: Vector2 = center + Vector2(0.0, 6.0)
+	draw_line(trunk_base, center + Vector2(0.0, -6.0 * scale), Color(0.38, 0.24, 0.12, 0.98), 4.0 * scale)
+	draw_line(center + Vector2(-3.0, -1.0), center + Vector2(-9.0 * scale, -9.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
+	draw_line(center + Vector2(3.0, -2.0), center + Vector2(9.0 * scale, -11.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
+	draw_circle(center + Vector2(-7.0 * scale, -10.0 * scale), 6.2 * scale, Color(0.32, 0.62, 0.24, 0.96))
+	draw_circle(center + Vector2(0.0, -14.0 * scale), 7.4 * scale, Color(0.40, 0.72, 0.28, 0.96))
+	draw_circle(center + Vector2(8.0 * scale, -9.0 * scale), 5.8 * scale, Color(0.24, 0.55, 0.22, 0.96))
+	draw_circle(center + Vector2(1.5, -13.0 * scale), 2.5 * scale, Color(0.82, 0.96, 0.52, 0.94))
+
+func _draw_reed_fiber_node(coord: Vector2i) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	var water_shadow: Color = Color(0.03, 0.14, 0.24, 0.40)
+	draw_circle(center + Vector2(1.0, 2.0), 9.2, water_shadow)
+	for reed_x: float in [-7.0, -3.5, 6.5]:
+		var base: Vector2 = center + Vector2(reed_x, 6.0)
+		draw_line(base, base + Vector2(1.4, -15.0), Color(0.58, 0.82, 0.38, 0.95), 1.7)
+		draw_circle(base + Vector2(1.5, -15.0), 1.8, Color(0.86, 0.77, 0.34, 0.90))
+	var fish_center: Vector2 = center + Vector2(2.5, -3.0 + sin(_anim_time * 2.2) * 1.2)
+	var fish_col: Color = Color(0.72, 0.94, 1.0, 0.94)
+	draw_colored_polygon(PackedVector2Array([
+		fish_center + Vector2(-8.0, 0.0),
+		fish_center + Vector2(-2.5, -4.0),
+		fish_center + Vector2(6.0, -2.4),
+		fish_center + Vector2(8.5, 0.0),
+		fish_center + Vector2(6.0, 2.4),
+		fish_center + Vector2(-2.5, 4.0),
+	]), fish_col)
+	draw_colored_polygon(PackedVector2Array([
+		fish_center + Vector2(-8.0, 0.0),
+		fish_center + Vector2(-13.0, -4.0),
+		fish_center + Vector2(-13.0, 4.0),
+	]), Color(0.44, 0.78, 0.95, 0.92))
+	draw_circle(fish_center + Vector2(5.0, -0.8), 0.9, Color(0.02, 0.08, 0.12, 0.90))
+
+func _draw_spirit_stone_node(coord: Vector2i) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	draw_circle(center + Vector2(0.0, 6.5), 8.6, Color(0.05, 0.06, 0.08, 0.34))
+	var crystal_col: Color = Color(0.74, 0.82, 0.90, 0.96)
+	var glow_col: Color = Color(0.84, 0.96, 1.0, 0.58)
+	for crystal: Dictionary in [
+		{"offset": Vector2(-6.0, 1.0), "height": 13.0, "width": 5.0},
+		{"offset": Vector2(0.0, -2.0), "height": 17.0, "width": 6.5},
+		{"offset": Vector2(6.0, 2.0), "height": 11.0, "width": 4.5},
+	]:
+		var offset: Vector2 = crystal["offset"]
+		var height: float = float(crystal["height"])
+		var width: float = float(crystal["width"])
+		var base: Vector2 = center + offset
+		draw_colored_polygon(PackedVector2Array([
+			base + Vector2(-width, 4.0),
+			base + Vector2(0.0, -height),
+			base + Vector2(width, 4.0),
+			base + Vector2(0.0, 7.0),
+		]), crystal_col)
+		draw_line(base + Vector2(0.0, -height + 1.0), base + Vector2(0.0, 5.5), glow_col, 1.4)
+
+func _draw_ember_clay_node(coord: Vector2i) -> void:
+	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	draw_circle(center + Vector2(0.0, 5.0), 9.0, Color(0.16, 0.04, 0.02, 0.45))
+	var clay_col: Color = Color(0.70, 0.28, 0.16, 0.96)
+	var ember_col: Color = Color(1.0, 0.72, 0.25, 0.94)
+	for shard: Dictionary in [
+		{"offset": Vector2(-5.0, 2.0), "radius": 5.0},
+		{"offset": Vector2(2.5, -2.0), "radius": 6.5},
+		{"offset": Vector2(7.0, 4.0), "radius": 4.2},
+	]:
+		var offset: Vector2 = shard["offset"]
+		var radius: float = float(shard["radius"])
+		var shard_center: Vector2 = center + offset
+		draw_colored_polygon(PackedVector2Array([
+			shard_center + Vector2(-radius, 2.0),
+			shard_center + Vector2(-radius * 0.2, -radius),
+			shard_center + Vector2(radius, -radius * 0.2),
+			shard_center + Vector2(radius * 0.35, radius),
+		]), clay_col)
+		draw_circle(shard_center + Vector2(1.0, -1.0), radius * 0.24, ember_col)
+
 func _draw_interact_hover_popover() -> void:
 	var hud: Node = get_node_or_null("../HUD")
 	if hud != null and hud.has_method("hide_world_popover"):
@@ -387,9 +515,17 @@ func _draw_interact_hover_popover() -> void:
 		return
 	var is_house: bool = bool(tile.metadata.get("is_building_complete", false)) and not bool(tile.metadata.get("shrine_built", false))
 	var is_structure: bool = bool(tile.metadata.get("shrine_built", false)) or bool(tile.metadata.get("is_origin_shrine", false)) or bool(tile.metadata.get("is_water_dropoff", false))
-	if not is_house and not is_structure:
+	var material_node: Dictionary = {}
+	var node_variant: Variant = tile.metadata.get("material_node", null)
+	if node_variant is Dictionary:
+		material_node = node_variant as Dictionary
+	var has_ready_material: bool = not material_node.is_empty() and StringName(str(material_node.get("state", &""))) == &"ready"
+	if not is_house and not is_structure and not has_ready_material:
 		return
 	var lines: Array[String] = []
+	if has_ready_material:
+		lines.append("Material: %s" % _material_label(StringName(str(material_node.get("material_id", &"")))))
+		lines.append("Tap to harvest")
 	if is_house:
 		lines.append("Type: %s" % _structure_label_for_tile(tile))
 		var owner_label: String = "Owner: Unbound"
@@ -423,6 +559,10 @@ func _structure_label_for_tile(tile: GardenTile) -> String:
 			return "Meadow Dwelling"
 		"building_scorched_hollow":
 			return "Scorched Hollow"
+		"building_reed_nest":
+			return "Reed Nest"
+		"building_stone_basin":
+			return "Stone Basin"
 		"building_house":
 			return "House (%s)" % _biome_label(tile.biome)
 	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
@@ -463,6 +603,32 @@ func _godai_name(element_id: int) -> String:
 			return "Ku"
 		_:
 			return "?"
+
+func _material_label(material_id: StringName) -> String:
+	match material_id:
+		&"living_wood":
+			return "Living Wood"
+		&"reed_fiber":
+			return "Reed Fiber"
+		&"spirit_stone":
+			return "Spirit Stone"
+		&"ember_clay":
+			return "Ember Clay"
+		_:
+			return str(material_id).replace("_", " ").capitalize()
+
+func _material_color(material_id: StringName) -> Color:
+	match material_id:
+		&"living_wood":
+			return Color(0.70, 0.95, 0.38, 0.96)
+		&"reed_fiber":
+			return Color(0.62, 0.90, 1.0, 0.96)
+		&"spirit_stone":
+			return Color(0.82, 0.92, 1.0, 0.96)
+		&"ember_clay":
+			return Color(1.0, 0.56, 0.24, 0.96)
+		_:
+			return Color(0.94, 0.92, 0.82, 0.96)
 
 func _biome_label(biome: int) -> String:
 	match biome:
@@ -608,7 +774,7 @@ func _draw_build_block_icon(coord: Vector2i, biome: int, structure_id: String, u
 func _should_draw_house_structure_sprite(structure_id: String) -> bool:
 	if structure_id.is_empty():
 		return true
-	return ["building_house", "building_meadow_dwelling"].has(structure_id)
+	return ["building_house", "building_meadow_dwelling", "building_reed_nest"].has(structure_id)
 
 func _draw_structure_texture(center: Vector2, texture: Texture2D, draw_size: float) -> void:
 	if texture == null:

@@ -1,0 +1,5 @@
+Name,Material ID,Icon,Asset,Visual ID,Spawned In Biome
+Living Wood,living_wood,assets/materials/material_icon_spritesheet.png,assets/materials/material_icon_spritesheet.png,living_wood_tree,Meadow; Cloud Ridge
+Reed Fiber,reed_fiber,assets/materials/material_icon_spritesheet.png,assets/materials/material_icon_spritesheet.png,water_fish_reeds,River; Wetlands; Moonlit Pool; Prismatic Terraces; Frostlands
+Spirit Stone,spirit_stone,assets/materials/material_icon_spritesheet.png,assets/materials/material_icon_spritesheet.png,spirit_stone_minerals,Stone; Sacred Stone; Badlands; Whistling Canyons
+Ember Clay,ember_clay,assets/materials/material_icon_spritesheet.png,assets/materials/material_icon_spritesheet.png,ember_clay_shards,Ember Field; Ember Shrine; The Ashfall

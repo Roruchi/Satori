@@ -1,0 +1,38 @@
+export const catalogs = [
+  {
+    id: "rituals",
+    label: "Rituals",
+    path: "../rituals.csv",
+    primaryField: "Friendly Name",
+    badgeField: "Type",
+    filterField: "Type",
+    visibleFields: ["Friendly Name", "Type", "Result ID", "Component1", "Component2", "Component3", "Placement Rules"],
+  },
+  {
+    id: "spirits",
+    label: "Spirits",
+    path: "../spirit_discoveries.csv",
+    primaryField: "Friendly Name",
+    badgeField: "Min Satori Required",
+    filterField: "Min Satori Required",
+    visibleFields: ["Friendly Name", "Min Satori Required", "Preferred Biome", "Codex Hint 1", "Codex Hint 2"],
+  },
+  {
+    id: "biomes",
+    label: "Biomes",
+    path: "../biome_discoveries.csv",
+    primaryField: "Friendly Name",
+    badgeField: "Tier",
+    filterField: "Tier",
+    visibleFields: ["Friendly Name", "Tier", "Required Biome", "Codex Hint 1", "Unlock text", "Assets Folder"],
+  },
+  {
+    id: "materials",
+    label: "Materials",
+    path: "../materials.csv",
+    primaryField: "Name",
+    badgeField: "Material ID",
+    filterField: "",
+    visibleFields: ["Name", "Material ID", "Visual ID", "Spawned In Biome", "Icon", "Asset"],
+  },
+];

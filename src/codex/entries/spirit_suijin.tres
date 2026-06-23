@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"spirit_suijin"
 category = 2
-hint_text = "A water kami lingers in the hush of Veil Marsh."
-full_name = "Suijin"
-full_description = "A deity of water and flowing life, honored in places of springs, rivers, and ritual purification."
+hint_text = "A reed nest rests where second-island rain gathers."
+full_name = "Rain Kami Suijin"
+full_description = "A water kami drawn by a Reed Nest and a gathered rain cluster. This first Rain path stays shrine-focused and does not require spirit assistants."
 always_hidden = false

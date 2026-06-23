@@ -188,7 +188,8 @@ switch ($Command) {
             Invoke-GutTests $resolvedGodot $projectRoot $Test
         } else {
             Invoke-GutTests $resolvedGodot $projectRoot "res://tests/unit/seeds/test_seed_crafting_grid.gd"
-            Invoke-GutTests $resolvedGodot $projectRoot "res://tests/unit/seeds/test_building_crafting_inventory.gd"
+            Invoke-GutTests $resolvedGodot $projectRoot "res://tests/unit/seeds/test_ritual_recipe_catalog.gd"
+            Invoke-GutTests $resolvedGodot $projectRoot "res://tests/unit/seeds/test_ritual_menu_slots.gd"
             Invoke-GutTests $resolvedGodot $projectRoot "res://tests/unit/test_building_placement_session.gd"
         }
     }

@@ -8,7 +8,6 @@ const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.g
 
 const SLOT_COUNT: int = 3
 const EMPTY_KEY: String = ""
-const FORM_WARM_HOLLOW: StringName = &"form_warm_hollow"
 
 const _INPUT_COLORS: Dictionary = {
 	"essence:earth": Color(0.62, 0.62, 0.62),
@@ -17,6 +16,8 @@ const _INPUT_COLORS: Dictionary = {
 	"essence:wind": Color(0.298, 0.686, 0.314),
 	"essence:ku": Color(0.55, 0.42, 0.78),
 	"material:living_wood": Color(0.56, 0.42, 0.25),
+	"material:reed_fiber": Color(0.42, 0.70, 0.66),
+	"material:spirit_stone": Color(0.54, 0.58, 0.66),
 }
 
 const _INPUT_LABELS: Dictionary = {
@@ -26,6 +27,8 @@ const _INPUT_LABELS: Dictionary = {
 	"essence:wind": "Wind Essence",
 	"essence:ku": "Ku Essence",
 	"material:living_wood": "Living Wood",
+	"material:reed_fiber": "Reed Fiber",
+	"material:spirit_stone": "Spirit Stone",
 }
 
 const _INPUT_SHORT_LABELS: Dictionary = {
@@ -35,6 +38,8 @@ const _INPUT_SHORT_LABELS: Dictionary = {
 	"essence:wind": "Wind",
 	"essence:ku": "Ku",
 	"material:living_wood": "Wood",
+	"material:reed_fiber": "Reed",
+	"material:spirit_stone": "Stone",
 }
 
 const _BIOME_SEED_NAMES: Dictionary = {
@@ -84,6 +89,8 @@ const _FEEDBACK_MESSAGES: Dictionary = {
 @onready var _wind_button: Button = $VBox/Elements/WindButton
 @onready var _ku_button: Button = $VBox/Elements/KuButton
 @onready var _living_wood_button: Button = $VBox/Materials/LivingWoodButton
+@onready var _reed_fiber_button: Button = $VBox/Materials/ReedFiberButton
+@onready var _spirit_stone_button: Button = $VBox/Materials/SpiritStoneButton
 
 var _slot_keys: Array[String] = []
 var _selected_slot_index: int = 0
@@ -101,6 +108,8 @@ func _ready() -> void:
 	_wind_button.pressed.connect(func() -> void: _on_input_tapped("essence:wind"))
 	_ku_button.pressed.connect(func() -> void: _on_input_tapped("essence:ku"))
 	_living_wood_button.pressed.connect(func() -> void: _on_input_tapped("material:living_wood"))
+	_reed_fiber_button.pressed.connect(func() -> void: _on_input_tapped("material:reed_fiber"))
+	_spirit_stone_button.pressed.connect(func() -> void: _on_input_tapped("material:spirit_stone"))
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_clear_button.pressed.connect(_on_clear_pressed)
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
@@ -112,6 +121,8 @@ func _ready() -> void:
 		alchemy.seed_added_to_pouch.connect(_on_seed_added_to_pouch)
 	if alchemy != null and alchemy.has_signal("ritual_attempt_resolved"):
 		alchemy.ritual_attempt_resolved.connect(func(_outcome: StringName, _feedback_key: StringName, _guidance: String, _ritual_id: StringName, _result_kind: StringName, _result_id: StringName) -> void: _update_ui())
+	if alchemy != null and alchemy.has_signal("material_count_changed"):
+		alchemy.material_count_changed.connect(func(_material_id: StringName, _count: int) -> void: _update_ui())
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
@@ -244,6 +255,8 @@ func _update_input_buttons() -> void:
 		"essence:wind": _wind_button,
 		"essence:ku": _ku_button,
 		"material:living_wood": _living_wood_button,
+		"material:reed_fiber": _reed_fiber_button,
+		"material:spirit_stone": _spirit_stone_button,
 	}
 	for key_variant: Variant in buttons_by_key.keys():
 		var key: String = str(key_variant)
@@ -406,8 +419,9 @@ func _result_display_name(result: RitualAttemptResultScript) -> String:
 		return ""
 	if result.result_kind == &"seed":
 		return _recipe_display_name_by_id(result.result_id)
-	if result.result_id == FORM_WARM_HOLLOW:
-		return "Warm Hollow"
+	var form_name: String = _form_display_name(result.result_id)
+	if not form_name.is_empty():
+		return form_name
 	var raw: String = str(result.result_id)
 	return raw.replace("form_", "").replace("building_", "").capitalize()
 
@@ -453,20 +467,21 @@ func _format_place_inventory_status(pouch: SeedPouch) -> String:
 	return "%s | %s" % [prefix, ", ".join(placeable_parts)]
 
 func _building_display_name(type_key: StringName) -> String:
-	match type_key:
-		FORM_WARM_HOLLOW:
-			return "Warm Hollow"
-		&"building_meadow_dwelling":
-			return "Meadow Dwelling"
-		&"building_scorched_hollow":
-			return "Scorched Hollow"
-		_:
-			var raw: String = str(type_key)
-			if raw.begins_with("building_"):
-				raw = raw.substr("building_".length())
-			if raw.begins_with("form_"):
-				raw = raw.substr("form_".length())
-			return raw.capitalize()
+	var form_name: String = _form_display_name(type_key)
+	if not form_name.is_empty():
+		return form_name
+	var raw: String = str(type_key)
+	if raw.begins_with("building_"):
+		raw = raw.substr("building_".length())
+	if raw.begins_with("form_"):
+		raw = raw.substr("form_".length())
+	return raw.capitalize()
+
+func _form_display_name(type_key: StringName) -> String:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_method("get_form_display_name"):
+		return str(alchemy.get_form_display_name(type_key))
+	return ""
 
 func _shake_button(target: Button) -> void:
 	if target == null:

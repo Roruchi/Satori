@@ -102,14 +102,29 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(120, 48)
 text = "Ku Essence"
 
-[node name="Materials" type="HBoxContainer" parent="VBox"]
+[node name="Materials" type="GridContainer" parent="VBox"]
 layout_mode = 2
+columns = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
 
 [node name="LivingWoodButton" type="Button" parent="VBox/Materials"]
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(120, 48)
 text = "Living Wood"
+
+[node name="ReedFiberButton" type="Button" parent="VBox/Materials"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(120, 48)
+text = "Reed Fiber"
+
+[node name="SpiritStoneButton" type="Button" parent="VBox/Materials"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(120, 48)
+text = "Spirit Stone"
 
 [node name="Actions" type="HBoxContainer" parent="VBox"]
 layout_mode = 2

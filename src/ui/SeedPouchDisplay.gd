@@ -24,8 +24,6 @@ func _ready() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy != null and alchemy.has_signal("seed_added_to_pouch"):
 		alchemy.seed_added_to_pouch.connect(_on_seed_added)
-	if alchemy != null and alchemy.has_signal("building_craft_resolved"):
-		alchemy.building_craft_resolved.connect(func(_tk: StringName, _oc: StringName, _fk: StringName, _g: String, _c: Array[int], _fd: bool) -> void: _refresh())
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_refresh)
@@ -78,19 +76,21 @@ func _seed_display_name(recipe: SeedRecipe) -> String:
 	return "%s Seed" % biome_name
 
 func _building_display_name(type_key: StringName) -> String:
-	match type_key:
-		&"form_warm_hollow":
-			return "Warm Hollow"
-		&"building_meadow_dwelling":
-			return "Meadow Dwelling"
-		&"building_scorched_hollow":
-			return "Scorched Hollow"
+	var form_name: String = _form_display_name(type_key)
+	if not form_name.is_empty():
+		return form_name
 	var raw: String = str(type_key)
 	if raw.begins_with("building_"):
 		raw = raw.substr("building_".length())
 	if raw.begins_with("form_"):
 		raw = raw.substr("form_".length())
 	return raw.capitalize()
+
+func _form_display_name(type_key: StringName) -> String:
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_method("get_form_display_name"):
+		return str(alchemy.get_form_display_name(type_key))
+	return ""
 
 func select_building_item(type_key: StringName) -> void:
 	building_item_selected.emit(type_key)

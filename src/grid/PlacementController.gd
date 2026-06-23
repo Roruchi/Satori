@@ -113,6 +113,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					var is_plant_mode: bool = hud.has_method("is_plant_mode") and hud.is_plant_mode()
 					is_build_mode = hud.has_method("is_build_mode") and hud.is_build_mode()
 					is_plant_or_build_mode = is_plant_mode or is_build_mode
+				if not is_build_mode and _try_harvest_material(coord):
+					return
 				if not is_plant_or_build_mode:
 					if hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode():
 						_collect_spirit_charge(coord)
@@ -213,6 +215,7 @@ func _toggle_build_block(coord: Vector2i) -> bool:
 		# Only structure recipes can expand into multi-tile projects.
 		return false
 	pouch.consume_use_at(recipe_index)
+	_harvest_material_for_placement(coord)
 	_mark_build_block_pending_confirm(tile, recipe_biome, origin_shrine_build, project_id_for_new_block, pending_structure_candidate)
 	_refresh_project_recipe_state(project_id_for_new_block)
 	if growth_service.has_method("notify_pouch_updated"):
@@ -581,6 +584,28 @@ func _collect_spirit_charge(coord: Vector2i) -> void:
 		return
 	alchemy.collect_shrine_charge(coord)
 
+func _try_harvest_material(coord: Vector2i) -> bool:
+	if not GameState.has_method("has_ready_material_at") or not GameState.has_ready_material_at(coord):
+		return false
+	if not GameState.has_method("harvest_material_at"):
+		return false
+	var result_variant: Variant = GameState.harvest_material_at(coord, &"player")
+	if result_variant is Dictionary:
+		var result: Dictionary = result_variant as Dictionary
+		if StringName(str(result.get("outcome", &""))) == &"success":
+			if _garden_view != null and _garden_view.has_method("queue_redraw"):
+				_garden_view.queue_redraw()
+			return true
+	return false
+
+func _harvest_material_for_placement(coord: Vector2i) -> void:
+	if GameState.has_method("harvest_material_for_placement"):
+		GameState.harvest_material_for_placement(coord)
+	elif GameState.has_method("harvest_material_at"):
+		GameState.harvest_material_at(coord, &"placement")
+	if _garden_view != null and _garden_view.has_method("queue_redraw"):
+		_garden_view.queue_redraw()
+
 func _try_build_shrine(coord: Vector2i) -> bool:
 	if not GameState.grid.has_tile(coord):
 		return false
@@ -591,6 +616,7 @@ func _try_build_shrine(coord: Vector2i) -> bool:
 		return false
 	if bool(tile.metadata.get("shrine_built", false)):
 		return false
+	_harvest_material_for_placement(coord)
 	tile.metadata["shrine_built"] = true
 	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
 	var satori_service: Node = get_node_or_null("/root/SatoriService")
@@ -649,6 +675,7 @@ func confirm_building_placement() -> bool:
 		if GameState.grid.has_tile(tile_coord):
 			var tile: GardenTile = GameState.grid.get_tile(tile_coord)
 			if tile != null:
+				_harvest_material_for_placement(tile_coord)
 				tile.metadata["is_building_complete"] = true
 				tile.metadata["structure_discovery_id"] = str(final_type_key)
 				if final_type_key != type_key:

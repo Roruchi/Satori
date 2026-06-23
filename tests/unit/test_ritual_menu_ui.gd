@@ -1,6 +1,45 @@
 extends GutTest
 
+class DiscoveryStub:
+	extends Node
+	var discovered_ids: Array[StringName] = []
+	func get_discovered_ids() -> Array[StringName]:
+		return discovered_ids
+
+func _add_root_singleton(p_name: String, node: Node) -> void:
+	var root: Node = get_tree().root
+	var existing: Node = root.get_node_or_null("/root/%s" % p_name)
+	if existing != null:
+		root.remove_child(existing)
+		existing.free()
+	node.name = p_name
+	root.add_child(node)
+
+func _setup_context() -> Dictionary:
+	var discovery: DiscoveryStub = DiscoveryStub.new()
+	_add_root_singleton("DiscoveryPersistence", discovery)
+
+	var growth: SeedGrowthServiceNode = SeedGrowthServiceNode.new()
+	_add_root_singleton("SeedGrowthService", growth)
+	growth._ready()
+
+	var alchemy: SeedAlchemyServiceNode = SeedAlchemyServiceNode.new()
+	_add_root_singleton("SeedAlchemyService", alchemy)
+	alchemy._ready()
+
+	return {"growth": growth, "alchemy": alchemy, "discovery": discovery}
+
+func _cleanup_context(ctx: Dictionary) -> void:
+	for key: String in ["growth", "alchemy", "discovery"]:
+		var node_variant: Variant = ctx.get(key, null)
+		if node_variant is Node:
+			var node: Node = node_variant as Node
+			if node.get_parent() != null:
+				node.get_parent().remove_child(node)
+			node.free()
+
 func test_ritual_panel_scene_uses_three_slots_and_ritual_copy() -> void:
+	var ctx: Dictionary = _setup_context()
 	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
 	assert_not_null(scene)
 	var panel: Control = scene.instantiate() as Control
@@ -13,6 +52,8 @@ func test_ritual_panel_scene_uses_three_slots_and_ritual_copy() -> void:
 	assert_null(panel.get_node_or_null("VBox/Grid/Slot3"))
 	assert_null(panel.get_node_or_null("VBox/Grid/Slot8"))
 	assert_not_null(panel.get_node_or_null("VBox/Materials/LivingWoodButton"))
+	assert_not_null(panel.get_node_or_null("VBox/Materials/ReedFiberButton"))
+	assert_not_null(panel.get_node_or_null("VBox/Materials/SpiritStoneButton"))
 	assert_not_null(panel.get_node_or_null("VBox/ChoicePrompt"))
 
 	var slots_label: Label = panel.get_node("VBox/Slots") as Label
@@ -24,8 +65,10 @@ func test_ritual_panel_scene_uses_three_slots_and_ritual_copy() -> void:
 
 	remove_child(panel)
 	panel.free()
+	_cleanup_context(ctx)
 
 func test_ritual_slot_first_selection_fills_selected_slot() -> void:
+	var ctx: Dictionary = _setup_context()
 	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
 	assert_not_null(scene)
 	var panel: Control = scene.instantiate() as Control
@@ -46,8 +89,28 @@ func test_ritual_slot_first_selection_fills_selected_slot() -> void:
 
 	remove_child(panel)
 	panel.free()
+	_cleanup_context(ctx)
+
+func test_ritual_panel_updates_reed_fiber_material_button() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"reed_fiber", 1)
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	await get_tree().process_frame
+
+	var reed_button: Button = panel.get_node("VBox/Materials/ReedFiberButton") as Button
+	assert_eq(reed_button.text, "Reed Fiber\nx1")
+	assert_false(reed_button.disabled)
+
+	remove_child(panel)
+	panel.free()
+	_cleanup_context(ctx)
 
 func test_ritual_slot_first_selection_rejects_duplicate_inputs() -> void:
+	var ctx: Dictionary = _setup_context()
 	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
 	assert_not_null(scene)
 	var panel: Control = scene.instantiate() as Control
@@ -67,8 +130,11 @@ func test_ritual_slot_first_selection_rejects_duplicate_inputs() -> void:
 
 	remove_child(panel)
 	panel.free()
+	_cleanup_context(ctx)
 
 func test_hud_separates_placeables_essence_and_materials() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var scene: PackedScene = load("res://scenes/UI/HUD.tscn") as PackedScene
 	assert_not_null(scene)
 	var hud: CanvasLayer = scene.instantiate() as CanvasLayer
@@ -77,17 +143,32 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 
 	var pouch_label: Label = hud.get_node("Root/TopBar/InventoryStack/SeedPouchDisplay") as Label
 	var material_label: Label = hud.get_node("Root/TopBar/InventoryStack/MaterialMeterLabel") as Label
+	var material_slot_row: HBoxContainer = hud.get_node("Root/TopBar/InventoryStack/MaterialSlotRow") as HBoxContainer
 	var essence_title: Label = hud.get_node("Root/TopBar/ElementMeterRow/EssenceTitle") as Label
 	var debug_label: Label = hud.get_node("Root/DebugInfoLabel") as Label
 	assert_true(pouch_label.text.begins_with("Placeables:"))
-	assert_eq(material_label.text, "Materials: Living Wood x3")
+	assert_eq(material_label.text, "Materials:")
+	assert_not_null(material_slot_row.get_node_or_null("MaterialSlot_reed_fiber"))
+	var reed_count_label: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/CountLabel") as Label
+	var ember_count_label: Label = material_slot_row.get_node("MaterialSlot_ember_clay/Contents/CountLabel") as Label
+	assert_eq(reed_count_label.text, "0")
+	assert_eq(ember_count_label.text, "0")
 	assert_eq(essence_title.text, "Essence:")
 	assert_gt(debug_label.offset_top, 88.0)
 
+	alchemy.add_material_for_testing(&"reed_fiber", 2)
+	alchemy.add_material_for_testing(&"spirit_stone", 1)
+	await get_tree().process_frame
+	assert_eq(material_label.text, "Materials:")
+	assert_eq(reed_count_label.text, "2")
+	assert_eq(ember_count_label.text, "0")
+
 	remove_child(hud)
 	hud.free()
+	_cleanup_context(ctx)
 
 func test_ritual_tab_lays_out_panel_without_screen_resize() -> void:
+	var ctx: Dictionary = _setup_context()
 	var scene: PackedScene = load("res://scenes/UI/HUD.tscn") as PackedScene
 	assert_not_null(scene)
 	var hud: CanvasLayer = scene.instantiate() as CanvasLayer
@@ -106,3 +187,4 @@ func test_ritual_tab_lays_out_panel_without_screen_resize() -> void:
 
 	remove_child(hud)
 	hud.free()
+	_cleanup_context(ctx)
