@@ -11,12 +11,18 @@ const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const MATERIAL_ICON_CELL_SIZE: float = 32.0
 const MATERIAL_SLOT_ICON_SIZE: float = 18.0
-const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(68.0, 24.0)
+const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(88.0, 24.0)
 const _MATERIAL_ICON_INDEX: Dictionary = {
 	&"living_wood": 0,
 	&"reed_fiber": 1,
 	&"spirit_stone": 2,
 	&"ember_clay": 3,
+}
+const _MATERIAL_SHORT_LABELS: Dictionary = {
+	&"living_wood": "LW",
+	&"reed_fiber": "RF",
+	&"spirit_stone": "SS",
+	&"ember_clay": "EC",
 }
 const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
 const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
@@ -393,6 +399,15 @@ func _create_material_slot(material_id: StringName) -> PanelContainer:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture = _material_icon_texture(material_id)
 	row.add_child(icon)
+	var fallback_label: Label = Label.new()
+	fallback_label.name = "IconFallback"
+	fallback_label.text = _material_short_label(material_id)
+	fallback_label.custom_minimum_size = Vector2(18.0, 18.0)
+	fallback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	fallback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fallback_label.add_theme_color_override("font_color", Color(0.82, 0.76, 0.59, 0.98))
+	fallback_label.add_theme_font_size_override("font_size", 9)
+	row.add_child(fallback_label)
 	var count_label: Label = Label.new()
 	count_label.name = "CountLabel"
 	count_label.text = "0"
@@ -413,6 +428,9 @@ func _material_icon_texture(material_id: StringName) -> Texture2D:
 	atlas_texture.atlas = _MATERIAL_ICON_TEXTURE
 	atlas_texture.region = Rect2(Vector2(float(icon_index) * MATERIAL_ICON_CELL_SIZE, 0.0), Vector2(MATERIAL_ICON_CELL_SIZE, MATERIAL_ICON_CELL_SIZE))
 	return atlas_texture
+
+func _material_short_label(material_id: StringName) -> String:
+	return str(_MATERIAL_SHORT_LABELS.get(material_id, str(material_id).substr(0, 2).to_upper()))
 
 func _material_display_name(material_id: StringName) -> String:
 	match material_id:

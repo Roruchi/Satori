@@ -1,5 +1,7 @@
 extends GutTest
 
+const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+
 class DiscoveryStub:
 	extends Node
 	var discovered_ids: Array[StringName] = []
@@ -109,6 +111,29 @@ func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	panel.free()
 	_cleanup_context(ctx)
 
+func test_ritual_panel_keeps_depleted_essence_available_for_single_seed() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.FU, 0)
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	await get_tree().process_frame
+
+	var wind_button: Button = panel.get_node("VBox/Elements/WindButton") as Button
+	assert_eq(wind_button.text, "Wind Essence\n0/3")
+	assert_false(wind_button.disabled)
+	panel.call("_on_input_tapped", "essence:wind")
+	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
+	assert_eq(slot0.text, "Slot 1\nWind")
+	var preview: Label = panel.get_node("VBox/Preview") as Label
+	assert_eq(preview.text, "Preview: Meadow Seed")
+
+	remove_child(panel)
+	panel.free()
+	_cleanup_context(ctx)
+
 func test_ritual_slot_first_selection_rejects_duplicate_inputs() -> void:
 	var ctx: Dictionary = _setup_context()
 	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
@@ -150,9 +175,13 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 	assert_eq(material_label.text, "Materials:")
 	assert_not_null(material_slot_row.get_node_or_null("MaterialSlot_reed_fiber"))
 	var reed_count_label: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/CountLabel") as Label
+	var reed_icon_fallback: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/IconFallback") as Label
 	var ember_count_label: Label = material_slot_row.get_node("MaterialSlot_ember_clay/Contents/CountLabel") as Label
+	var ember_icon_fallback: Label = material_slot_row.get_node("MaterialSlot_ember_clay/Contents/IconFallback") as Label
 	assert_eq(reed_count_label.text, "0")
+	assert_eq(reed_icon_fallback.text, "RF")
 	assert_eq(ember_count_label.text, "0")
+	assert_eq(ember_icon_fallback.text, "EC")
 	assert_eq(essence_title.text, "Essence:")
 	assert_gt(debug_label.offset_top, 88.0)
 

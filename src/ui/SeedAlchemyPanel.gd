@@ -167,7 +167,7 @@ func _on_input_tapped(input_key: String) -> void:
 	var definition: Dictionary = _definition_for_key(input_key)
 	if definition.is_empty():
 		return
-	if not bool(definition.get("unlocked", false)) or int(definition.get("available_count", 0)) <= 0:
+	if not bool(definition.get("available_for_selection", false)):
 		_last_feedback = _feedback_text_for_key(RitualAttemptResultScript.FEEDBACK_LOCKED_INPUT)
 		_update_ui()
 		return
@@ -266,7 +266,7 @@ func _update_input_buttons() -> void:
 		var definition: Dictionary = _definition_for_key(key)
 		var available: int = int(definition.get("available_count", 0))
 		var unlocked: bool = bool(definition.get("unlocked", false))
-		btn.disabled = not unlocked or available <= 0
+		btn.disabled = not bool(definition.get("available_for_selection", false))
 		btn.text = _format_input_button_text(key, available, unlocked)
 		_style_input_button(btn, key, _selected_slot_key() == key)
 

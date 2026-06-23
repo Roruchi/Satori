@@ -102,6 +102,7 @@ func get_ritual_input_definitions() -> Array[Dictionary]:
 			"key": "material:%s" % str(material_id),
 			"display_name": _material_display_name(material_id),
 			"available_count": get_material_count(material_id),
+			"available_for_selection": get_material_count(material_id) > 0,
 			"unlocked": true,
 		})
 	return inputs
@@ -233,9 +234,10 @@ func _resolve_ritual(slot_keys: Array[String], confirm: bool) -> RitualAttemptRe
 			return RitualAttemptResultScript.locked_input(key)
 		if StringName(str(input_def.get("kind", &""))) == INPUT_KIND_ESSENCE:
 			has_essence = true
-		var available_count: int = int(input_def.get("available_count", 0))
-		if available_count <= 0:
-			return RitualAttemptResultScript.locked_input(key)
+		else:
+			var available_count: int = int(input_def.get("available_count", 0))
+			if available_count <= 0:
+				return RitualAttemptResultScript.locked_input(key)
 	if not has_essence:
 		return RitualAttemptResultScript.missing_essence()
 
@@ -262,7 +264,8 @@ func _resolve_seed_ritual(normalized_keys: Array[String], confirm: bool) -> Ritu
 		return RitualAttemptResultScript.no_match()
 	if _recipe_has_locked_elements(recipe):
 		return RitualAttemptResultScript.locked_input(_key_for_element(recipe.elements[0]))
-	if not can_afford_mix(recipe.elements):
+	var requires_essence_charge: bool = recipe.elements.size() > 1
+	if requires_essence_charge and not can_afford_mix(recipe.elements):
 		var no_energy: RitualAttemptResultScript = RitualAttemptResultScript.no_match()
 		no_energy.guidance = "Gather more essence before shaping this seed."
 		return no_energy
@@ -274,7 +277,8 @@ func _resolve_seed_ritual(normalized_keys: Array[String], confirm: bool) -> Ritu
 	if not pouch.add(recipe):
 		return RitualAttemptResultScript.inventory_full(&"seed", recipe.recipe_id)
 	_notify_pouch_updated()
-	_consume_mix_elements(recipe.elements)
+	if requires_essence_charge:
+		_consume_mix_elements(recipe.elements)
 	if not _discovered.has(recipe.recipe_id):
 		_register_discovery(recipe.recipe_id, true)
 	seed_added_to_pouch.emit(recipe)
@@ -444,6 +448,7 @@ func _essence_input(id: StringName, element: int, display_name: String) -> Dicti
 		"element": element,
 		"display_name": display_name,
 		"available_count": charge,
+		"available_for_selection": unlocked,
 		"unlocked": unlocked,
 	}
 
