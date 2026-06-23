@@ -6,6 +6,9 @@
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt
 
+# Godot web export output
+/build/
+
 # Universal ignores
 .DS_Store
 Thumbs.db
