@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "disableAllHooks": false,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "sessionStart"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "userPromptSubmitted"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "permissionRequest": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "permissionRequest"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "postToolUse"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "postToolUseFailure"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "agentStop"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "subagentStart": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "subagentStart"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "subagentStop": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "subagentStop"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "preCompact": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "preCompact"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "errorOccurred": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "errorOccurred"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "sessionEnd"
+        },
+        "timeoutSec": 10
+      }
+    ],
+    "notification": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/copilot-audit.sh",
+        "powershell": ".github/hooks/scripts/copilot-audit.ps1",
+        "env": {
+          "COPILOT_HOOK_EVENT": "notification"
+        },
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
