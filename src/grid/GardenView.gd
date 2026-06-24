@@ -2,16 +2,19 @@
 extends Node2D
 
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const _TerrainTilesheet = preload("res://src/rendering/terrain_tilesheet.gd")
 const SeedStateScript = preload("res://src/seeds/SeedState.gd")
 const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacementSession.gd")
 const _HOUSE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/house/frames/idle/down/frame_0000.png")
 const _ORIGIN_SHRINE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/origin_shrine/frames/idle/down/frame_0000.png")
+const _TERRAIN_TILESET_PATH: String = "res://assets/tiles/satori_terrain_tilesheet.png"
 
 ## Hex circumradius in pixels (centre to vertex).
 const TILE_RADIUS: float = 20.0
 
 ## Depth of the 2.5D voxel side-face in world units (appears as ~7px on screen at zoom=2).
 const VOXEL_DEPTH: float = 3.5
+const TERRAIN_TILE_DRAW_SIZE: float = 44.0
 
 const _HOUSE_STRUCTURE_DRAW_SIZE: float = 32.0
 const _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE: float = 34.0
@@ -55,6 +58,7 @@ var _anim_time: float = 0.0
 var _bg_stars: Array = []
 ## Pre-computed mist wisp data: [nx, ny, w_frac, h_frac, alpha, pulse_spd, drift_spd, phase, amp_x, amp_y]
 var _bg_mists: Array = []
+var _terrain_tileset_texture: Texture2D = null
 
 # ---------------------------------------------------------------------------
 # Cluster cache  (unified, keyed by biome)
@@ -100,6 +104,7 @@ const _BUILD_GATED_DISCOVERY_IDS: Dictionary = {
 # ---------------------------------------------------------------------------
 
 func _ready() -> void:
+	_load_terrain_tilesheet()
 	GameState.tile_placed.connect(_on_tile_placed)
 	GameState.tile_mixed.connect(_on_tile_mixed)
 	GameState.mix_rejected.connect(_on_mix_rejected)
@@ -213,7 +218,14 @@ func _draw() -> void:
 		var base_color: Color = _biome_color(tile.biome)
 		if in_large:
 			base_color = base_color.darkened(0.18)
-		_draw_tile(coord, base_color)
+		var has_meadow_water_edge: bool = _has_meadow_water_edge(coord, tile.biome)
+		_draw_tile(
+			coord,
+			base_color,
+			tile.biome,
+			has_meadow_water_edge,
+			_meadow_water_edge_rotation(coord, tile.biome) if has_meadow_water_edge else 0.0
+		)
 		_draw_tile_decorations(coord, tile.biome, in_large)
 		var is_build_block: bool = bool(tile.metadata.get("is_build_block", false))
 		var is_completed_building: bool = bool(tile.metadata.get("is_building_complete", false))
@@ -565,6 +577,8 @@ func _structure_label_for_tile(tile: GardenTile) -> String:
 			return "Stone Basin"
 		"building_house":
 			return "House (%s)" % _biome_label(tile.biome)
+	if structure_id.begins_with("building_"):
+		return _humanize_structure_id(structure_id)
 	var discovery_id: String = str(tile.metadata.get("build_discovery_id", ""))
 	if not discovery_id.is_empty():
 		return _humanize_discovery_id(discovery_id)
@@ -651,6 +665,19 @@ func _humanize_discovery_id(discovery_id: String) -> String:
 	var raw: String = discovery_id
 	if raw.begins_with("disc_"):
 		raw = raw.substr(5)
+	var words: PackedStringArray = PackedStringArray()
+	for part: String in raw.split("_"):
+		if part.is_empty():
+			continue
+		words.append(part.substr(0, 1).to_upper() + part.substr(1))
+	if words.is_empty():
+		return "Structure"
+	return " ".join(words)
+
+func _humanize_structure_id(structure_id: String) -> String:
+	var raw: String = structure_id
+	if raw.begins_with("building_"):
+		raw = raw.substr(9)
 	var words: PackedStringArray = PackedStringArray()
 	for part: String in raw.split("_"):
 		if part.is_empty():
@@ -817,7 +844,13 @@ func _is_any_build_tile_built(coords: Array[Vector2i]) -> bool:
 # Tile drawing helpers
 # ---------------------------------------------------------------------------
 
-func _draw_tile(coord: Vector2i, color: Color) -> void:
+func _draw_tile(
+	coord: Vector2i,
+	color: Color,
+	biome: int = BiomeType.Value.NONE,
+	has_meadow_water_edge: bool = false,
+	meadow_water_rotation: float = 0.0
+) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	var pts: PackedVector2Array = _hex_polygon(center, TILE_RADIUS)
 
@@ -836,7 +869,10 @@ func _draw_tile(coord: Vector2i, color: Color) -> void:
 		draw_colored_polygon(PackedVector2Array([a, b, b_low, a_low]), color.darkened(shade))
 
 	# --- Main top face ---
-	draw_colored_polygon(pts, color)
+	if _terrain_tileset_texture != null and _TerrainTilesheet.supports_biome(biome):
+		_draw_tilesheet_top(coord, center, biome, has_meadow_water_edge, meadow_water_rotation)
+	else:
+		draw_colored_polygon(pts, color)
 
 	# --- Directional edge shading (light from upper-right) ---
 	for i: int in range(6):
@@ -853,7 +889,61 @@ func _draw_tile(coord: Vector2i, color: Color) -> void:
 	draw_polyline(border, color.darkened(0.45), 1.0)
 
 
+func _draw_tilesheet_top(
+	coord: Vector2i,
+	center: Vector2,
+	biome: int,
+	has_meadow_water_edge: bool,
+	meadow_water_rotation: float
+) -> void:
+	var region: Rect2 = _TerrainTilesheet.region_for(coord, biome, has_meadow_water_edge)
+	var size := Vector2(TERRAIN_TILE_DRAW_SIZE, TERRAIN_TILE_DRAW_SIZE)
+	var rect := Rect2(-size * 0.5, size)
+	draw_set_transform(center, meadow_water_rotation if has_meadow_water_edge else 0.0, Vector2.ONE)
+	draw_texture_rect_region(_terrain_tileset_texture, rect, region)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _load_terrain_tilesheet() -> void:
+	var image: Image = Image.load_from_file(_TERRAIN_TILESET_PATH)
+	if image == null:
+		push_warning("GardenView: terrain tilesheet could not be loaded from %s" % _TERRAIN_TILESET_PATH)
+		return
+	_terrain_tileset_texture = ImageTexture.create_from_image(image)
+
+
+func _has_meadow_water_edge(coord: Vector2i, biome: int) -> bool:
+	if not _TerrainTilesheet.supports_biome(biome):
+		return false
+	var opposite_biome: int = BiomeType.Value.RIVER if biome == BiomeType.Value.MEADOW else BiomeType.Value.MEADOW
+	for offset: Vector2i in _HexUtils.HEX_NEIGHBORS:
+		var neighbour: GardenTile = GameState.grid.get_tile(coord + offset)
+		if neighbour != null and neighbour.biome == opposite_biome:
+			return true
+	return false
+
+
+func _meadow_water_edge_rotation(coord: Vector2i, biome: int) -> float:
+	if not _TerrainTilesheet.supports_biome(biome):
+		return 0.0
+	var opposite_biome: int = BiomeType.Value.RIVER if biome == BiomeType.Value.MEADOW else BiomeType.Value.MEADOW
+	var direction_sum := Vector2.ZERO
+	for offset: Vector2i in _HexUtils.HEX_NEIGHBORS:
+		var neighbour: GardenTile = GameState.grid.get_tile(coord + offset)
+		if neighbour == null or neighbour.biome != opposite_biome:
+			continue
+		direction_sum += _HexUtils.axial_to_pixel(offset, 1.0).normalized()
+	if direction_sum.length_squared() < 0.001:
+		return 0.0
+
+	var target_angle: float = direction_sum.angle()
+	var base_angle: float = PI * 0.5 if biome == BiomeType.Value.MEADOW else -PI * 0.5
+	return target_angle - base_angle
+
+
 func _draw_tile_decorations(coord: Vector2i, biome: int, in_large_cluster: bool) -> void:
+	if _TerrainTilesheet.supports_biome(biome):
+		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(coord)
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
