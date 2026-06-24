@@ -27,6 +27,15 @@ export const catalogs = [
     visibleFields: ["Friendly Name", "Tier", "Required Biome", "Codex Hint 1", "Unlock text", "Assets Folder"],
   },
   {
+    id: "tiles",
+    label: "Tiles",
+    path: "../tiles.csv.txt",
+    primaryField: "Tile Name",
+    badgeField: "Tier",
+    filterField: "Tier",
+    visibleFields: ["Tile Name", "Tier", "Required Elements", "Unlock Requirement", "Material Output", "Seed Recipe ID"],
+  },
+  {
     id: "materials",
     label: "Materials",
     path: "../materials.csv.txt",

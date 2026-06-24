@@ -1,7 +1,15 @@
 import { catalogs } from "./catalog-config.js";
 import { parseCsv } from "./csv.js";
 
-const fileNameMap = new Map(catalogs.map((catalog) => [catalog.path.split("/").pop(), catalog.id]));
+const fileNameMap = new Map();
+
+catalogs.forEach((catalog) => {
+  const fileName = catalog.path.split("/").pop();
+  fileNameMap.set(fileName, catalog.id);
+  if (fileName.endsWith(".txt")) {
+    fileNameMap.set(fileName.slice(0, -4), catalog.id);
+  }
+});
 
 export async function loadCatalogs() {
   const entries = await Promise.all(catalogs.map(loadCatalog));

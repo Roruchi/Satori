@@ -38,18 +38,23 @@ refreshButton.addEventListener("click", () => {
 
 fileInput.addEventListener("change", async () => {
   const loaded = await loadCatalogsFromFiles(fileInput.files);
+  const loadedCount = Object.keys(loaded).length;
+  if (loadedCount === 0) {
+    setStatus("No matching catalog files selected.", true);
+    return;
+  }
   state.datasets = { ...state.datasets, ...loaded };
   selectFirstVisibleRow();
-  setStatus(`Loaded ${Object.keys(loaded).length} CSV file(s).`);
+  setStatus(`Loaded ${loadedCount} catalog file(s).`);
   render();
 });
 
 async function boot() {
   try {
-    setStatus("Loading CSV files...");
+    setStatus("Loading catalog files...");
     state.datasets = await loadCatalogs();
     selectFirstVisibleRow();
-    setStatus("CSV files loaded.");
+    setStatus("Catalog files loaded.");
     render();
   } catch (error) {
     setStatus(error.message, true);

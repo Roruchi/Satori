@@ -1,0 +1,16 @@
+Tile Name,Biome ID,Seed Name,Seed Recipe ID,Tier,Required Elements,Unlock Requirement,Material Output,Codex Hint,Unlock text
+Stone,0,Stone Seed,recipe_chi,1,Chi,Available when Chi essence is unlocked.,Spirit Stone,"Cold and still, the bones of the earth.",A single Chi seed that blooms into stone.
+River,1,River Seed,recipe_sui,1,Sui,Available when Sui essence is unlocked.,Reed Fiber,It finds its own way through stone.,A single Sui seed that blooms into river.
+Ember Field,2,Ember Seed,recipe_ka,1,Ka,Available when Ka essence is unlocked.,Ember Clay,Where heat remembers the shape of fire.,A single Ka seed that blooms into ember field.
+Meadow,3,Meadow Seed,recipe_fu,1,Fū,Available when Fū essence is unlocked.,Living Wood,Grass that bends but does not break.,A single Fū seed that blooms into meadow.
+Wetlands,4,Wetlands Seed,recipe_chi_sui,2,Chi + Sui,Requires Chi + Sui essences.,Reed Fiber,"Earth softened by patient, standing water.",Chi and Sui settle into patient wetlands.
+Badlands,5,Badlands Seed,recipe_chi_ka,2,Chi + Ka,Requires Chi + Ka essences.,Spirit Stone,Earth baked until it cracks beneath the sun.,Chi and Ka harden into sun-baked badlands.
+Whistling Canyons,6,Whistling Canyons Seed,recipe_chi_fu,2,Chi + Fū,Requires Chi + Fū essences.,Spirit Stone,Stone carved hollow by the breath of wind.,Chi and Fū carve stone into whistling canyons.
+Prismatic Terraces,7,Prismatic Terraces Seed,recipe_sui_ka,2,Sui + Ka,Requires Sui + Ka essences.,Reed Fiber,Water that boils with the memory of fire.,Sui and Ka rise into prismatic geothermal terraces.
+Frostlands,8,Frostlands Seed,recipe_sui_fu,2,Sui + Fū,Requires Sui + Fū essences.,Reed Fiber,Water frozen still by the piercing wind.,"Sui and Fū lock into pale, wind-cut frostlands."
+The Ashfall,9,Ashfall Seed,recipe_ka_fu,2,Ka + Fū,Requires Ka + Fū essences.,Ember Clay,Where wind carries the glowing bones of fire.,Ka and Fū scatter into the drifting Ashfall.
+Sacred Stone,10,Sacred Stone Seed,recipe_chi_ku,2,Chi + Kū,Requires Kū unlocked by Mist Stag.,Spirit Stone,Stone made sacred by the breath of Kū.,Chi and Kū combine into a seed that blooms as Sacred Stone.
+Moonlit Pool,11,Moonlit Pool Seed,recipe_sui_ku,2,Sui + Kū,Requires Kū unlocked by Mist Stag.,Reed Fiber,Water and void veil the marsh in quiet mist.,Sui and Kū merge into a seed that blooms as Moonlit Pool.
+Ember Shrine,12,Ember Shrine Seed,recipe_ka_ku,2,Ka + Kū,Requires Kū unlocked by Mist Stag.,Ember Clay,Ember and emptiness kindle a shrine flame.,Ka and Kū shape a seed that blooms as Ember Shrine.
+Cloud Ridge,13,Cloud Ridge Seed,recipe_fu_ku,2,Fū + Kū,Requires Kū unlocked by Mist Stag.,Living Wood,Wind lifts the ridge where sky and void converge.,Fu and Kū become a seed that blooms as Cloud Ridge.
+Kū,14,Kū Seed,recipe_ku,1,Kū,Requires Kū unlocked by Mist Stag.,,Void made tangible; silence with form.,Void made tangible; silence with form.

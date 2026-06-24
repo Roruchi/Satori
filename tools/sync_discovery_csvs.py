@@ -20,6 +20,7 @@ CSV_DIR = ROOT / "data" / "discovery_editor"
 RITUAL_CSV = CSV_DIR / "rituals.csv.txt"
 SPIRIT_CSV = CSV_DIR / "spirit_discoveries.csv.txt"
 BIOME_CSV = CSV_DIR / "biome_discoveries.csv.txt"
+TILE_CSV = CSV_DIR / "tiles.csv.txt"
 MATERIAL_CSV = CSV_DIR / "materials.csv.txt"
 
 RITUAL_FIELDS = [
@@ -53,6 +54,18 @@ BIOME_FIELDS = [
     "Codex Hint 2",
     "Unlock text",
     "Assets Folder",
+]
+TILE_FIELDS = [
+    "Tile Name",
+    "Biome ID",
+    "Seed Name",
+    "Seed Recipe ID",
+    "Tier",
+    "Required Elements",
+    "Unlock Requirement",
+    "Material Output",
+    "Codex Hint",
+    "Unlock text",
 ]
 MATERIAL_FIELDS = [
     "Name",
@@ -700,8 +713,77 @@ def _export_biomes() -> list[dict[str, str]]:
     return rows
 
 
+def _material_outputs_by_biome() -> dict[int, list[str]]:
+    result: dict[int, list[str]] = {}
+    for material in MATERIAL_CATALOG:
+        for biome in _biomes_from_field(material["Spawned In Biome"]):
+            result.setdefault(biome, []).append(material["Name"])
+    return result
+
+
+def _tile_unlock_requirement(recipe: dict[str, object]) -> str:
+    elements = [int(value) for value in recipe["elements"]]
+    element_names = [ELEMENT_ID_TO_NAME[value] for value in elements]
+    spirit_unlock_id = str(recipe.get("spirit_unlock_id", ""))
+    if spirit_unlock_id:
+        return "Requires spirit gift: %s." % spirit_unlock_id
+    if 4 in elements:
+        return "Requires Kū unlocked by Mist Stag."
+    if len(elements) == 1:
+        return "Available when %s essence is unlocked." % element_names[0]
+    return "Requires %s essences." % " + ".join(element_names)
+
+
+def _export_tiles(codex: dict[str, dict[str, str]]) -> list[dict[str, str]]:
+    material_outputs = _material_outputs_by_biome()
+    rows: list[dict[str, str]] = []
+    for recipe_id, recipe in sorted(
+        _seed_recipes_by_id().items(),
+        key=lambda item: (int(item[1].get("produces_biome", -1)), item[0]),
+    ):
+        biome_id = int(recipe.get("produces_biome", -1))
+        entry = codex.get(recipe_id, {})
+        elements = [int(value) for value in recipe["elements"]]
+        rows.append(
+            {
+                "Tile Name": _biome_names([biome_id]),
+                "Biome ID": str(biome_id),
+                "Seed Name": entry.get("full_name") or "%s Seed" % _biome_names([biome_id]),
+                "Seed Recipe ID": recipe_id,
+                "Tier": str(recipe.get("tier", "")),
+                "Required Elements": " + ".join(ELEMENT_ID_TO_NAME[value] for value in elements),
+                "Unlock Requirement": _tile_unlock_requirement(recipe),
+                "Material Output": "; ".join(material_outputs.get(biome_id, [])),
+                "Codex Hint": str(recipe.get("codex_hint", "")) or entry.get("hint_text", ""),
+                "Unlock text": entry.get("full_description", ""),
+            }
+        )
+    return rows
+
+
 def _export_materials() -> list[dict[str, str]]:
     return [entry.copy() for entry in MATERIAL_CATALOG]
+
+
+def _validate_tiles(rows: list[dict[str, str]]) -> None:
+    recipe_ids = set(_seed_recipes_by_id().keys())
+    seen_biomes: set[int] = set()
+    for row in rows:
+        if not row["Tile Name"]:
+            raise SystemExit("tiles.csv.txt contains a row without Tile Name")
+        recipe_id = row["Seed Recipe ID"]
+        if recipe_id not in recipe_ids:
+            raise SystemExit(f"tiles.csv.txt references unknown Seed Recipe ID: {recipe_id}")
+        try:
+            biome_id = int(row["Biome ID"])
+        except ValueError:
+            raise SystemExit(f"tiles.csv.txt has invalid Biome ID for {row['Tile Name']}")
+        if biome_id not in BIOME_ID_TO_NAME:
+            raise SystemExit(f"tiles.csv.txt has unknown Biome ID {biome_id} for {row['Tile Name']}")
+        seen_biomes.add(biome_id)
+    missing = sorted(set(BIOME_ID_TO_NAME.keys()) - seen_biomes)
+    if missing:
+        raise SystemExit("tiles.csv.txt is missing biome IDs: %s" % ", ".join(str(value) for value in missing))
 
 
 def _validate_materials(rows: list[dict[str, str]]) -> None:
@@ -797,6 +879,7 @@ def export_current() -> None:
     _write_csv(RITUAL_CSV, RITUAL_FIELDS, _export_rituals(codex))
     _write_csv(SPIRIT_CSV, SPIRIT_FIELDS, _export_spirits(codex))
     _write_csv(BIOME_CSV, BIOME_FIELDS, _export_biomes())
+    _write_csv(TILE_CSV, TILE_FIELDS, _export_tiles(codex))
     _write_csv(MATERIAL_CSV, MATERIAL_FIELDS, _export_materials())
 
 
@@ -805,6 +888,7 @@ def sync_from_csv() -> None:
     _sync_rituals(_read_csv(RITUAL_CSV, RITUAL_FIELDS), codex)
     _sync_spirits(_read_csv(SPIRIT_CSV, SPIRIT_FIELDS), codex)
     _sync_biomes(_read_csv(BIOME_CSV, BIOME_FIELDS))
+    _validate_tiles(_read_csv(TILE_CSV, TILE_FIELDS))
     _validate_materials(_read_csv(MATERIAL_CSV, MATERIAL_FIELDS))
 
 
