@@ -64,7 +64,7 @@ func _ready() -> void:
 	_emit_satori_if_changed()
 
 func _process(delta: float) -> void:
-	_tick_accumulator += delta
+	_tick_accumulator += _progression_delta(delta)
 	while _tick_accumulator >= TICK_INTERVAL_SECONDS:
 		_tick_accumulator -= TICK_INTERVAL_SECONDS
 		process_minute_tick()
@@ -171,13 +171,13 @@ func _play_sequence(condition_set: SatoriConditionSet) -> void:
 	_active_overlay.add_child(rect)
 
 	var tween: Tween = create_tween()
-	tween.tween_property(rect, "color", Color(1.0, 1.0, 1.0, 0.25), 0.5)
-	tween.tween_interval(2.0)
-	tween.tween_property(rect, "color", Color(1.0, 1.0, 1.0, 0.0), 1.0)
+	tween.tween_property(rect, "color", Color(1.0, 1.0, 1.0, 0.25), _progression_duration(0.5))
+	tween.tween_interval(_progression_duration(2.0))
+	tween.tween_property(rect, "color", Color(1.0, 1.0, 1.0, 0.0), _progression_duration(1.0))
 	tween.finished.connect(_complete_sequence)
 	_skip_available = false
 	set_process_input(true)
-	_skip_timer = get_tree().create_timer(2.0)
+	_skip_timer = get_tree().create_timer(_progression_duration(2.0))
 	_skip_timer.timeout.connect(func() -> void:
 		if _active_overlay == null:
 			return
@@ -219,6 +219,18 @@ func _apply_unlock(unlock_type: int, payload: StringName) -> void:
 				var registry: SeedRecipeRegistry = alchemy2.get_registry()
 				if registry != null:
 					registry.unlock_recipe(payload)
+
+func _progression_delta(delta_seconds: float) -> float:
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_method("scale_progress_delta"):
+		return float(settings.scale_progress_delta(delta_seconds))
+	return maxf(0.0, delta_seconds)
+
+func _progression_duration(duration_seconds: float) -> float:
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_method("scaled_progress_duration"):
+		return float(settings.scaled_progress_duration(duration_seconds))
+	return maxf(0.1, duration_seconds)
 
 func get_current_satori() -> int:
 	return _current_satori

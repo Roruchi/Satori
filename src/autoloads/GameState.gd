@@ -81,6 +81,7 @@ func evaluate_material_spawns(delta_seconds: float) -> Array[Dictionary]:
 	var spawned: Array[Dictionary] = []
 	if grid == null or delta_seconds <= 0.0:
 		return spawned
+	var scaled_delta_seconds: float = _progression_delta(delta_seconds)
 	var active_cluster_keys: Dictionary = {}
 	for cluster: Dictionary in _collect_material_spawn_clusters():
 		var cluster_key: String = str(cluster.get("cluster_key", ""))
@@ -91,7 +92,7 @@ func evaluate_material_spawns(delta_seconds: float) -> Array[Dictionary]:
 		if tile_count <= 0:
 			continue
 		var interval_seconds: float = MATERIAL_BASE_TILE_SECONDS / float(tile_count)
-		var accumulated: float = float(_material_spawn_accumulators.get(cluster_key, 0.0)) + delta_seconds
+		var accumulated: float = float(_material_spawn_accumulators.get(cluster_key, 0.0)) + scaled_delta_seconds
 		var spawnable_coords: Array[Vector2i] = []
 		var spawnable_variant: Variant = cluster.get("spawnable_coords", [])
 		if spawnable_variant is Array:
@@ -121,6 +122,12 @@ func evaluate_material_spawns(delta_seconds: float) -> Array[Dictionary]:
 			_material_spawn_accumulators.erase(key)
 			_material_spawn_counts.erase(key)
 	return spawned
+
+func _progression_delta(delta_seconds: float) -> float:
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_method("scale_progress_delta"):
+		return float(settings.scale_progress_delta(delta_seconds))
+	return maxf(0.0, delta_seconds)
 
 func get_material_node_at(coord: Vector2i) -> Dictionary:
 	var tile: GardenTile = grid.get_tile(coord)

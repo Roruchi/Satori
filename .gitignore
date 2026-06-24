@@ -1,7 +1,12 @@
 # Godot 4+ specific ignores
 .godot/
+node_modules/
+playwright-report/
+test-results/
+.codex-remote-attachments/
 /android/
 *.import
+!assets/materials/material_icon_spritesheet.png.import
 
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt

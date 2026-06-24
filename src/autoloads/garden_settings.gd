@@ -23,6 +23,15 @@ func set_growth_speed_multiplier(multiplier: float) -> void:
 		seed_growth_service.set_growth_speed_multiplier(growth_speed_multiplier)
 	growth_speed_multiplier_changed.emit(growth_speed_multiplier)
 
+func get_progression_speed_multiplier() -> float:
+	return maxf(1.0, growth_speed_multiplier)
+
+func scale_progress_delta(delta_seconds: float) -> float:
+	return maxf(0.0, delta_seconds) * get_progression_speed_multiplier()
+
+func scaled_progress_duration(duration_seconds: float) -> float:
+	return maxf(0.1, maxf(0.0, duration_seconds) / get_progression_speed_multiplier())
+
 func set_debug_info_enabled(enabled: bool) -> void:
 	if debug_info_enabled == enabled:
 		return

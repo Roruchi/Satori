@@ -339,7 +339,7 @@ func _can_place_origin_shrine_on_island(coord: Vector2i) -> bool:
 func _start_build_countdown(coord: Vector2i, tile: GardenTile) -> void:
 	tile.metadata["build_countdown_started"] = true
 	tile.metadata["build_started_at"] = Time.get_unix_time_from_system()
-	tile.metadata["build_duration"] = _BUILD_COUNTDOWN_SECONDS
+	tile.metadata["build_duration"] = _build_countdown_duration()
 	tile.metadata["build_completion_pending"] = true
 	_notify_pending_building_started(coord)
 
@@ -377,7 +377,7 @@ func _start_project_countdown(project_id: int, structure_id: String) -> void:
 			continue
 		tile.metadata["build_countdown_started"] = true
 		tile.metadata["build_started_at"] = now
-		tile.metadata["build_duration"] = _BUILD_COUNTDOWN_SECONDS
+		tile.metadata["build_duration"] = _build_countdown_duration()
 		tile.metadata["build_completion_pending"] = true
 		tile.metadata.erase("project_recipe_required")
 		tile.metadata.erase("project_recipe_valid")
@@ -720,6 +720,12 @@ func _notify_pending_building_started(coord: Vector2i) -> void:
 		spirit_service = get_node_or_null("/root/SpiritService")
 	if spirit_service != null and spirit_service.has_method("register_pending_building"):
 		spirit_service.register_pending_building(coord)
+
+func _build_countdown_duration() -> float:
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_method("scaled_progress_duration"):
+		return float(settings.scaled_progress_duration(_BUILD_COUNTDOWN_SECONDS))
+	return _BUILD_COUNTDOWN_SECONDS
 
 func _notify_housing_dirty() -> void:
 	var spirit_service: Node = get_node_or_null("../SpiritService")

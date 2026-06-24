@@ -35,7 +35,7 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
 layout_mode = 2
-text = "⬡  SATORI"
+text = "SATORI"
 horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
@@ -49,15 +49,15 @@ custom_minimum_size = Vector2(0, 10)
 
 [node name="PlayButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
 layout_mode = 2
-text = "▶  Play"
+text = "Play"
 
 [node name="SettingsButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
 layout_mode = 2
-text = "⚙  Settings"
+text = "Settings"
 
 [node name="QuitButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
 layout_mode = 2
-text = "✕  Quit"
+text = "Quit"
 
 [node name="SettingsOverlay" parent="." instance=ExtResource("2_settings")]
 visible = false

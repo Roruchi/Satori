@@ -24,7 +24,7 @@ const _MATERIAL_SHORT_LABELS: Dictionary = {
 	&"spirit_stone": "SS",
 	&"ember_clay": "EC",
 }
-const MODE_TAB_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷"]
+const MODE_TAB_GLYPHS: Array[String] = ["PL", "RI", "IN", "CO"]
 const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
@@ -699,11 +699,11 @@ func _init_building_confirm_panel() -> void:
 	label.add_theme_color_override("font_color", Color(0.90, 0.95, 0.90, 0.98))
 	hbox.add_child(label)
 	var confirm_btn: Button = Button.new()
-	confirm_btn.text = "✓ Confirm"
+	confirm_btn.text = "Confirm"
 	confirm_btn.pressed.connect(func() -> void: building_placement_confirm_requested.emit())
 	hbox.add_child(confirm_btn)
 	var cancel_btn: Button = Button.new()
-	cancel_btn.text = "✗ Cancel"
+	cancel_btn.text = "Cancel"
 	cancel_btn.pressed.connect(func() -> void: building_placement_cancel_requested.emit())
 	hbox.add_child(cancel_btn)
 	_root.add_child(_building_confirm_panel)

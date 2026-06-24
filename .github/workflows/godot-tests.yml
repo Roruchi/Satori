@@ -29,5 +29,7 @@ jobs:
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_recipe_catalog.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/seeds/test_ritual_menu_slots.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_biome_material_harvesting.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_progression_speed_settings.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ritual_menu_ui.gd -gexit
+          godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_web_ui_smoke_contract.gd -gexit
           godot --path . --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_first_expansion_loop.gd -gexit

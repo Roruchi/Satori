@@ -72,6 +72,9 @@ func _ready() -> void:
 		satori_service.era_changed.connect(_on_era_changed)
 		if satori_service.has_method("get_current_era"):
 			_current_era = satori_service.get_current_era()
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
+		settings.growth_speed_multiplier_changed.connect(_on_progression_speed_changed)
 
 func _install_runtime_timers() -> void:
 	_building_finalize_timer = Timer.new()
@@ -134,7 +137,7 @@ func restore_from_persistence() -> void:
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		var wanderer: Node = _spawner.spawn(instance, entry)
 		_active_wanderers[key] = wanderer
-		_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+		_next_essence_drop_at[key] = Time.get_unix_time_from_system() + _progression_duration(ESSENCE_CHARGE_SECONDS)
 		var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
 		if ecology != null and ecology.has_method("register_wanderer"):
 			ecology.register_wanderer(wanderer)
@@ -165,7 +168,7 @@ func _summon_spirit(spirit_id: String, coords: Array[Vector2i], island_id: Strin
 	instance.island_id = island_id
 	var key: String = _spirit_key(spirit_id, island_id)
 	_active_instances[key] = instance
-	_next_essence_drop_at[key] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+	_next_essence_drop_at[key] = Time.get_unix_time_from_system() + _progression_duration(ESSENCE_CHARGE_SECONDS)
 	mark_housing_dirty()
 	if _is_ku_deity_spirit(spirit_id):
 		_maybe_mark_shrine_buildable(instance)
@@ -232,7 +235,7 @@ func _refresh_active_instance_islands(grid: RefCounted) -> void:
 			next_wanderers[new_key] = wanderer
 			if wanderer.has_method("set_island_id"):
 				wanderer.set_island_id(island_id)
-		next_drop_times[new_key] = float(_next_essence_drop_at.get(old_key, Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS))
+		next_drop_times[new_key] = float(_next_essence_drop_at.get(old_key, Time.get_unix_time_from_system() + _progression_duration(ESSENCE_CHARGE_SECONDS)))
 		if _house_binding_by_spirit.has(old_key):
 			next_bindings[new_key] = _house_binding_by_spirit[old_key]
 	_active_instances = next_instances
@@ -315,7 +318,7 @@ func _summon_sky_whale(grid: RefCounted) -> void:
 	# Sky Whale is global — no island scoping.
 	instance.island_id = ""
 	_active_instances[SkyWhaleEvaluator.SPIRIT_ID] = instance
-	_next_essence_drop_at[SkyWhaleEvaluator.SPIRIT_ID] = Time.get_unix_time_from_system() + ESSENCE_CHARGE_SECONDS
+	_next_essence_drop_at[SkyWhaleEvaluator.SPIRIT_ID] = Time.get_unix_time_from_system() + _progression_duration(ESSENCE_CHARGE_SECONDS)
 	mark_housing_dirty()
 	var wanderer: Node = _spawner.spawn(instance, entry)
 	var ecology: Node = get_node_or_null("/root/SpiritEcologyService")
@@ -522,6 +525,14 @@ func _on_era_changed(new_era: StringName) -> void:
 	_current_era = new_era
 	_apply_era_requirements()
 
+func _on_progression_speed_changed(_multiplier: float) -> void:
+	var now: float = Time.get_unix_time_from_system()
+	var next_fast_drop: float = now + _progression_duration(ESSENCE_CHARGE_SECONDS)
+	for key_variant: Variant in _next_essence_drop_at.keys():
+		var key: String = str(key_variant)
+		var current_drop: float = float(_next_essence_drop_at.get(key, next_fast_drop))
+		_next_essence_drop_at[key] = minf(current_drop, next_fast_drop)
+
 func _apply_era_requirements() -> void:
 	var keys_to_remove: Array[String] = []
 	for key_variant: Variant in _active_instances.keys():
@@ -670,12 +681,12 @@ func _process_essence_charge_timers() -> void:
 			continue
 		if instance.spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
 			continue
-		var next_drop_at: float = float(_next_essence_drop_at.get(key, now + ESSENCE_CHARGE_SECONDS))
+		var next_drop_at: float = float(_next_essence_drop_at.get(key, now + _progression_duration(ESSENCE_CHARGE_SECONDS)))
 		if now < next_drop_at:
 			continue
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		_maybe_queue_godai_charge_drop(instance.spirit_id, entry)
-		_next_essence_drop_at[key] = now + ESSENCE_CHARGE_SECONDS
+		_next_essence_drop_at[key] = now + _progression_duration(ESSENCE_CHARGE_SECONDS)
 
 func _collect_available_houses_by_island() -> Dictionary:
 	var houses_by_island: Dictionary = {}
@@ -864,7 +875,7 @@ func _finalize_pending_buildings_for_coords(coords: Array[Vector2i]) -> void:
 			_pending_build_coords.erase(coord_key)
 			continue
 		var started_at: float = float(tile.metadata.get("build_started_at", now))
-		var duration: float = float(tile.metadata.get("build_duration", BUILD_COMPLETION_SECONDS))
+		var duration: float = float(tile.metadata.get("build_duration", _progression_duration(BUILD_COMPLETION_SECONDS)))
 		if now - started_at < maxf(0.1, duration):
 			_pending_build_coords[coord_key] = coord
 			continue
@@ -923,3 +934,9 @@ func _complete_pending_building_tile(coord: Vector2i, tile: GardenTile, now: flo
 	tile.locked = false
 	mark_housing_dirty()
 	building_completed.emit(coord, tile.biome)
+
+func _progression_duration(duration_seconds: float) -> float:
+	var settings: Node = get_node_or_null("/root/GardenSettings")
+	if settings != null and settings.has_method("scaled_progress_duration"):
+		return float(settings.scaled_progress_duration(duration_seconds))
+	return maxf(0.1, duration_seconds)

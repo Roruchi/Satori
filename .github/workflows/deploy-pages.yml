@@ -45,9 +45,47 @@ jobs:
         with:
           path: build/web
 
+      - name: Upload web smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: satori-web-export
+          path: build/web
+
+  browser-smoke:
+    name: Browser Smoke
+    needs: export-web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download web export
+        uses: actions/download-artifact@v4
+        with:
+          name: satori-web-export
+          path: build/web
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install browser test dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright smoke tests
+        run: npm run test:web
+
   deploy-pages:
     name: Deploy to GitHub Pages
-    needs: export-web
+    needs: browser-smoke
     runs-on: ubuntu-latest
     permissions:
       pages: write

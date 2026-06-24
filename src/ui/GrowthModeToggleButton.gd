@@ -1,7 +1,7 @@
 class_name GrowthModeToggleButton
 extends Button
 
-const SPEED_STEPS: Array[float] = [1.0, 4.0, 8.0]
+const SPEED_STEPS: Array[float] = [1.0, 4.0, 8.0, 16.0]
 
 func _ready() -> void:
 	pressed.connect(_on_pressed)
@@ -27,4 +27,4 @@ func _on_pressed() -> void:
 func _update_display(multiplier: float) -> void:
 	var rounded: int = int(round(multiplier))
 	text = "x%d" % max(1, rounded)
-	tooltip_text = "Growth speed x%d" % max(1, rounded)
+	tooltip_text = "Progression speed x%d" % max(1, rounded)

@@ -48,7 +48,7 @@ func _sync_from_settings() -> void:
 
 func show_menu() -> void:
 	_sync_from_settings()
-	_growth_check.text = "Growth Speedup (x8)"
+	_growth_check.text = "Fast Progression (x16)"
 	_debug_check.text = ""
 	visible = true
 
@@ -65,7 +65,7 @@ func _on_mute_toggled(pressed: bool) -> void:
 func _on_growth_toggled(pressed: bool) -> void:
 	var gs: Node = get_node_or_null("/root/GardenSettings")
 	if gs != null and gs.has_method("set_growth_speed_multiplier"):
-		gs.set_growth_speed_multiplier(8.0 if pressed else 1.0)
+		gs.set_growth_speed_multiplier(16.0 if pressed else 1.0)
 
 func _on_debug_toggled(pressed: bool) -> void:
 	var gs: Node = get_node_or_null("/root/GardenSettings")
