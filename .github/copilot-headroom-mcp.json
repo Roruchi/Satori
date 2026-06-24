@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "headroom": {
+      "type": "local",
+      "command": "headroom",
+      "args": ["mcp", "serve"],
+      "tools": [
+        "headroom_compress",
+        "headroom_retrieve",
+        "headroom_stats"
+      ]
+    }
+  }
+}

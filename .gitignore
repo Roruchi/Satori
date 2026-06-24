@@ -20,8 +20,10 @@ test-results/
 Thumbs.db
 *.tmp
 *.swp
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 .idea/
 *.log
 .copilot-audit/
 .env*
+.headroom/
