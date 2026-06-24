@@ -93,6 +93,30 @@ func test_ritual_slot_first_selection_fills_selected_slot() -> void:
 	panel.free()
 	_cleanup_context(ctx)
 
+func test_ritual_panel_previews_single_wind_as_meadow_seed() -> void:
+	var ctx: Dictionary = _setup_context()
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	await get_tree().process_frame
+
+	panel.call("_on_slot_pressed", 0)
+	panel.call("_on_input_tapped", "essence:wind")
+
+	var keys: Array = panel.get("_slot_keys")
+	assert_eq(keys[0], "essence:wind")
+	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
+	var preview: Label = panel.get_node("VBox/Preview") as Label
+	var feedback: Label = panel.get_node("VBox/Feedback") as Label
+	assert_eq(slot0.text, "Slot 1\nWind")
+	assert_eq(preview.text, "Preview: Meadow Seed")
+	assert_eq(feedback.text, "Confirm to shape Meadow Seed.")
+
+	remove_child(panel)
+	panel.free()
+	_cleanup_context(ctx)
+
 func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
