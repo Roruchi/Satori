@@ -6,8 +6,5 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
-  },
-  "dependencies": {
-    "headroom-ai": "^0.22.4"
   }
 }

@@ -13,12 +13,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Export:** Use the Godot editor Export dialog; no build scripts exist yet
 - **No package manager or lint toolchain** — GDScript is interpreted by the engine; there is no separate compile/lint step outside Godot
 
-## Token Usage
-
-- Start from `llms.txt` for compact repository context before opening broad specs or source trees.
-- Headroom is configured for optional token savings via `.mcp.json`, `.vscode/mcp.json`, and `tools/headroom.ps1`.
-- Use Headroom MCP compression for large logs, search results, generated JSON/CSV, broad diffs, and copied docs; retrieve originals before exact line-level edits.
-
 ## Speckit Workflow
 
 This repo uses **Speckit** (v0.3.2) for specification-driven, AI-assisted feature development. The standard workflow is:

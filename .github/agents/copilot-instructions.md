@@ -37,10 +37,4 @@ cd src; pytest; ruff check .
 
 
 <!-- MANUAL ADDITIONS START -->
-## Token Usage
-
-- Start from `llms.txt` for compact repository context before opening broad specs or source trees.
-- Headroom is configured for optional token savings via `.vscode/mcp.json` for local VS Code Copilot and `.github/copilot-headroom-mcp.json` for GitHub repository MCP settings.
-- Use Headroom MCP compression for large logs, search results, generated JSON/CSV, broad diffs, and copied docs; retrieve originals before exact line-level edits.
-
 <!-- MANUAL ADDITIONS END -->
