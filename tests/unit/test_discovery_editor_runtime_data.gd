@@ -12,11 +12,11 @@ func _read_text(path: String) -> String:
 func test_runtime_ritual_data_mirrors_editor_csv() -> void:
 	assert_eq(
 		_read_text("res://data/discovery_editor/runtime/rituals.csv.txt"),
-		_read_text("res://data/discovery_editor/rituals.csv")
+		_read_text("res://data/discovery_editor/rituals.csv.txt")
 	)
 
 func test_runtime_material_data_mirrors_editor_csv() -> void:
 	assert_eq(
 		_read_text("res://data/discovery_editor/runtime/materials.csv.txt"),
-		_read_text("res://data/discovery_editor/materials.csv")
+		_read_text("res://data/discovery_editor/materials.csv.txt")
 	)

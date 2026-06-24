@@ -2,7 +2,7 @@ export const catalogs = [
   {
     id: "rituals",
     label: "Rituals",
-    path: "../rituals.csv",
+    path: "../rituals.csv.txt",
     primaryField: "Friendly Name",
     badgeField: "Type",
     filterField: "Type",
@@ -11,7 +11,7 @@ export const catalogs = [
   {
     id: "spirits",
     label: "Spirits",
-    path: "../spirit_discoveries.csv",
+    path: "../spirit_discoveries.csv.txt",
     primaryField: "Friendly Name",
     badgeField: "Min Satori Required",
     filterField: "Min Satori Required",
@@ -20,7 +20,7 @@ export const catalogs = [
   {
     id: "biomes",
     label: "Biomes",
-    path: "../biome_discoveries.csv",
+    path: "../biome_discoveries.csv.txt",
     primaryField: "Friendly Name",
     badgeField: "Tier",
     filterField: "Tier",
@@ -29,7 +29,7 @@ export const catalogs = [
   {
     id: "materials",
     label: "Materials",
-    path: "../materials.csv",
+    path: "../materials.csv.txt",
     primaryField: "Name",
     badgeField: "Material ID",
     filterField: "",

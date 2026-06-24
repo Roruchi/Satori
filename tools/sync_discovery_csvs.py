@@ -17,10 +17,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CSV_DIR = ROOT / "data" / "discovery_editor"
 
-RITUAL_CSV = CSV_DIR / "rituals.csv"
-SPIRIT_CSV = CSV_DIR / "spirit_discoveries.csv"
-BIOME_CSV = CSV_DIR / "biome_discoveries.csv"
-MATERIAL_CSV = CSV_DIR / "materials.csv"
+RITUAL_CSV = CSV_DIR / "rituals.csv.txt"
+SPIRIT_CSV = CSV_DIR / "spirit_discoveries.csv.txt"
+BIOME_CSV = CSV_DIR / "biome_discoveries.csv.txt"
+MATERIAL_CSV = CSV_DIR / "materials.csv.txt"
 
 RITUAL_FIELDS = [
     "Friendly Name",
@@ -707,9 +707,9 @@ def _export_materials() -> list[dict[str, str]]:
 def _validate_materials(rows: list[dict[str, str]]) -> None:
     for row in rows:
         if not row["Name"]:
-            raise SystemExit("materials.csv contains a row without Name")
+            raise SystemExit("materials.csv.txt contains a row without Name")
         if not row["Material ID"]:
-            raise SystemExit("materials.csv contains a row without Material ID")
+            raise SystemExit("materials.csv.txt contains a row without Material ID")
         _biomes_from_field(row["Spawned In Biome"])
 
 

@@ -6,6 +6,7 @@ test-results/
 .codex-remote-attachments/
 /android/
 *.import
+*.translation
 !assets/materials/material_icon_spritesheet.png.import
 
 # GUT test framework output
