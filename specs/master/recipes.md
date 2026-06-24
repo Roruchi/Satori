@@ -293,7 +293,11 @@ This section mirrors the current code catalog so `recipes.md` remains a complete
 Primary code sources:
 
 * `src/seeds/recipes/*.tres`
-* `src/seeds/BuildingRecipeCatalog.gd`
+* `data/discovery_editor/runtime/rituals.csv.txt`
+* `data/discovery_editor/runtime/materials.csv.txt`
+* `src/seeds/RitualRecipeCatalog.gd`
+* `src/autoloads/GameState.gd`
+* `src/autoloads/seed_alchemy_service.gd`
 * `src/biomes/discovery_catalog_data.gd`
 * `src/biomes/patterns/**/*.tres`
 * `src/spirits/spirit_catalog_data.gd`
@@ -324,11 +328,22 @@ Design implication: Fox Den should not be the base Meadow house. Meadow Dwelling
 | `recipe_ka_ku` | 2 | KA + KU | Ember Shrine | requires Ku access in target design |
 | `recipe_fu_ku` | 2 | FU + KU | Cloud Ridge | requires Ku access in target design |
 
-### Current Craftable Building Recipes
+### Current Material Spawn Catalog
 
-These are registered in `BuildingRecipeCatalog.gd`. They are current implementation unlockables, but their token patterns use duplicates and therefore conflict with the target ritual rule that no slot can duplicate another slot. Treat this table as migration input, not final ritual grammar.
+These are loaded from `data/discovery_editor/runtime/materials.csv.txt` for editor/runtime reference and mirrored by `GameState._material_definition_for_biome()` for actual spawn behavior. Material nodes spawn on matching biome clusters, skip completed structures and shrine/build tiles, and harvest into `SeedAlchemyService` material inventory with a default capacity of 99.
 
-As of `022-ritual-menu-slots`, player-facing creation uses the ritual menu instead of accepting these duplicate-token patterns. The catalog remains available as migration/reference data, but duplicate-token building attempts do not produce inventory items through the playable ritual path.
+| Material | Material ID | Current Spawn Biomes | Visual ID | Current Ritual Use |
+|----------|-------------|----------------------|-----------|--------------------|
+| Living Wood | `living_wood` | Meadow, Cloud Ridge | `living_wood_tree` | Warm Hollow via Living Wood + Fire Essence |
+| Reed Fiber | `reed_fiber` | River, Wetlands, Moonlit Pool, Prismatic Terraces, Frostlands | `water_fish_reeds` | Reed Nest via Reed Fiber + Water Essence |
+| Spirit Stone | `spirit_stone` | Stone, Sacred Stone, Badlands, Whistling Canyons | `spirit_stone_minerals` | Stone Basin via Spirit Stone + Water Essence |
+| Ember Clay | `ember_clay` | Ember Field, Ember Shrine, The Ashfall | `ember_clay_shards` | Material implemented; no current form ritual yet |
+
+### Retired Duplicate-Token Building Recipes
+
+The old `BuildingRecipeCatalog.gd` duplicate-token structure catalog is no longer present in the current implementation. The patterns below survive only as migration history from the archived craft-mode era. They conflict with the target ritual rule that no slot can duplicate another slot and are not reachable through the playable ritual menu.
+
+As of `022-ritual-menu-slots`, player-facing creation uses CSV-backed rituals from `RitualRecipeCatalog.gd`. Keep this legacy table only as a design reminder when replacing old structure concepts with distinct material + essence inputs.
 
 | `recipe_id` | Building | Current Tokens | Discovery Entry | Migration Note |
 |-------------|----------|----------------|-----------------|----------------|
@@ -340,9 +355,19 @@ As of `022-ritual-menu-slots`, player-facing creation uses the ritual menu inste
 
 ### Current Ritual Form Recipes
 
-| `ritual_id` | Inputs | Produces | Inventory Key | Placement Outcome |
-|-------------|--------|----------|---------------|-------------------|
-| `ritual_warm_hollow` | Living Wood + Fire Essence | Warm Hollow | `form_warm_hollow` | Meadow -> `building_meadow_dwelling`; Ember/Hearth -> `building_scorched_hollow` |
+These rows are loaded from `data/discovery_editor/runtime/rituals.csv.txt` by `RitualRecipeCatalog.gd`, registered into the Codex by `CodexService`, and resolved into placeable forms by `SeedAlchemyService`.
+
+| `ritual_id` | Inputs | Produces | Inventory Key | Discovery Entry | Placement Outcome |
+|-------------|--------|----------|---------------|-----------------|-------------------|
+| `ritual_warm_hollow` | Living Wood + Fire Essence | Warm Hollow | `form_warm_hollow` | `disc_warm_hollow` | Meadow -> `building_meadow_dwelling`; Ember Field / Ember Shrine -> `building_scorched_hollow` |
+| `ritual_dew_bowl` | Living Wood + Water Essence | Dew Bowl | `form_dew_bowl` | `disc_dew_bowl` | Meadow / Cloud Ridge -> `building_dew_bowl` |
+| `ritual_root_network` | Living Wood + Earth Essence | Root Network | `form_root_network` | `disc_root_network` | Meadow / Cloud Ridge -> `building_root_network` |
+| `ritual_wind_chime` | Living Wood + Wind Essence | Wind Chime | `form_wind_chime` | `disc_wind_chime` | Meadow / Cloud Ridge -> `building_wind_chime` |
+| `ritual_reed_nest` | Reed Fiber + Water Essence | Reed Nest | `form_reed_nest` | `disc_reed_nest` | River / Wetlands / Moonlit Pool -> `building_reed_nest` |
+| `ritual_stone_basin` | Spirit Stone + Water Essence | Stone Basin | `form_stone_basin` | `disc_stone_basin` | River / Wetlands / Moonlit Pool -> `building_stone_basin` |
+| `ritual_kiln_heart` | Ember Clay + Fire Essence | Kiln Heart | `form_kiln_heart` | `disc_kiln_heart` | Ember Field / Ember Shrine / The Ashfall -> `building_kiln_heart` |
+
+The runtime CSV now covers the full Tier 1 material-family grammar: Living Wood, Reed Fiber, Spirit Stone and Ember Clay each support Fire, Water, Earth, Wind and Ku essence pairings. The table above calls out the most important currently-effectful rows; the rest resolve as placeable forms and future hooks rather than spirit-assistant/component systems.
 
 ### Current Discovery Unlocks
 
@@ -489,7 +514,11 @@ These mappings are design targets, not immediate code changes.
 When the design migration reaches code, reconcile this file against:
 
 * `src/seeds/recipes/*.tres`
-* `src/seeds/BuildingRecipeCatalog.gd`
+* `data/discovery_editor/runtime/rituals.csv.txt`
+* `data/discovery_editor/runtime/materials.csv.txt`
+* `src/seeds/RitualRecipeCatalog.gd`
+* `src/autoloads/GameState.gd`
+* `src/autoloads/seed_alchemy_service.gd`
 * `src/biomes/discovery_catalog_data.gd`
 * `src/spirits/spirit_catalog_data.gd`
 * existing specs that mention the seed crafting grid, especially `specs/019-seed-crafting-grid/`

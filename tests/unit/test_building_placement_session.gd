@@ -244,6 +244,32 @@ func test_warm_hollow_on_fire_resolves_to_scorched_hollow() -> void:
 	controller.queue_free()
 	_cleanup_context(ctx)
 
+func test_root_network_on_meadow_resolves_to_root_network_structure() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var pouch: SeedPouch = growth.get_pouch()
+	var coord: Vector2i = Vector2i(124, 0)
+	game_state.place_tile_from_seed(coord, BiomeType.Value.MEADOW, false)
+	assert_true(pouch.add_building(&"form_root_network", 1))
+
+	var controller: Node2D = Node2D.new()
+	controller.set_script(PlacementControllerScript)
+	add_child(controller)
+
+	controller.start_building_placement(&"form_root_network")
+	var session: BuildingPlacementSession = controller.get_active_building_session()
+	assert_not_null(session)
+	session.update_anchor(coord, [coord], true, &"")
+	assert_true(controller.confirm_building_placement())
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	assert_eq(str(tile.metadata.get("structure_discovery_id", "")), "building_root_network")
+	assert_eq(str(tile.metadata.get("placed_form_id", "")), "form_root_network")
+
+	controller.queue_free()
+	_cleanup_context(ctx)
+
 func test_warm_hollow_invalid_context_does_not_consume_inventory() -> void:
 	var ctx: Dictionary = _setup_context()
 	var game_state: Node = ctx["game_state"]

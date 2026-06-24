@@ -178,6 +178,55 @@ func test_inventory_full_harvest_preserves_ready_node() -> void:
 	assert_eq(StringName(str(node.get("state", &""))), &"ready")
 	_cleanup_context(ctx)
 
+func test_dew_bowl_increases_living_wood_material_capacity() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var coord: Vector2i = Vector2i(1, 0)
+	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	tile.metadata["is_building_complete"] = true
+	tile.metadata["structure_discovery_id"] = "building_dew_bowl"
+	assert_eq(alchemy.get_material_capacity(&"living_wood"), 124)
+	assert_eq(alchemy.get_material_capacity(&"reed_fiber"), 99)
+	_cleanup_context(ctx)
+
+func test_root_network_speeds_nearby_living_wood_spawn() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var root_coord: Vector2i = Vector2i(1, 0)
+	var meadow_coord: Vector2i = Vector2i(2, 0)
+	game_state.place_tile_from_seed(root_coord, BiomeTypeScript.Value.MEADOW)
+	game_state.place_tile_from_seed(meadow_coord, BiomeTypeScript.Value.MEADOW)
+	var root_tile: GardenTile = game_state.grid.get_tile(root_coord)
+	assert_not_null(root_tile)
+	root_tile.metadata["is_building_complete"] = true
+	root_tile.metadata["structure_discovery_id"] = "building_root_network"
+	assert_eq(_spawn_materials(game_state, 49.0).size(), 0)
+	assert_eq(_spawn_materials(game_state, 1.0).size(), 1)
+	assert_true(game_state.has_ready_material_at(meadow_coord))
+	_cleanup_context(ctx)
+
+func test_wind_chime_auto_harvests_nearby_living_wood() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var chime_coord: Vector2i = Vector2i(1, 0)
+	var meadow_coord: Vector2i = Vector2i(2, 0)
+	game_state.place_tile_from_seed(chime_coord, BiomeTypeScript.Value.MEADOW)
+	game_state.place_tile_from_seed(meadow_coord, BiomeTypeScript.Value.MEADOW)
+	var chime_tile: GardenTile = game_state.grid.get_tile(chime_coord)
+	assert_not_null(chime_tile)
+	chime_tile.metadata["is_building_complete"] = true
+	chime_tile.metadata["structure_discovery_id"] = "building_wind_chime"
+	var spawned: Array = _spawn_materials(game_state, 100.0)
+	assert_eq(spawned.size(), 1)
+	assert_true(bool((spawned[0] as Dictionary).get("auto_harvested", false)))
+	assert_false(game_state.has_ready_material_at(meadow_coord))
+	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
+	_cleanup_context(ctx)
+
 func test_first_session_loop_reaches_warm_hollow_after_harvest() -> void:
 	var ctx: Dictionary = _setup_context()
 	var game_state: Node = ctx["game_state"]

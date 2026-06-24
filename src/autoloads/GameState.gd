@@ -15,6 +15,8 @@ const MATERIAL_REED_FIBER: StringName = &"reed_fiber"
 const MATERIAL_SPIRIT_STONE: StringName = &"spirit_stone"
 const MATERIAL_EMBER_CLAY: StringName = &"ember_clay"
 const MATERIAL_BASE_TILE_SECONDS: float = 100.0
+const MATERIAL_CAPACITY_BONUS_PER_STORAGE: int = 25
+const MATERIAL_STRUCTURE_EFFECT_RADIUS: int = 1
 
 var grid: RefCounted       # GardenGrid instance
 var selected_biome: int = BiomeType.Value.STONE
@@ -91,7 +93,8 @@ func evaluate_material_spawns(delta_seconds: float) -> Array[Dictionary]:
 		var tile_count: int = int(cluster.get("tile_count", 0))
 		if tile_count <= 0:
 			continue
-		var interval_seconds: float = MATERIAL_BASE_TILE_SECONDS / float(tile_count)
+		var effective_tile_count: int = tile_count + _material_spawn_speed_bonus(cluster)
+		var interval_seconds: float = MATERIAL_BASE_TILE_SECONDS / float(maxi(1, effective_tile_count))
 		var accumulated: float = float(_material_spawn_accumulators.get(cluster_key, 0.0)) + scaled_delta_seconds
 		var spawnable_coords: Array[Vector2i] = []
 		var spawnable_variant: Variant = cluster.get("spawnable_coords", [])
@@ -137,6 +140,21 @@ func get_material_node_at(coord: Vector2i) -> Dictionary:
 	if node_variant is Dictionary:
 		return (node_variant as Dictionary).duplicate(true)
 	return {}
+
+func get_material_capacity_bonus(material_id: StringName) -> int:
+	var bonus: int = 0
+	if grid == null:
+		return bonus
+	for coord_variant: Variant in grid.tiles.keys():
+		if not (coord_variant is Vector2i):
+			continue
+		var tile: GardenTile = grid.get_tile(coord_variant as Vector2i)
+		var structure_id: StringName = _completed_structure_id(tile)
+		if structure_id == &"":
+			continue
+		if _storage_material_for_structure(structure_id) == material_id:
+			bonus += MATERIAL_CAPACITY_BONUS_PER_STORAGE
+	return bonus
 
 func has_ready_material_at(coord: Vector2i) -> bool:
 	var node: Dictionary = get_material_node_at(coord)
@@ -281,7 +299,90 @@ func _spawn_material_node_for_tile(coord: Vector2i, tile: GardenTile) -> Diction
 	}
 	tile.metadata["material_node"] = node
 	material_node_spawned.emit(coord, material_id, 1)
+	if _try_auto_harvest_material_node(coord, material_id, 1):
+		var auto_node: Dictionary = node.duplicate(true)
+		auto_node["state"] = MATERIAL_STATE_COLLECTED
+		auto_node["auto_harvested"] = true
+		return auto_node
 	return node
+
+func _try_auto_harvest_material_node(coord: Vector2i, material_id: StringName, amount: int) -> bool:
+	if material_id != MATERIAL_LIVING_WOOD:
+		return false
+	if not _has_structure_near_coord(coord, &"building_wind_chime", MATERIAL_STRUCTURE_EFFECT_RADIUS):
+		return false
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("try_add_material"):
+		return false
+	if not alchemy.try_add_material(material_id, amount):
+		return false
+	_clear_material_node_at(coord)
+	material_node_harvested.emit(coord, material_id, amount)
+	return true
+
+func _material_spawn_speed_bonus(cluster: Dictionary) -> int:
+	var material_id: StringName = StringName(str(cluster.get("material_id", &"")))
+	if material_id == &"":
+		return 0
+	var coords: Array[Vector2i] = []
+	var coords_variant: Variant = cluster.get("coords", [])
+	if coords_variant is Array:
+		for coord_variant: Variant in coords_variant:
+			if coord_variant is Vector2i:
+				coords.append(coord_variant as Vector2i)
+	if coords.is_empty():
+		return 0
+	var bonus: int = 0
+	if material_id == MATERIAL_LIVING_WOOD and _has_structure_near_any_coord(coords, &"building_root_network", MATERIAL_STRUCTURE_EFFECT_RADIUS):
+		bonus += 1
+	if material_id == MATERIAL_EMBER_CLAY and _has_structure_near_any_coord(coords, &"building_kiln_heart", MATERIAL_STRUCTURE_EFFECT_RADIUS):
+		bonus += 1
+	return bonus
+
+func _has_structure_near_any_coord(coords: Array[Vector2i], structure_id: StringName, radius: int) -> bool:
+	for coord: Vector2i in coords:
+		if _has_structure_near_coord(coord, structure_id, radius):
+			return true
+	return false
+
+func _has_structure_near_coord(coord: Vector2i, structure_id: StringName, radius: int) -> bool:
+	if grid == null:
+		return false
+	var candidates: Array[Vector2i] = [coord]
+	if radius >= 1:
+		for neighbor: Vector2i in _HexUtils.get_neighbors(coord):
+			candidates.append(neighbor)
+	for candidate: Vector2i in candidates:
+		var tile: GardenTile = grid.get_tile(candidate)
+		if _completed_structure_id(tile) == structure_id:
+			return true
+	return false
+
+func _completed_structure_id(tile: GardenTile) -> StringName:
+	if tile == null:
+		return &""
+	var completed: bool = bool(tile.metadata.get("is_building_complete", false)) or bool(tile.metadata.get("shrine_built", false))
+	if not completed:
+		return &""
+	var structure_id: String = str(tile.metadata.get("structure_discovery_id", ""))
+	if structure_id.is_empty():
+		structure_id = str(tile.metadata.get("build_discovery_id", ""))
+	if structure_id.is_empty():
+		return &""
+	return StringName(structure_id)
+
+func _storage_material_for_structure(structure_id: StringName) -> StringName:
+	match structure_id:
+		&"building_dew_bowl":
+			return MATERIAL_LIVING_WOOD
+		&"building_reed_nest":
+			return MATERIAL_REED_FIBER
+		&"building_foundation_marker":
+			return MATERIAL_SPIRIT_STONE
+		&"building_hearth_stone":
+			return MATERIAL_EMBER_CLAY
+		_:
+			return &""
 
 func _choose_material_spawn_coord(cluster_key: String, candidates: Array[Vector2i]) -> Vector2i:
 	if candidates.is_empty():

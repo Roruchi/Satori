@@ -113,8 +113,8 @@ func get_material_count(material_id: StringName) -> int:
 func get_material_display_order() -> Array[StringName]:
 	return MATERIAL_DISPLAY_ORDER.duplicate()
 
-func get_material_capacity(_material_id: StringName) -> int:
-	return DEFAULT_MATERIAL_CAPACITY
+func get_material_capacity(material_id: StringName) -> int:
+	return DEFAULT_MATERIAL_CAPACITY + _material_capacity_bonus(material_id)
 
 func try_add_material(material_id: StringName, amount: int) -> bool:
 	if amount <= 0:
@@ -488,6 +488,12 @@ func _ritual_input_defs_by_key() -> Dictionary:
 	for input_def: Dictionary in get_ritual_input_definitions():
 		defs[str(input_def.get("key", ""))] = input_def
 	return defs
+
+func _material_capacity_bonus(material_id: StringName) -> int:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("get_material_capacity_bonus"):
+		return 0
+	return int(game_state.get_material_capacity_bonus(material_id))
 
 func _filled_ritual_keys(slot_keys: Array[String]) -> Array[String]:
 	var keys: Array[String] = []
