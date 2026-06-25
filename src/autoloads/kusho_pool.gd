@@ -15,6 +15,9 @@ var _charges: Dictionary = {
 func set_charge(element: int, charge: int) -> void:
 	_charges[element] = clampi(charge, 0, CAPACITY_PER_ELEMENT)
 
+func set_charge_with_capacity(element: int, charge: int, capacity: int) -> void:
+	_charges[element] = clampi(charge, 0, maxi(0, capacity))
+
 func set_charge_for_testing(element: int, charge: int) -> void:
 	_charges[element] = maxi(charge, 0)
 
@@ -31,10 +34,13 @@ func consume(element: int, amount: int = 1) -> bool:
 	return true
 
 func add_charge(element: int, amount: int = 1) -> int:
+	return add_charge_with_capacity(element, amount, CAPACITY_PER_ELEMENT)
+
+func add_charge_with_capacity(element: int, amount: int = 1, capacity: int = CAPACITY_PER_ELEMENT) -> int:
 	if amount <= 0:
 		return 0
 	var current: int = get_charge(element)
-	var space: int = CAPACITY_PER_ELEMENT - current
+	var space: int = maxi(0, capacity) - current
 	if space <= 0:
 		return amount
 	var accepted: int = mini(space, amount)

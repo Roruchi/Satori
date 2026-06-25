@@ -53,7 +53,7 @@ func _ready() -> void:
 		_material_counts[material_id] = 0
 	_material_counts[&"living_wood"] = STARTING_LIVING_WOOD
 	for element: int in _unlocked_elements:
-		_kusho_pool.set_charge(element, KushoPoolScript.CAPACITY_PER_ELEMENT)
+		_set_pool_charge(element, get_element_capacity(element))
 	_kusho_pool.set_charge(GodaiElementScript.Value.KU, 0)
 
 func is_element_unlocked(element: int) -> bool:
@@ -69,7 +69,7 @@ func unlock_element(element: int) -> void:
 	element_unlocked.emit(element)
 	if element == GodaiElementScript.Value.KU:
 		# Ku should start at full charge immediately on unlock.
-		_kusho_pool.set_charge(GodaiElementScript.Value.KU, KushoPoolScript.CAPACITY_PER_ELEMENT)
+		_set_pool_charge(GodaiElementScript.Value.KU, get_element_capacity(GodaiElementScript.Value.KU))
 		element_charge_changed.emit(GodaiElementScript.Value.KU, _kusho_pool.get_charge(GodaiElementScript.Value.KU))
 		_register_discovery(SatoriIds.KU_GUIDANCE_ENTRY_ID, false)
 
@@ -327,6 +327,9 @@ func _resolve_form_ritual(normalized_keys: Array[String], confirm: bool) -> Ritu
 func get_element_charge(element: int) -> int:
 	return _kusho_pool.get_charge(element)
 
+func get_element_capacity(element: int) -> int:
+	return KushoPoolScript.CAPACITY_PER_ELEMENT + _element_capacity_bonus(element)
+
 func can_afford_mix(elements: Array[int]) -> bool:
 	var required_counts: Dictionary = {}
 	for element: int in elements:
@@ -365,7 +368,7 @@ func refund_for_biome_placement(biome: int) -> void:
 	var element: int = _element_for_biome_placement(biome)
 	if element == INVALID_ELEMENT:
 		return
-	_kusho_pool.add_charge(element, 1)
+	_add_pool_charge(element, 1)
 	element_charge_changed.emit(element, _kusho_pool.get_charge(element))
 
 func refund_for_recipe_placement(recipe: SeedRecipe) -> void:
@@ -391,7 +394,7 @@ func store_shrine_charge(coord: Vector2i, element: int, amount: int = 1) -> bool
 	if counts_variant is Dictionary:
 		counts = (counts_variant as Dictionary).duplicate()
 	var current_amount: int = int(counts.get(element, 0))
-	var next_amount: int = mini(KushoPoolScript.CAPACITY_PER_ELEMENT, current_amount + amount)
+	var next_amount: int = mini(get_element_capacity(element), current_amount + amount)
 	if next_amount <= current_amount:
 		return false
 	counts[element] = next_amount
@@ -412,7 +415,7 @@ func collect_shrine_charge(coord: Vector2i) -> bool:
 		if element == INVALID_ELEMENT or amount <= 0:
 			continue
 		had_any = true
-		var overflow: int = _kusho_pool.add_charge(element, amount)
+		var overflow: int = _add_pool_charge(element, amount)
 		var collected: int = amount - overflow
 		if collected > 0:
 			element_charge_changed.emit(element, _kusho_pool.get_charge(element))
@@ -445,6 +448,7 @@ func _coord_key(coord: Vector2i) -> String:
 func _essence_input(id: StringName, element: int, display_name: String) -> Dictionary:
 	var unlocked: bool = is_element_unlocked(element)
 	var charge: int = _kusho_pool.get_charge(element) if unlocked else 0
+	var capacity: int = get_element_capacity(element)
 	return {
 		"kind": INPUT_KIND_ESSENCE,
 		"id": id,
@@ -452,6 +456,7 @@ func _essence_input(id: StringName, element: int, display_name: String) -> Dicti
 		"element": element,
 		"display_name": display_name,
 		"available_count": charge,
+		"capacity": capacity,
 		"available_for_selection": unlocked and charge > 0,
 		"unlocked": unlocked,
 	}
@@ -494,6 +499,12 @@ func _material_capacity_bonus(material_id: StringName) -> int:
 	if game_state == null or not game_state.has_method("get_material_capacity_bonus"):
 		return 0
 	return int(game_state.get_material_capacity_bonus(material_id))
+
+func _element_capacity_bonus(element: int) -> int:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("get_element_capacity_bonus"):
+		return 0
+	return int(game_state.get_element_capacity_bonus(element))
 
 func _filled_ritual_keys(slot_keys: Array[String]) -> Array[String]:
 	var keys: Array[String] = []
@@ -563,8 +574,19 @@ func _refund_mix_elements(elements: Array[int]) -> void:
 
 func _refund_elements(elements: Array[int]) -> void:
 	for element: int in elements:
-		_kusho_pool.add_charge(element, 1)
+		_add_pool_charge(element, 1)
 		element_charge_changed.emit(element, _kusho_pool.get_charge(element))
+
+func _set_pool_charge(element: int, charge: int) -> void:
+	if _kusho_pool.has_method("set_charge_with_capacity"):
+		_kusho_pool.set_charge_with_capacity(element, charge, get_element_capacity(element))
+	else:
+		_kusho_pool.set_charge(element, charge)
+
+func _add_pool_charge(element: int, amount: int) -> int:
+	if _kusho_pool.has_method("add_charge_with_capacity"):
+		return int(_kusho_pool.add_charge_with_capacity(element, amount, get_element_capacity(element)))
+	return _kusho_pool.add_charge(element, amount)
 
 func _recipe_has_locked_elements(recipe: SeedRecipe) -> bool:
 	if recipe == null:

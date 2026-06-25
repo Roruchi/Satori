@@ -2,21 +2,21 @@ class_name HUDController
 extends CanvasLayer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
-const _MATERIAL_ICON_TEXTURE: Texture2D = preload("res://assets/materials/material_icon_spritesheet.png")
+const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
 const MIX_PANEL_GAP: float = 16.0
-const MIX_PANEL_MIN_WIDTH: float = 460.0
+const MIX_PANEL_MIN_WIDTH: float = 360.0
 const MIX_PANEL_SCREEN_MARGIN: float = 16.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
-const MATERIAL_ICON_CELL_SIZE: float = 32.0
+const RITUAL_ICON_CELL_SIZE: float = 32.0
 const MATERIAL_SLOT_ICON_SIZE: float = 18.0
 const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(88.0, 24.0)
 const _MATERIAL_ICON_INDEX: Dictionary = {
-	&"living_wood": 0,
-	&"reed_fiber": 1,
-	&"spirit_stone": 2,
-	&"ember_clay": 3,
+	&"living_wood": 5,
+	&"reed_fiber": 6,
+	&"spirit_stone": 7,
+	&"ember_clay": 8,
 }
 const _MATERIAL_SHORT_LABELS: Dictionary = {
 	&"living_wood": "LW",
@@ -24,8 +24,8 @@ const _MATERIAL_SHORT_LABELS: Dictionary = {
 	&"spirit_stone": "SS",
 	&"ember_clay": "EC",
 }
-const MODE_TAB_GLYPHS: Array[String] = ["PL", "RI", "IN", "CO"]
 const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
+const MODE_TAB_ICON_INDICES: Array[int] = [5, 4, 7, 0]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
@@ -185,12 +185,14 @@ func _layout_mix_panel() -> void:
 	if root_size.x <= 0.0 or root_size.y <= 0.0:
 		call_deferred("_layout_mix_panel")
 		return
-	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
-	var panel_width: float = max(min_size.x, MIX_PANEL_MIN_WIDTH)
-	var panel_height: float = max(min_size.y, _mix_panel.custom_minimum_size.y)
 	var bottom_y: float = _bottom_bar.position.y
 	if bottom_y <= 0.0:
 		bottom_y = root_size.y - 104.0
+	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
+	var available_width: float = maxf(300.0, root_size.x - (MIX_PANEL_SCREEN_MARGIN * 2.0))
+	var available_height: float = maxf(260.0, bottom_y - MIX_PANEL_GAP - MIX_PANEL_SCREEN_MARGIN)
+	var panel_width: float = minf(maxf(min_size.x, MIX_PANEL_MIN_WIDTH), available_width)
+	var panel_height: float = minf(maxf(min_size.y, _mix_panel.custom_minimum_size.y), available_height)
 	var panel_x: float = (root_size.x - panel_width) * 0.5
 	var panel_y: float = bottom_y - panel_height - MIX_PANEL_GAP
 	var max_panel_x: float = root_size.x - panel_width - MIX_PANEL_SCREEN_MARGIN
@@ -421,12 +423,17 @@ func _create_material_slot(material_id: StringName) -> PanelContainer:
 	return slot
 
 func _material_icon_texture(material_id: StringName) -> Texture2D:
-	if _MATERIAL_ICON_TEXTURE == null or not _MATERIAL_ICON_INDEX.has(material_id):
+	if _RITUAL_ICON_TEXTURE == null or not _MATERIAL_ICON_INDEX.has(material_id):
 		return null
 	var icon_index: int = int(_MATERIAL_ICON_INDEX.get(material_id, 0))
+	var column: int = icon_index % 3
+	var row: int = floori(float(icon_index) / 3.0)
 	var atlas_texture: AtlasTexture = AtlasTexture.new()
-	atlas_texture.atlas = _MATERIAL_ICON_TEXTURE
-	atlas_texture.region = Rect2(Vector2(float(icon_index) * MATERIAL_ICON_CELL_SIZE, 0.0), Vector2(MATERIAL_ICON_CELL_SIZE, MATERIAL_ICON_CELL_SIZE))
+	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
+	atlas_texture.region = Rect2(
+		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
+		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
+	)
 	return atlas_texture
 
 func _material_short_label(material_id: StringName) -> String:
@@ -586,11 +593,14 @@ func _style_mode_tabs() -> void:
 		button.clip_text = false
 		button.add_theme_font_size_override("font_size", 18)
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		button.expand_icon = false
 		button.scale = Vector2.ONE
 		_apply_mode_tab_state(button, false, button_index)
 
 func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
-	button.text = "%s\n%s" % [MODE_TAB_GLYPHS[index], MODE_TAB_TITLES[index]]
+	button.text = MODE_TAB_TITLES[index]
+	button.icon = _ritual_icon_texture_by_index(MODE_TAB_ICON_INDICES[index])
 	button.modulate = Color.WHITE
 	var normal_style: StyleBoxFlat = StyleBoxFlat.new()
 	normal_style.bg_color = MODE_TAB_ACTIVE_BG if is_active else MODE_TAB_INACTIVE_BG
@@ -621,6 +631,19 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 	button.add_theme_color_override("icon_normal_color", MODE_TAB_TINTS[index])
 	button.add_theme_color_override("icon_hover_color", MODE_TAB_TINTS[index].lightened(0.1))
 	button.add_theme_color_override("icon_pressed_color", MODE_TAB_TINTS[index])
+
+func _ritual_icon_texture_by_index(icon_index: int) -> Texture2D:
+	if _RITUAL_ICON_TEXTURE == null:
+		return null
+	var column: int = icon_index % 3
+	var row: int = floori(float(icon_index) / 3.0)
+	var atlas_texture: AtlasTexture = AtlasTexture.new()
+	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
+	atlas_texture.region = Rect2(
+		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
+		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
+	)
+	return atlas_texture
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)

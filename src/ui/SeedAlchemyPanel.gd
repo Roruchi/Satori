@@ -5,9 +5,13 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
+const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
 
 const SLOT_COUNT: int = 3
 const EMPTY_KEY: String = ""
+const RITUAL_ICON_CELL_SIZE: float = 32.0
+const INPUT_BUTTON_MIN_SIZE: Vector2 = Vector2(138.0, 68.0)
+const SLOT_BUTTON_MIN_SIZE: Vector2 = Vector2(116.0, 78.0)
 
 const _INPUT_COLORS: Dictionary = {
 	"essence:earth": Color(0.62, 0.62, 0.62),
@@ -18,28 +22,58 @@ const _INPUT_COLORS: Dictionary = {
 	"material:living_wood": Color(0.56, 0.42, 0.25),
 	"material:reed_fiber": Color(0.42, 0.70, 0.66),
 	"material:spirit_stone": Color(0.54, 0.58, 0.66),
+	"material:ember_clay": Color(0.76, 0.35, 0.20),
 }
 
 const _INPUT_LABELS: Dictionary = {
+	"essence:earth": "Chi",
+	"essence:water": "Sui",
+	"essence:fire": "Ka",
+	"essence:wind": "Fu",
+	"essence:ku": "Ku",
+	"material:living_wood": "Living Wood",
+	"material:reed_fiber": "Reed Fiber",
+	"material:spirit_stone": "Spirit Stone",
+	"material:ember_clay": "Ember Clay",
+}
+
+const _INPUT_SUBLABELS: Dictionary = {
 	"essence:earth": "Earth Essence",
 	"essence:water": "Water Essence",
 	"essence:fire": "Fire Essence",
 	"essence:wind": "Wind Essence",
-	"essence:ku": "Ku Essence",
-	"material:living_wood": "Living Wood",
-	"material:reed_fiber": "Reed Fiber",
-	"material:spirit_stone": "Spirit Stone",
+	"essence:ku": "Void Essence",
 }
 
 const _INPUT_SHORT_LABELS: Dictionary = {
-	"essence:earth": "Earth",
-	"essence:water": "Water",
-	"essence:fire": "Fire",
-	"essence:wind": "Wind",
+	"essence:earth": "Chi",
+	"essence:water": "Sui",
+	"essence:fire": "Ka",
+	"essence:wind": "Fu",
 	"essence:ku": "Ku",
 	"material:living_wood": "Wood",
 	"material:reed_fiber": "Reed",
 	"material:spirit_stone": "Stone",
+	"material:ember_clay": "Clay",
+}
+
+const _RITUAL_ICON_INDEX: Dictionary = {
+	"essence:earth": 0,
+	"essence:water": 1,
+	"essence:fire": 2,
+	"essence:wind": 3,
+	"essence:ku": 4,
+	"material:living_wood": 5,
+	"material:reed_fiber": 6,
+	"material:spirit_stone": 7,
+	"material:ember_clay": 8,
+}
+
+const _SECTION_TITLES: Dictionary = {
+	&"essence": "Godai Essence",
+	&"material": "Materials",
+	&"component": "Components",
+	&"spirit": "Spirit Assistants",
 }
 
 const _BIOME_SEED_NAMES: Dictionary = {
@@ -76,6 +110,7 @@ const _FEEDBACK_MESSAGES: Dictionary = {
 @onready var _feedback_label: Label = $VBox/Feedback
 @onready var _slots_label: Label = $VBox/Slots
 @onready var _choice_prompt_label: Label = $VBox/ChoicePrompt
+@onready var _picker_sections: VBoxContainer = $VBox/PickerScroll/PickerSections
 @onready var _slot_buttons: Array[Button] = [
 	$VBox/Grid/Slot0,
 	$VBox/Grid/Slot1,
@@ -83,18 +118,14 @@ const _FEEDBACK_MESSAGES: Dictionary = {
 ]
 @onready var _confirm_button: Button = $VBox/Actions/ConfirmButton
 @onready var _clear_button: Button = $VBox/Actions/ClearButton
-@onready var _earth_button: Button = $VBox/Elements/EarthButton
-@onready var _water_button: Button = $VBox/Elements/WaterButton
-@onready var _fire_button: Button = $VBox/Elements/FireButton
-@onready var _wind_button: Button = $VBox/Elements/WindButton
-@onready var _ku_button: Button = $VBox/Elements/KuButton
-@onready var _living_wood_button: Button = $VBox/Materials/LivingWoodButton
-@onready var _reed_fiber_button: Button = $VBox/Materials/ReedFiberButton
-@onready var _spirit_stone_button: Button = $VBox/Materials/SpiritStoneButton
 
 var _slot_keys: Array[String] = []
 var _selected_slot_index: int = 0
 var _last_feedback: String = ""
+var _input_buttons_by_key: Dictionary = {}
+var _section_grids_by_kind: Dictionary = {}
+var _section_nodes_by_kind: Dictionary = {}
+var _input_icon_cache: Dictionary = {}
 
 func _ready() -> void:
 	for _i: int in range(SLOT_COUNT):
@@ -102,14 +133,6 @@ func _ready() -> void:
 	for i: int in range(_slot_buttons.size()):
 		var button: Button = _slot_buttons[i]
 		button.pressed.connect(func() -> void: _on_slot_pressed(i))
-	_earth_button.pressed.connect(func() -> void: _on_input_tapped("essence:earth"))
-	_water_button.pressed.connect(func() -> void: _on_input_tapped("essence:water"))
-	_fire_button.pressed.connect(func() -> void: _on_input_tapped("essence:fire"))
-	_wind_button.pressed.connect(func() -> void: _on_input_tapped("essence:wind"))
-	_ku_button.pressed.connect(func() -> void: _on_input_tapped("essence:ku"))
-	_living_wood_button.pressed.connect(func() -> void: _on_input_tapped("material:living_wood"))
-	_reed_fiber_button.pressed.connect(func() -> void: _on_input_tapped("material:reed_fiber"))
-	_spirit_stone_button.pressed.connect(func() -> void: _on_input_tapped("material:spirit_stone"))
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_clear_button.pressed.connect(_on_clear_pressed)
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
@@ -128,6 +151,10 @@ func _ready() -> void:
 		growth.pouch_updated.connect(_on_pouch_updated)
 	_apply_panel_style()
 	_update_ui()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_apply_responsive_picker_columns()
 
 func _apply_panel_style() -> void:
 	var bg := StyleBoxFlat.new()
@@ -211,7 +238,9 @@ func _on_clear_pressed() -> void:
 func _update_ui() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	_ensure_selected_slot()
+	_refresh_input_controls()
 	_update_input_buttons()
+	_apply_responsive_picker_columns()
 	var occupied_count: int = _count_occupied_slots()
 	_slots_label.text = "Ritual slots: %d/%d" % [occupied_count, SLOT_COUNT]
 	_choice_prompt_label.text = _format_choice_prompt()
@@ -248,36 +277,171 @@ func _update_ui() -> void:
 	_confirm_button.disabled = occupied_count == 0
 
 func _update_input_buttons() -> void:
-	var buttons_by_key: Dictionary = {
-		"essence:earth": _earth_button,
-		"essence:water": _water_button,
-		"essence:fire": _fire_button,
-		"essence:wind": _wind_button,
-		"essence:ku": _ku_button,
-		"material:living_wood": _living_wood_button,
-		"material:reed_fiber": _reed_fiber_button,
-		"material:spirit_stone": _spirit_stone_button,
-	}
-	for key_variant: Variant in buttons_by_key.keys():
+	for key_variant: Variant in _input_buttons_by_key.keys():
 		var key: String = str(key_variant)
-		var btn: Button = buttons_by_key[key] as Button
+		var btn: Button = _input_buttons_by_key[key] as Button
 		if btn == null:
 			continue
 		var definition: Dictionary = _definition_for_key(key)
 		var available: int = int(definition.get("available_count", 0))
 		var unlocked: bool = bool(definition.get("unlocked", false))
 		btn.disabled = not bool(definition.get("available_for_selection", false))
-		btn.text = _format_input_button_text(key, available, unlocked)
+		btn.text = ""
+		btn.tooltip_text = _format_input_tooltip(key, definition, available, unlocked)
+		_set_input_button_content(btn, key, definition, available, unlocked)
 		_style_input_button(btn, key, _selected_slot_key() == key)
+
+func _refresh_input_controls() -> void:
+	var definitions: Array[Dictionary] = _get_input_definitions()
+	var active_keys: Dictionary = {}
+	for definition: Dictionary in definitions:
+		var key: String = str(definition.get("key", ""))
+		if key.is_empty():
+			continue
+		active_keys[key] = true
+		var kind: StringName = StringName(str(definition.get("kind", &"material")))
+		var grid: GridContainer = _ensure_section_grid(kind)
+		if not _input_buttons_by_key.has(key):
+			var btn: Button = _create_input_button(key)
+			_input_buttons_by_key[key] = btn
+			grid.add_child(btn)
+	for key_variant: Variant in _input_buttons_by_key.keys().duplicate():
+		var existing_key: String = str(key_variant)
+		if active_keys.has(existing_key):
+			continue
+		var old_button: Button = _input_buttons_by_key[existing_key] as Button
+		_input_buttons_by_key.erase(existing_key)
+		if old_button != null:
+			old_button.queue_free()
+
+func _create_input_button(input_key: String) -> Button:
+	var btn: Button = Button.new()
+	btn.name = _node_name_for_input_key(input_key)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = INPUT_BUTTON_MIN_SIZE
+	btn.clip_text = true
+	btn.pressed.connect(func() -> void: _on_input_tapped(input_key))
+	return btn
+
+func _ensure_button_contents(btn: Button) -> Dictionary:
+	var existing: Node = btn.get_node_or_null("Contents")
+	if existing != null:
+		return {
+			"icon": existing.get_node("Icon"),
+			"title": existing.get_node("Labels/Title"),
+			"detail": existing.get_node("Labels/Detail"),
+		}
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Contents"
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 8.0
+	row.offset_top = 6.0
+	row.offset_right = -8.0
+	row.offset_bottom = -6.0
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var icon: TextureRect = TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(32.0, 32.0)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon)
+	var labels: VBoxContainer = VBoxContainer.new()
+	labels.name = "Labels"
+	labels.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	labels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	labels.alignment = BoxContainer.ALIGNMENT_CENTER
+	labels.add_theme_constant_override("separation", 0)
+	row.add_child(labels)
+	var title: Label = Label.new()
+	title.name = "Title"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.clip_text = true
+	title.add_theme_font_size_override("font_size", 14)
+	labels.add_child(title)
+	var detail: Label = Label.new()
+	detail.name = "Detail"
+	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	detail.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	detail.clip_text = true
+	detail.add_theme_font_size_override("font_size", 12)
+	labels.add_child(detail)
+	btn.add_child(row)
+	return {"icon": icon, "title": title, "detail": detail}
+
+func _set_input_button_content(btn: Button, key: String, definition: Dictionary, available: int, unlocked: bool) -> void:
+	var parts: Dictionary = _ensure_button_contents(btn)
+	var icon: TextureRect = parts["icon"] as TextureRect
+	var title: Label = parts["title"] as Label
+	var detail: Label = parts["detail"] as Label
+	if icon != null:
+		icon.texture = _icon_texture_for_key(key)
+		icon.modulate = Color.WHITE if unlocked else Color(0.45, 0.42, 0.50, 0.75)
+	if title != null:
+		title.text = _display_label_for_key(key, definition)
+	if detail != null:
+		if not unlocked:
+			detail.text = "Locked"
+		elif key.begins_with("essence:"):
+			detail.text = "%s %d/%d" % [str(_INPUT_SUBLABELS.get(key, "Essence")), available, _capacity_for_definition(definition)]
+		else:
+			detail.text = "x%d" % available
+
+func _ensure_section_grid(kind: StringName) -> GridContainer:
+	var existing_variant: Variant = _section_grids_by_kind.get(kind, null)
+	if existing_variant is GridContainer:
+		return existing_variant as GridContainer
+	var section: VBoxContainer = VBoxContainer.new()
+	section.name = "Section_%s" % str(kind)
+	section.add_theme_constant_override("separation", 4)
+	var title: Label = Label.new()
+	title.name = "Title"
+	title.text = _section_title(kind)
+	title.add_theme_color_override("font_color", Color(0.93, 0.87, 0.66))
+	title.add_theme_font_size_override("font_size", 13)
+	var grid: GridContainer = GridContainer.new()
+	grid.name = "Grid"
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	section.add_child(title)
+	section.add_child(grid)
+	_picker_sections.add_child(section)
+	_section_nodes_by_kind[kind] = section
+	_section_grids_by_kind[kind] = grid
+	return grid
+
+func _apply_responsive_picker_columns() -> void:
+	var panel_width: float = size.x
+	if panel_width <= 0.0:
+		panel_width = custom_minimum_size.x
+	for kind_variant: Variant in _section_grids_by_kind.keys():
+		var kind: StringName = StringName(str(kind_variant))
+		var grid: GridContainer = _section_grids_by_kind[kind] as GridContainer
+		if grid == null:
+			continue
+		if kind == &"essence":
+			grid.columns = 2 if panel_width < 420.0 else 3
+		else:
+			grid.columns = 1 if panel_width < 360.0 else 2
+
+func _section_title(kind: StringName) -> String:
+	return str(_SECTION_TITLES.get(kind, str(kind).replace("_", " ").capitalize()))
+
+func _node_name_for_input_key(input_key: String) -> String:
+	return "Input_%s" % input_key.replace(":", "_").replace("-", "_").replace(" ", "_")
 
 func _update_slot_button(slot_index: int) -> void:
 	var key: String = _slot_keys[slot_index]
 	var btn: Button = _slot_buttons[slot_index]
-	btn.custom_minimum_size = Vector2(104.0, 68.0)
+	btn.custom_minimum_size = SLOT_BUTTON_MIN_SIZE
 	btn.clip_text = true
 	var selected: bool = slot_index == _selected_slot_index
 	if key.is_empty():
-		btn.text = "Slot %d\nTap to choose" % (slot_index + 1)
+		btn.text = ""
+		_set_slot_button_content(btn, null, "Slot %d" % (slot_index + 1), "Choose input", false)
 		var empty_style := StyleBoxFlat.new()
 		empty_style.bg_color = Color(0.16, 0.14, 0.22) if selected else Color(0.12, 0.12, 0.16)
 		empty_style.border_color = Color(0.86, 0.76, 0.48) if selected else Color(0.37, 0.36, 0.48)
@@ -294,6 +458,8 @@ func _update_slot_button(slot_index: int) -> void:
 		btn.add_theme_font_size_override("font_size", 13)
 		return
 	var col: Color = Color(_INPUT_COLORS.get(key, Color(0.45, 0.45, 0.45)))
+	btn.text = ""
+	_set_slot_button_content(btn, _icon_texture_for_key(key), "Slot %d" % (slot_index + 1), _short_label_for_key(key), true)
 	var filled_style := StyleBoxFlat.new()
 	filled_style.bg_color = col.darkened(0.24 if selected else 0.34)
 	filled_style.border_color = Color(0.96, 0.88, 0.58) if selected else col.lightened(0.12)
@@ -308,7 +474,21 @@ func _update_slot_button(slot_index: int) -> void:
 	btn.add_theme_stylebox_override("normal", filled_style)
 	btn.add_theme_color_override("font_color", Color.WHITE)
 	btn.add_theme_font_size_override("font_size", 15)
-	btn.text = "Slot %d\n%s" % [slot_index + 1, str(_INPUT_SHORT_LABELS.get(key, "?"))]
+
+func _set_slot_button_content(btn: Button, texture: Texture2D, title_text: String, detail_text: String, show_icon: bool) -> void:
+	var parts: Dictionary = _ensure_button_contents(btn)
+	var icon: TextureRect = parts["icon"] as TextureRect
+	var title: Label = parts["title"] as Label
+	var detail: Label = parts["detail"] as Label
+	if icon != null:
+		icon.visible = show_icon and texture != null
+		icon.texture = texture
+	if title != null:
+		title.text = title_text
+		title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.98) if not show_icon else Color(1.0, 0.96, 0.78))
+	if detail != null:
+		detail.text = detail_text
+		detail.add_theme_color_override("font_color", Color(0.78, 0.76, 0.86) if not show_icon else Color.WHITE)
 
 func _style_input_button(btn: Button, key: String, selected: bool) -> void:
 	var col: Color = Color(_INPUT_COLORS.get(key, Color.WHITE))
@@ -331,30 +511,86 @@ func _style_input_button(btn: Button, key: String, selected: bool) -> void:
 	btn.add_theme_stylebox_override("pressed", normal_style)
 	btn.add_theme_color_override("font_color", Color.WHITE if selected else Color(0.86, 0.86, 0.86))
 	btn.add_theme_font_size_override("font_size", 13)
+	var parts: Dictionary = _ensure_button_contents(btn)
+	var title: Label = parts["title"] as Label
+	var detail: Label = parts["detail"] as Label
+	if title != null:
+		title.add_theme_color_override("font_color", Color.WHITE if selected else Color(0.94, 0.92, 0.84))
+	if detail != null:
+		detail.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96) if selected else Color(0.78, 0.76, 0.72))
 
-func _format_input_button_text(key: String, available: int, unlocked: bool) -> String:
-	var base: String = str(_INPUT_LABELS.get(key, "?"))
+func _format_input_button_text(key: String, definition: Dictionary, available: int, unlocked: bool) -> String:
+	var base: String = _display_label_for_key(key, definition)
 	if not unlocked:
 		return "%s\nLocked" % base
 	if key.begins_with("essence:"):
-		return "%s\n%d/%d" % [base, available, KushoPoolScript.CAPACITY_PER_ELEMENT]
+		var sublabel: String = str(_INPUT_SUBLABELS.get(key, "Essence"))
+		return "%s\n%s %d/%d" % [base, sublabel, available, _capacity_for_definition(definition)]
 	return "%s\nx%d" % [base, available]
 
+func _format_input_tooltip(key: String, definition: Dictionary, available: int, unlocked: bool) -> String:
+	var label: String = _display_label_for_key(key, definition)
+	var sublabel: String = str(_INPUT_SUBLABELS.get(key, str(definition.get("display_name", ""))))
+	if not unlocked:
+		return "%s is not available yet." % label
+	if key.begins_with("essence:"):
+		return "%s: %s, %d of %d essence ready." % [label, sublabel, available, _capacity_for_definition(definition)]
+	return "%s: %d available." % [label, available]
+
+func _capacity_for_definition(definition: Dictionary) -> int:
+	return int(definition.get("capacity", KushoPoolScript.CAPACITY_PER_ELEMENT))
+
+func _display_label_for_key(key: String, definition: Dictionary = {}) -> String:
+	if _INPUT_LABELS.has(key):
+		return str(_INPUT_LABELS[key])
+	return str(definition.get("display_name", key.replace(":", " ").replace("_", " ").capitalize()))
+
+func _short_label_for_key(key: String) -> String:
+	return str(_INPUT_SHORT_LABELS.get(key, _display_label_for_key(key).substr(0, mini(6, _display_label_for_key(key).length()))))
+
 func _definition_for_key(input_key: String) -> Dictionary:
+	for definition: Dictionary in _get_input_definitions():
+		if str(definition.get("key", "")) == input_key:
+			return definition
+	return {}
+
+func _get_input_definitions() -> Array[Dictionary]:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy == null or not alchemy.has_method("get_ritual_input_definitions"):
-		return {}
+		return []
 	var definitions_variant: Variant = alchemy.get_ritual_input_definitions()
 	if not (definitions_variant is Array):
-		return {}
+		return []
 	var definitions: Array = definitions_variant as Array
+	var typed_definitions: Array[Dictionary] = []
 	for definition_variant: Variant in definitions:
 		if not (definition_variant is Dictionary):
 			continue
 		var definition: Dictionary = definition_variant as Dictionary
-		if str(definition.get("key", "")) == input_key:
-			return definition
-	return {}
+		typed_definitions.append(definition)
+	return typed_definitions
+
+func _icon_texture_for_key(input_key: String) -> Texture2D:
+	if _input_icon_cache.has(input_key):
+		return _input_icon_cache[input_key] as Texture2D
+	var texture: Texture2D = _ritual_icon_texture(input_key)
+	if texture != null:
+		_input_icon_cache[input_key] = texture
+	return texture
+
+func _ritual_icon_texture(input_key: String) -> Texture2D:
+	if _RITUAL_ICON_TEXTURE == null or not _RITUAL_ICON_INDEX.has(input_key):
+		return null
+	var icon_index: int = int(_RITUAL_ICON_INDEX.get(input_key, 0))
+	var column: int = icon_index % 3
+	var row: int = floori(float(icon_index) / 3.0)
+	var atlas_texture: AtlasTexture = AtlasTexture.new()
+	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
+	atlas_texture.region = Rect2(
+		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
+		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
+	)
+	return atlas_texture
 
 func _slot_contains_key_elsewhere(input_key: String, current_slot: int) -> bool:
 	for i: int in range(_slot_keys.size()):
@@ -393,8 +629,8 @@ func _format_choice_prompt() -> String:
 	var slot_number: int = _selected_slot_index + 1
 	var selected_key: String = _selected_slot_key()
 	if selected_key.is_empty():
-		return "Slot %d selected: choose essence or material" % slot_number
-	return "Slot %d selected: replace %s" % [slot_number, str(_INPUT_LABELS.get(selected_key, "?"))]
+		return "Slot %d selected: choose godai essence or material" % slot_number
+	return "Slot %d selected: replace %s" % [slot_number, _display_label_for_key(selected_key)]
 
 func _count_occupied_slots() -> int:
 	var count: int = 0

@@ -1,6 +1,8 @@
 extends GutTest
 
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
+const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
 
 class DiscoveryStub:
@@ -54,6 +56,14 @@ func _spawn_materials(game_state: Node, delta_seconds: float) -> Array:
 	if spawned_variant is Array:
 		return spawned_variant as Array
 	return []
+
+func _complete_structure(game_state: Node, coord: Vector2i, biome: int, structure_id: String) -> GardenTile:
+	game_state.place_tile_from_seed(coord, biome)
+	var tile: GardenTile = game_state.grid.get_tile(coord)
+	assert_not_null(tile)
+	tile.metadata["is_building_complete"] = true
+	tile.metadata["structure_discovery_id"] = structure_id
+	return tile
 
 func test_meadow_tile_does_not_spawn_living_wood_immediately() -> void:
 	var ctx: Dictionary = _setup_context()
@@ -183,13 +193,28 @@ func test_dew_bowl_increases_living_wood_material_capacity() -> void:
 	var game_state: Node = ctx["game_state"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var coord: Vector2i = Vector2i(1, 0)
-	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
-	var tile: GardenTile = game_state.grid.get_tile(coord)
-	assert_not_null(tile)
-	tile.metadata["is_building_complete"] = true
-	tile.metadata["structure_discovery_id"] = "building_dew_bowl"
+	_complete_structure(game_state, coord, BiomeTypeScript.Value.MEADOW, "building_dew_bowl")
 	assert_eq(alchemy.get_material_capacity(&"living_wood"), 124)
 	assert_eq(alchemy.get_material_capacity(&"reed_fiber"), 99)
+	_cleanup_context(ctx)
+
+func test_essence_capacity_structures_raise_matching_caps() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	_complete_structure(game_state, Vector2i(1, 0), BiomeTypeScript.Value.MEADOW, "building_dew_bowl")
+	_complete_structure(game_state, Vector2i(0, 1), BiomeTypeScript.Value.RIVER, "building_reed_nest")
+	_complete_structure(game_state, Vector2i(-1, 1), BiomeTypeScript.Value.STONE, "building_hearth_stone")
+
+	assert_eq(alchemy.get_element_capacity(GodaiElementScript.Value.FU), KushoPoolScript.CAPACITY_PER_ELEMENT + 1)
+	assert_eq(alchemy.get_element_capacity(GodaiElementScript.Value.SUI), KushoPoolScript.CAPACITY_PER_ELEMENT + 1)
+	assert_eq(alchemy.get_element_capacity(GodaiElementScript.Value.KA), KushoPoolScript.CAPACITY_PER_ELEMENT + 1)
+	assert_eq(alchemy.get_element_capacity(GodaiElementScript.Value.CHI), KushoPoolScript.CAPACITY_PER_ELEMENT)
+
+	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.FU, KushoPoolScript.CAPACITY_PER_ELEMENT)
+	assert_true(alchemy.store_shrine_charge(Vector2i.ZERO, GodaiElementScript.Value.FU, 1))
+	assert_true(alchemy.collect_shrine_charge(Vector2i.ZERO))
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), KushoPoolScript.CAPACITY_PER_ELEMENT + 1)
 	_cleanup_context(ctx)
 
 func test_root_network_speeds_nearby_living_wood_spawn() -> void:
@@ -197,15 +222,24 @@ func test_root_network_speeds_nearby_living_wood_spawn() -> void:
 	var game_state: Node = ctx["game_state"]
 	var root_coord: Vector2i = Vector2i(1, 0)
 	var meadow_coord: Vector2i = Vector2i(2, 0)
-	game_state.place_tile_from_seed(root_coord, BiomeTypeScript.Value.MEADOW)
 	game_state.place_tile_from_seed(meadow_coord, BiomeTypeScript.Value.MEADOW)
-	var root_tile: GardenTile = game_state.grid.get_tile(root_coord)
-	assert_not_null(root_tile)
-	root_tile.metadata["is_building_complete"] = true
-	root_tile.metadata["structure_discovery_id"] = "building_root_network"
+	_complete_structure(game_state, root_coord, BiomeTypeScript.Value.MEADOW, "building_root_network")
 	assert_eq(_spawn_materials(game_state, 49.0).size(), 0)
 	assert_eq(_spawn_materials(game_state, 1.0).size(), 1)
 	assert_true(game_state.has_ready_material_at(meadow_coord))
+	_cleanup_context(ctx)
+
+func test_kiln_heart_speeds_nearby_ember_clay_spawn() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var kiln_coord: Vector2i = Vector2i(1, 0)
+	var ember_coord: Vector2i = Vector2i(2, 0)
+	game_state.place_tile_from_seed(ember_coord, BiomeTypeScript.Value.EMBER_FIELD)
+	_complete_structure(game_state, kiln_coord, BiomeTypeScript.Value.EMBER_FIELD, "building_kiln_heart")
+	assert_eq(_spawn_materials(game_state, 49.0).size(), 0)
+	var spawned: Array = _spawn_materials(game_state, 1.0)
+	assert_eq(spawned.size(), 1)
+	assert_true(game_state.has_ready_material_at(ember_coord))
 	_cleanup_context(ctx)
 
 func test_wind_chime_auto_harvests_nearby_living_wood() -> void:
@@ -214,17 +248,37 @@ func test_wind_chime_auto_harvests_nearby_living_wood() -> void:
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var chime_coord: Vector2i = Vector2i(1, 0)
 	var meadow_coord: Vector2i = Vector2i(2, 0)
-	game_state.place_tile_from_seed(chime_coord, BiomeTypeScript.Value.MEADOW)
 	game_state.place_tile_from_seed(meadow_coord, BiomeTypeScript.Value.MEADOW)
-	var chime_tile: GardenTile = game_state.grid.get_tile(chime_coord)
-	assert_not_null(chime_tile)
-	chime_tile.metadata["is_building_complete"] = true
-	chime_tile.metadata["structure_discovery_id"] = "building_wind_chime"
+	_complete_structure(game_state, chime_coord, BiomeTypeScript.Value.MEADOW, "building_wind_chime")
 	var spawned: Array = _spawn_materials(game_state, 100.0)
 	assert_eq(spawned.size(), 1)
 	assert_true(bool((spawned[0] as Dictionary).get("auto_harvested", false)))
 	assert_false(game_state.has_ready_material_at(meadow_coord))
 	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
+	_cleanup_context(ctx)
+
+func test_tiny_shrine_generates_ku_shrine_charge() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var shrine_coord: Vector2i = Vector2i(1, 0)
+	_complete_structure(game_state, shrine_coord, BiomeTypeScript.Value.MEADOW, "building_tiny_shrine")
+	alchemy.unlock_element(GodaiElementScript.Value.KU)
+	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.KU, 0)
+
+	var early_generated: Variant = game_state.evaluate_structure_essence_generators(119.0)
+	assert_true(early_generated is Array)
+	assert_eq((early_generated as Array).size(), 0)
+	assert_false(alchemy.has_shrine_charge(shrine_coord))
+
+	var generated_variant: Variant = game_state.evaluate_structure_essence_generators(1.0)
+	assert_true(generated_variant is Array)
+	var generated: Array = generated_variant as Array
+	assert_eq(generated.size(), 1)
+	assert_eq(StringName(str((generated[0] as Dictionary).get("structure_id", &""))), &"building_tiny_shrine")
+	assert_true(alchemy.has_shrine_charge(shrine_coord))
+	assert_true(alchemy.collect_shrine_charge(shrine_coord))
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KU), 1)
 	_cleanup_context(ctx)
 
 func test_first_session_loop_reaches_warm_hollow_after_harvest() -> void:

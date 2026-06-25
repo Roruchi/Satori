@@ -53,15 +53,32 @@ func test_ritual_panel_scene_uses_three_slots_and_ritual_copy() -> void:
 	assert_not_null(panel.get_node_or_null("VBox/Grid/Slot2"))
 	assert_null(panel.get_node_or_null("VBox/Grid/Slot3"))
 	assert_null(panel.get_node_or_null("VBox/Grid/Slot8"))
-	assert_not_null(panel.get_node_or_null("VBox/Materials/LivingWoodButton"))
-	assert_not_null(panel.get_node_or_null("VBox/Materials/ReedFiberButton"))
-	assert_not_null(panel.get_node_or_null("VBox/Materials/SpiritStoneButton"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_essence/Grid/Input_essence_earth"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_essence/Grid/Input_essence_wind"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_material/Grid/Input_material_living_wood"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_material/Grid/Input_material_reed_fiber"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_material/Grid/Input_material_spirit_stone"))
+	assert_not_null(panel.get_node_or_null("VBox/PickerScroll/PickerSections/Section_material/Grid/Input_material_ember_clay"))
 	assert_not_null(panel.get_node_or_null("VBox/ChoicePrompt"))
 
 	var slots_label: Label = panel.get_node("VBox/Slots") as Label
 	assert_eq(slots_label.text, "Ritual slots: 0/3")
 	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
-	assert_eq(slot0.text, "Slot 1\nTap to choose")
+	var slot0_title: Label = slot0.get_node("Contents/Labels/Title") as Label
+	var slot0_detail: Label = slot0.get_node("Contents/Labels/Detail") as Label
+	assert_eq(slot0.text, "")
+	assert_eq(slot0_title.text, "Slot 1")
+	assert_eq(slot0_detail.text, "Choose input")
+	var wind_button: Button = panel.get_node("VBox/PickerScroll/PickerSections/Section_essence/Grid/Input_essence_wind") as Button
+	var wind_icon: TextureRect = wind_button.get_node("Contents/Icon") as TextureRect
+	var wind_title: Label = wind_button.get_node("Contents/Labels/Title") as Label
+	var wind_detail: Label = wind_button.get_node("Contents/Labels/Detail") as Label
+	assert_eq(wind_button.text, "")
+	assert_eq(wind_title.text, "Fu")
+	assert_eq(wind_detail.text, "Wind Essence 3/3")
+	assert_not_null(wind_icon.texture)
+	assert_true(wind_icon.texture is AtlasTexture)
+	assert_eq((wind_icon.texture as AtlasTexture).atlas.resource_path, "res://assets/ritual/ritual_input_icon_spritesheet.png")
 	var confirm_button: Button = panel.get_node("VBox/Actions/ConfirmButton") as Button
 	assert_eq(confirm_button.text, "Perform Ritual")
 
@@ -85,9 +102,13 @@ func test_ritual_slot_first_selection_fills_selected_slot() -> void:
 	assert_eq(keys[1], "essence:fire")
 	assert_eq(keys[2], "")
 	var slot1: Button = panel.get_node("VBox/Grid/Slot1") as Button
-	assert_eq(slot1.text, "Slot 2\nFire")
+	var slot1_icon: TextureRect = slot1.get_node("Contents/Icon") as TextureRect
+	var slot1_detail: Label = slot1.get_node("Contents/Labels/Detail") as Label
+	assert_eq(slot1.text, "")
+	assert_true(slot1_icon.visible)
+	assert_eq(slot1_detail.text, "Ka")
 	var choice_prompt: Label = panel.get_node("VBox/ChoicePrompt") as Label
-	assert_eq(choice_prompt.text, "Slot 3 selected: choose essence or material")
+	assert_eq(choice_prompt.text, "Slot 3 selected: choose godai essence or material")
 
 	remove_child(panel)
 	panel.free()
@@ -109,7 +130,11 @@ func test_ritual_panel_previews_single_wind_as_meadow_seed() -> void:
 	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
 	var preview: Label = panel.get_node("VBox/Preview") as Label
 	var feedback: Label = panel.get_node("VBox/Feedback") as Label
-	assert_eq(slot0.text, "Slot 1\nWind")
+	var slot0_icon: TextureRect = slot0.get_node("Contents/Icon") as TextureRect
+	var slot0_detail: Label = slot0.get_node("Contents/Labels/Detail") as Label
+	assert_eq(slot0.text, "")
+	assert_true(slot0_icon.visible)
+	assert_eq(slot0_detail.text, "Fu")
 	assert_eq(preview.text, "Preview: Meadow Seed")
 	assert_eq(feedback.text, "Confirm to shape Meadow Seed.")
 
@@ -127,9 +152,16 @@ func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	add_child(panel)
 	await get_tree().process_frame
 
-	var reed_button: Button = panel.get_node("VBox/Materials/ReedFiberButton") as Button
-	assert_eq(reed_button.text, "Reed Fiber\nx1")
+	var reed_button: Button = panel.get_node("VBox/PickerScroll/PickerSections/Section_material/Grid/Input_material_reed_fiber") as Button
+	var reed_title: Label = reed_button.get_node("Contents/Labels/Title") as Label
+	var reed_detail: Label = reed_button.get_node("Contents/Labels/Detail") as Label
+	var reed_input_icon: TextureRect = reed_button.get_node("Contents/Icon") as TextureRect
+	assert_eq(reed_button.text, "")
+	assert_eq(reed_title.text, "Reed Fiber")
+	assert_eq(reed_detail.text, "x1")
 	assert_false(reed_button.disabled)
+	assert_not_null(reed_input_icon.texture)
+	assert_true(reed_input_icon.texture is AtlasTexture)
 
 	remove_child(panel)
 	panel.free()
@@ -145,12 +177,17 @@ func test_ritual_panel_blocks_depleted_essence_for_single_seed() -> void:
 	add_child(panel)
 	await get_tree().process_frame
 
-	var wind_button: Button = panel.get_node("VBox/Elements/WindButton") as Button
-	assert_eq(wind_button.text, "Wind Essence\n0/3")
+	var wind_button: Button = panel.get_node("VBox/PickerScroll/PickerSections/Section_essence/Grid/Input_essence_wind") as Button
+	var wind_title: Label = wind_button.get_node("Contents/Labels/Title") as Label
+	var wind_detail: Label = wind_button.get_node("Contents/Labels/Detail") as Label
+	assert_eq(wind_title.text, "Fu")
+	assert_eq(wind_detail.text, "Wind Essence 0/3")
 	assert_true(wind_button.disabled)
 	panel.call("_on_input_tapped", "essence:wind")
 	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
-	assert_eq(slot0.text, "Slot 1\nTap to choose")
+	var slot0_detail: Label = slot0.get_node("Contents/Labels/Detail") as Label
+	assert_eq(slot0.text, "")
+	assert_eq(slot0_detail.text, "Choose input")
 	var preview: Label = panel.get_node("VBox/Preview") as Label
 	assert_eq(preview.text, "Preview: --")
 
@@ -199,10 +236,13 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 	assert_eq(material_label.text, "Materials:")
 	assert_not_null(material_slot_row.get_node_or_null("MaterialSlot_reed_fiber"))
 	var reed_count_label: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/CountLabel") as Label
+	var reed_icon: TextureRect = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/Icon") as TextureRect
 	var reed_icon_fallback: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/IconFallback") as Label
 	var ember_count_label: Label = material_slot_row.get_node("MaterialSlot_ember_clay/Contents/CountLabel") as Label
 	var ember_icon_fallback: Label = material_slot_row.get_node("MaterialSlot_ember_clay/Contents/IconFallback") as Label
 	assert_eq(reed_count_label.text, "0")
+	assert_true(reed_icon.texture is AtlasTexture)
+	assert_eq((reed_icon.texture as AtlasTexture).atlas.resource_path, "res://assets/ritual/ritual_input_icon_spritesheet.png")
 	assert_eq(reed_icon_fallback.text, "RF")
 	assert_eq(ember_count_label.text, "0")
 	assert_eq(ember_icon_fallback.text, "EC")
@@ -233,8 +273,8 @@ func test_ritual_tab_lays_out_panel_without_screen_resize() -> void:
 
 	var panel: Control = hud.get_node("Root/Panels/SeedAlchemyPanel") as Control
 	assert_true(panel.visible)
-	assert_true(panel.size.x >= 460.0)
-	assert_true(panel.size.y >= 392.0)
+	assert_true(panel.size.x >= 360.0)
+	assert_true(panel.size.y >= 260.0)
 	assert_true(panel.position.x >= 0.0)
 	assert_true(panel.position.y >= 0.0)
 

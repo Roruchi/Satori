@@ -27,10 +27,14 @@ func test_mode_tab_markers_are_ascii_safe() -> void:
 	var interact_button: Button = hud.get_node("Root/BottomBar/InteractButton") as Button
 	var codex_button: Button = hud.get_node("Root/BottomBar/CodexButton") as Button
 	var speed_button: Button = hud.get_node("Root/TopBar/ProgressionSpeedButton") as Button
-	assert_eq(plant_button.text, "PL\nPlace")
-	assert_eq(ritual_button.text, "RI\nRitual")
-	assert_eq(interact_button.text, "IN\nInteract")
-	assert_eq(codex_button.text, "CO\nCodex")
+	assert_eq(plant_button.text, "Place")
+	assert_eq(ritual_button.text, "Ritual")
+	assert_eq(interact_button.text, "Interact")
+	assert_eq(codex_button.text, "Codex")
+	assert_true(plant_button.icon is AtlasTexture)
+	assert_true(ritual_button.icon is AtlasTexture)
+	assert_true(interact_button.icon is AtlasTexture)
+	assert_true(codex_button.icon is AtlasTexture)
 	assert_eq(speed_button.text, "x1")
 
 	remove_child(hud)

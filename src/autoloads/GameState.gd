@@ -4,6 +4,7 @@ extends Node
 
 const _GardenGridScript = preload("res://src/grid/GridMap.gd")
 const _HexUtils = preload("res://src/grid/hex_utils.gd")
+const _GodaiElement = preload("res://src/seeds/GodaiElement.gd")
 const MATERIAL_OUTCOME_SUCCESS: StringName = &"success"
 const MATERIAL_OUTCOME_MISSING_NODE: StringName = &"missing_node"
 const MATERIAL_OUTCOME_ALREADY_COLLECTED: StringName = &"already_collected"
@@ -17,12 +18,15 @@ const MATERIAL_EMBER_CLAY: StringName = &"ember_clay"
 const MATERIAL_BASE_TILE_SECONDS: float = 100.0
 const MATERIAL_CAPACITY_BONUS_PER_STORAGE: int = 25
 const MATERIAL_STRUCTURE_EFFECT_RADIUS: int = 1
+const ESSENCE_CAPACITY_BONUS_PER_STRUCTURE: int = 1
+const ESSENCE_GENERATOR_INTERVAL_SECONDS: float = 120.0
 
 var grid: RefCounted       # GardenGrid instance
 var selected_biome: int = BiomeType.Value.STONE
 var _is_initialized: bool = false
 var _material_spawn_accumulators: Dictionary = {}
 var _material_spawn_counts: Dictionary = {}
+var _essence_generator_accumulators: Dictionary = {}
 
 signal tile_placed(coord: Vector2i, tile: GardenTile)
 signal bloom_confirmed(coord: Vector2i, biome: int)
@@ -31,13 +35,18 @@ signal mix_rejected(coord: Vector2i, reason: String)
 signal material_node_spawned(coord: Vector2i, material_id: StringName, amount: int)
 signal material_node_harvested(coord: Vector2i, material_id: StringName, amount: int)
 signal material_harvest_blocked(coord: Vector2i, reason: StringName)
+signal structure_essence_generated(coord: Vector2i, structure_id: StringName, element_id: int, amount: int)
 
 func _ready() -> void:
 	if _is_initialized:
 		return
 	_is_initialized = true
+	_initialize_fresh_garden()
+
+func _initialize_fresh_garden() -> void:
 	_material_spawn_accumulators.clear()
 	_material_spawn_counts.clear()
+	_essence_generator_accumulators.clear()
 	grid = _GardenGridScript.new()
 	var origin_tile: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.STONE)
 	origin_tile.metadata["is_origin_shrine"] = true
@@ -48,6 +57,68 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	evaluate_material_spawns(delta)
+	evaluate_structure_essence_generators(delta)
+
+func serialize_game_state() -> Dictionary:
+	var serialized_tiles: Array[Dictionary] = []
+	if grid != null:
+		var coords: Array[Vector2i] = []
+		for coord_variant: Variant in grid.tiles.keys():
+			if coord_variant is Vector2i:
+				coords.append(coord_variant as Vector2i)
+		_sort_coords(coords)
+		for coord: Vector2i in coords:
+			var tile: GardenTile = grid.get_tile(coord)
+			if tile == null:
+				continue
+			serialized_tiles.append({
+				"coord": [coord.x, coord.y],
+				"biome": tile.biome,
+				"locked": tile.locked,
+				"metadata": _to_json_safe_value(tile.metadata),
+			})
+	return {
+		"selected_biome": selected_biome,
+		"material_spawn_accumulators": _to_json_safe_value(_material_spawn_accumulators),
+		"material_spawn_counts": _to_json_safe_value(_material_spawn_counts),
+		"essence_generator_accumulators": _to_json_safe_value(_essence_generator_accumulators),
+		"tiles": serialized_tiles,
+	}
+
+func restore_game_state(data: Dictionary) -> bool:
+	var raw_tiles: Variant = data.get("tiles", [])
+	if not (raw_tiles is Array):
+		return false
+	var restored_grid: RefCounted = _GardenGridScript.new()
+	var tile_count: int = 0
+	var bounds: Rect2i = Rect2i(0, 0, 0, 0)
+	for raw_tile: Variant in raw_tiles:
+		if not (raw_tile is Dictionary):
+			continue
+		var tile_data: Dictionary = raw_tile as Dictionary
+		var coord: Vector2i = _coord_from_save_value(tile_data.get("coord", []))
+		var tile: GardenTile = GardenTile.create(coord, int(tile_data.get("biome", BiomeType.Value.STONE)))
+		tile.locked = bool(tile_data.get("locked", false))
+		var metadata: Variant = _from_json_safe_value(tile_data.get("metadata", {}))
+		if metadata is Dictionary:
+			tile.metadata = metadata as Dictionary
+		restored_grid.tiles[coord] = tile
+		tile_count += 1
+		if tile_count == 1:
+			bounds = Rect2i(coord, Vector2i(1, 1))
+		else:
+			bounds = bounds.expand(coord)
+	if tile_count <= 0:
+		return false
+	restored_grid.total_tile_count = tile_count
+	restored_grid.garden_bounds = bounds
+	restored_grid.compute_island_ids()
+	grid = restored_grid
+	selected_biome = int(data.get("selected_biome", BiomeType.Value.STONE))
+	_material_spawn_accumulators = _dictionary_from_json_safe_value(data.get("material_spawn_accumulators", {}))
+	_material_spawn_counts = _dictionary_from_json_safe_value(data.get("material_spawn_counts", {}))
+	_essence_generator_accumulators = _dictionary_from_json_safe_value(data.get("essence_generator_accumulators", {}))
+	return true
 
 ## Attempt to place the selected biome at coord.
 ## Returns true on success, false if placement is invalid.
@@ -155,6 +226,67 @@ func get_material_capacity_bonus(material_id: StringName) -> int:
 		if _storage_material_for_structure(structure_id) == material_id:
 			bonus += MATERIAL_CAPACITY_BONUS_PER_STORAGE
 	return bonus
+
+func get_element_capacity_bonus(element: int) -> int:
+	var bonus: int = 0
+	if grid == null:
+		return bonus
+	for coord_variant: Variant in grid.tiles.keys():
+		if not (coord_variant is Vector2i):
+			continue
+		var tile: GardenTile = grid.get_tile(coord_variant as Vector2i)
+		var structure_id: StringName = _completed_structure_id(tile)
+		if structure_id == &"":
+			continue
+		if _essence_cap_element_for_structure(structure_id) == element:
+			bonus += ESSENCE_CAPACITY_BONUS_PER_STRUCTURE
+	return bonus
+
+func evaluate_structure_essence_generators(delta_seconds: float) -> Array[Dictionary]:
+	var generated: Array[Dictionary] = []
+	if grid == null or delta_seconds <= 0.0:
+		return generated
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy == null or not alchemy.has_method("store_shrine_charge"):
+		return generated
+	var scaled_delta_seconds: float = _progression_delta(delta_seconds)
+	var active_generator_keys: Dictionary = {}
+	for coord_variant: Variant in grid.tiles.keys():
+		if not (coord_variant is Vector2i):
+			continue
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		var structure_id: StringName = _completed_structure_id(tile)
+		if structure_id == &"":
+			continue
+		var element: int = _essence_generator_element_for_structure(structure_id)
+		if element < 0:
+			continue
+		if alchemy.has_method("is_element_unlocked") and not bool(alchemy.is_element_unlocked(element)):
+			continue
+		var generator_key: String = _essence_generator_key(coord, structure_id, element)
+		active_generator_keys[generator_key] = true
+		var accumulated: float = float(_essence_generator_accumulators.get(generator_key, 0.0)) + scaled_delta_seconds
+		while accumulated >= ESSENCE_GENERATOR_INTERVAL_SECONDS:
+			accumulated -= ESSENCE_GENERATOR_INTERVAL_SECONDS
+			if alchemy.store_shrine_charge(coord, element, 1):
+				var entry: Dictionary = {
+					"coord": coord,
+					"structure_id": structure_id,
+					"element": element,
+					"amount": 1,
+				}
+				generated.append(entry)
+				structure_essence_generated.emit(coord, structure_id, element, 1)
+			else:
+				accumulated = ESSENCE_GENERATOR_INTERVAL_SECONDS
+				break
+		_essence_generator_accumulators[generator_key] = accumulated
+	for key_variant: Variant in _essence_generator_accumulators.keys():
+		var key: String = str(key_variant)
+		if not active_generator_keys.has(key):
+			_essence_generator_accumulators.erase(key)
+	return generated
 
 func has_ready_material_at(coord: Vector2i) -> bool:
 	var node: Dictionary = get_material_node_at(coord)
@@ -384,6 +516,27 @@ func _storage_material_for_structure(structure_id: StringName) -> StringName:
 		_:
 			return &""
 
+func _essence_cap_element_for_structure(structure_id: StringName) -> int:
+	match structure_id:
+		&"building_dew_bowl", &"form_dew_bowl":
+			return _GodaiElement.Value.FU
+		&"building_reed_nest", &"form_reed_nest":
+			return _GodaiElement.Value.SUI
+		&"building_hearth_stone", &"form_hearth_stone":
+			return _GodaiElement.Value.KA
+		_:
+			return -1
+
+func _essence_generator_element_for_structure(structure_id: StringName) -> int:
+	match structure_id:
+		&"building_tiny_shrine", &"form_tiny_shrine":
+			return _GodaiElement.Value.KU
+		_:
+			return -1
+
+func _essence_generator_key(coord: Vector2i, structure_id: StringName, element: int) -> String:
+	return "%d,%d:%s:%d" % [coord.x, coord.y, str(structure_id), element]
+
 func _choose_material_spawn_coord(cluster_key: String, candidates: Array[Vector2i]) -> Vector2i:
 	if candidates.is_empty():
 		return Vector2i.ZERO
@@ -432,3 +585,64 @@ func _material_result(outcome: StringName, material_id: StringName = &"", amount
 		"amount": amount,
 		"feedback_key": outcome,
 	}
+
+func _sort_coords(coords: Array[Vector2i]) -> void:
+	coords.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		if a.x == b.x:
+			return a.y < b.y
+		return a.x < b.x
+	)
+
+func _to_json_safe_value(value: Variant) -> Variant:
+	if value is Vector2i:
+		var coord: Vector2i = value as Vector2i
+		return {"__type": "Vector2i", "x": coord.x, "y": coord.y}
+	if value is StringName:
+		return str(value)
+	if value is Dictionary:
+		var result: Dictionary = {}
+		var source: Dictionary = value as Dictionary
+		for key: Variant in source.keys():
+			result[str(key)] = _to_json_safe_value(source[key])
+		return result
+	if value is Array:
+		var array_result: Array = []
+		var source_array: Array = value as Array
+		for item: Variant in source_array:
+			array_result.append(_to_json_safe_value(item))
+		return array_result
+	return value
+
+func _from_json_safe_value(value: Variant) -> Variant:
+	if value is Dictionary:
+		var source: Dictionary = value as Dictionary
+		if str(source.get("__type", "")) == "Vector2i":
+			return Vector2i(int(source.get("x", 0)), int(source.get("y", 0)))
+		var result: Dictionary = {}
+		for key: Variant in source.keys():
+			result[str(key)] = _from_json_safe_value(source[key])
+		return result
+	if value is Array:
+		var array_result: Array = []
+		var source_array: Array = value as Array
+		for item: Variant in source_array:
+			array_result.append(_from_json_safe_value(item))
+		return array_result
+	return value
+
+func _dictionary_from_json_safe_value(value: Variant) -> Dictionary:
+	var decoded: Variant = _from_json_safe_value(value)
+	if decoded is Dictionary:
+		return decoded as Dictionary
+	return {}
+
+func _coord_from_save_value(value: Variant) -> Vector2i:
+	if value is Array:
+		var coord_array: Array = value as Array
+		if coord_array.size() >= 2:
+			return Vector2i(int(coord_array[0]), int(coord_array[1]))
+	if value is Dictionary:
+		var decoded: Variant = _from_json_safe_value(value)
+		if decoded is Vector2i:
+			return decoded as Vector2i
+	return Vector2i.ZERO
