@@ -2,7 +2,7 @@ class_name SpiritCatalogData
 extends RefCounted
 
 func get_entries() -> Array[Dictionary]:
-	return [
+	var entries: Array[Dictionary] = [
 		{
 		"spirit_id": "spirit_blue_kingfisher",
 		"display_name": "Blue Kingfisher",
@@ -482,3 +482,46 @@ func get_entries() -> Array[Dictionary]:
 		"min_era": "stillness",
 		}
 	]
+	_apply_sprite_scales(entries)
+	return entries
+
+func _apply_sprite_scales(entries: Array[Dictionary]) -> void:
+	var scales_by_spirit_id: Dictionary = {
+		"spirit_blue_kingfisher": 0.55,
+		"spirit_boreal_wolf": 0.86,
+		"spirit_dragonfly": 0.40,
+		"spirit_emerald_snake": 0.52,
+		"spirit_field_mouse": 0.34,
+		"spirit_frost_owl": 0.62,
+		"spirit_fujin": 1.10,
+		"spirit_golden_bee": 0.38,
+		"spirit_granite_ram": 0.82,
+		"spirit_hare": 0.46,
+		"spirit_ice_cavern_bat": 0.44,
+		"spirit_jade_beetle": 0.40,
+		"spirit_kagutsuchi": 1.08,
+		"spirit_koi_fish": 0.50,
+		"spirit_marsh_frog": 0.34,
+		"spirit_meadow_lark": 0.42,
+		"spirit_mist_stag": 1.05,
+		"spirit_mountain_goat": 0.72,
+		"spirit_mud_crab": 0.48,
+		"spirit_murk_crocodile": 0.95,
+		"spirit_owl_of_silence": 0.62,
+		"spirit_oyamatsumi": 1.25,
+		"spirit_peat_salamander": 0.42,
+		"spirit_red_fox": 0.62,
+		"spirit_river_otter": 0.65,
+		"spirit_rock_badger": 0.62,
+		"spirit_sky_whale": 1.95,
+		"spirit_stone_golem": 0.95,
+		"spirit_suijin": 1.05,
+		"spirit_sun_lizard": 0.42,
+		"spirit_swamp_crane": 0.80,
+		"spirit_tree_frog": 0.32,
+		"spirit_tundra_lynx": 0.72,
+		"spirit_white_heron": 0.78,
+	}
+	for entry: Dictionary in entries:
+		var spirit_key: String = str(entry.get("spirit_id", ""))
+		entry["sprite_scale"] = float(scales_by_spirit_id.get(spirit_key, 0.62))

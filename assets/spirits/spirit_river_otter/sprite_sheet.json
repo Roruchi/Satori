@@ -1,0 +1,19 @@
+{
+  "entity_id": "spirit_river_otter",
+  "frame_width": 64,
+  "frame_height": 64,
+  "directions": [
+    "down"
+  ],
+  "layout": "static-batch-source",
+  "source": "assets/spirits/source_batches/batch_06_owl_of_silence_oyamatsumi_peat_salamander_river_otter.png",
+  "source_cell": "bottom_right",
+  "animations": [
+    {
+      "name": "idle_down",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ]
+}

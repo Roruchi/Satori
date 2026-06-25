@@ -1,0 +1,19 @@
+{
+  "entity_id": "spirit_dragonfly",
+  "frame_width": 64,
+  "frame_height": 64,
+  "directions": [
+    "down"
+  ],
+  "layout": "static-batch-source",
+  "source": "assets/spirits/source_batches/batch_01_blue_kingfisher_boreal_wolf_dragonfly_emerald_snake.png",
+  "source_cell": "bottom_left",
+  "animations": [
+    {
+      "name": "idle_down",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ]
+}

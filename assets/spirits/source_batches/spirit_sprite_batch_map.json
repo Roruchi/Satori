@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "description": "Static first-pass spirit sprites generated in source batches. Each full batch uses a 2x2 atlas with four spirits; the final atlas contains the lone remaining missing spirit.",
+  "existing_sprite_spirits": [
+    "spirit_red_fox"
+  ],
+  "spirits": [
+    {"spirit_id": "spirit_blue_kingfisher", "display_name": "Blue Kingfisher", "batch": "batch_01_blue_kingfisher_boreal_wolf_dragonfly_emerald_snake.png", "cell": "top_left"},
+    {"spirit_id": "spirit_boreal_wolf", "display_name": "Boreal Wolf", "batch": "batch_01_blue_kingfisher_boreal_wolf_dragonfly_emerald_snake.png", "cell": "top_right"},
+    {"spirit_id": "spirit_dragonfly", "display_name": "Dragonfly", "batch": "batch_01_blue_kingfisher_boreal_wolf_dragonfly_emerald_snake.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_emerald_snake", "display_name": "Emerald Snake", "batch": "batch_01_blue_kingfisher_boreal_wolf_dragonfly_emerald_snake.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_field_mouse", "display_name": "Field Mouse", "batch": "batch_02_field_mouse_frost_owl_fujin_golden_bee.png", "cell": "top_left"},
+    {"spirit_id": "spirit_frost_owl", "display_name": "Frost Owl", "batch": "batch_02_field_mouse_frost_owl_fujin_golden_bee.png", "cell": "top_right"},
+    {"spirit_id": "spirit_fujin", "display_name": "Fujin", "batch": "batch_02_field_mouse_frost_owl_fujin_golden_bee.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_golden_bee", "display_name": "Golden Bee", "batch": "batch_02_field_mouse_frost_owl_fujin_golden_bee.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_granite_ram", "display_name": "Granite Ram", "batch": "batch_03_granite_ram_hare_ice_cavern_bat_jade_beetle.png", "cell": "top_left"},
+    {"spirit_id": "spirit_hare", "display_name": "Hare", "batch": "batch_03_granite_ram_hare_ice_cavern_bat_jade_beetle.png", "cell": "top_right"},
+    {"spirit_id": "spirit_ice_cavern_bat", "display_name": "Ice Cavern Bat", "batch": "batch_03_granite_ram_hare_ice_cavern_bat_jade_beetle.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_jade_beetle", "display_name": "Jade Beetle", "batch": "batch_03_granite_ram_hare_ice_cavern_bat_jade_beetle.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_kagutsuchi", "display_name": "Kagutsuchi", "batch": "batch_04_kagutsuchi_koi_fish_marsh_frog_meadow_lark.png", "cell": "top_left"},
+    {"spirit_id": "spirit_koi_fish", "display_name": "Koi Fish", "batch": "batch_04_kagutsuchi_koi_fish_marsh_frog_meadow_lark.png", "cell": "top_right"},
+    {"spirit_id": "spirit_marsh_frog", "display_name": "Marsh Frog", "batch": "batch_04_kagutsuchi_koi_fish_marsh_frog_meadow_lark.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_meadow_lark", "display_name": "Meadow Lark", "batch": "batch_04_kagutsuchi_koi_fish_marsh_frog_meadow_lark.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_mist_stag", "display_name": "Mist Stag", "batch": "batch_05_mist_stag_mountain_goat_mud_crab_murk_crocodile.png", "cell": "top_left"},
+    {"spirit_id": "spirit_mountain_goat", "display_name": "Mountain Goat", "batch": "batch_05_mist_stag_mountain_goat_mud_crab_murk_crocodile.png", "cell": "top_right"},
+    {"spirit_id": "spirit_mud_crab", "display_name": "Mud Crab", "batch": "batch_05_mist_stag_mountain_goat_mud_crab_murk_crocodile.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_murk_crocodile", "display_name": "Murk Crocodile", "batch": "batch_05_mist_stag_mountain_goat_mud_crab_murk_crocodile.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_owl_of_silence", "display_name": "Owl of Silence", "batch": "batch_06_owl_of_silence_oyamatsumi_peat_salamander_river_otter.png", "cell": "top_left"},
+    {"spirit_id": "spirit_oyamatsumi", "display_name": "Oyamatsumi", "batch": "batch_06_owl_of_silence_oyamatsumi_peat_salamander_river_otter.png", "cell": "top_right"},
+    {"spirit_id": "spirit_peat_salamander", "display_name": "Peat Salamander", "batch": "batch_06_owl_of_silence_oyamatsumi_peat_salamander_river_otter.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_river_otter", "display_name": "River Otter", "batch": "batch_06_owl_of_silence_oyamatsumi_peat_salamander_river_otter.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_rock_badger", "display_name": "Rock Badger", "batch": "batch_07_rock_badger_sky_whale_stone_golem_suijin.png", "cell": "top_left"},
+    {"spirit_id": "spirit_sky_whale", "display_name": "Sky Whale", "batch": "batch_07_rock_badger_sky_whale_stone_golem_suijin.png", "cell": "top_right"},
+    {"spirit_id": "spirit_stone_golem", "display_name": "Stone Golem", "batch": "batch_07_rock_badger_sky_whale_stone_golem_suijin.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_suijin", "display_name": "Rain Kami Suijin", "batch": "batch_07_rock_badger_sky_whale_stone_golem_suijin.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_sun_lizard", "display_name": "Sun Lizard", "batch": "batch_08_sun_lizard_swamp_crane_tree_frog_tundra_lynx.png", "cell": "top_left"},
+    {"spirit_id": "spirit_swamp_crane", "display_name": "Swamp Crane", "batch": "batch_08_sun_lizard_swamp_crane_tree_frog_tundra_lynx.png", "cell": "top_right"},
+    {"spirit_id": "spirit_tree_frog", "display_name": "Tree Frog", "batch": "batch_08_sun_lizard_swamp_crane_tree_frog_tundra_lynx.png", "cell": "bottom_left"},
+    {"spirit_id": "spirit_tundra_lynx", "display_name": "Tundra Lynx", "batch": "batch_08_sun_lizard_swamp_crane_tree_frog_tundra_lynx.png", "cell": "bottom_right"},
+    {"spirit_id": "spirit_white_heron", "display_name": "White Heron", "batch": "batch_09_white_heron.png", "cell": "full"}
+  ]
+}

@@ -8,10 +8,12 @@ const HOUSED_LABEL_COLOR: Color = Color(1.0, 1.0, 1.0)
 const UNHOUSED_LABEL_COLOR: Color = Color(1.0, 0.35, 0.35)
 const HOUSING_COLOR_REFRESH_SECONDS: float = 0.5
 const SPRITE_FRAMES_PATH_TEMPLATE: String = "res://assets/spirits/%s/sprite_frames.tres"
-const SPRITE_SCALE: float = 0.62
+const DEFAULT_SPRITE_SCALE: float = 0.62
 const SPRITE_Y_OFFSET: float = -4.0
 const PLACEHOLDER_LABEL_Y: float = -30.0
 const SPRITE_LABEL_Y: float = -48.0
+const SPRITE_FRAME_SIZE: float = 64.0
+const SPRITE_LABEL_PADDING: float = 28.0
 
 signal moved_to(spirit_id: String, coord: Vector2i)
 
@@ -32,12 +34,14 @@ var _sprite: AnimatedSprite2D = null
 var _last_direction: String = "down"
 var _is_using_sprite_art: bool = false
 var _is_housed: bool = false
+var _sprite_scale: float = DEFAULT_SPRITE_SCALE
 
 func setup(instance: SpiritInstance, catalog_entry: Dictionary) -> void:
 	spirit_id = instance.spirit_id
 	wander_bounds = instance.wander_bounds
 	_island_id = instance.island_id
 	_speed = float(catalog_entry.get("wander_speed", 2.0)) * TILE_RADIUS * 0.25
+	_sprite_scale = maxf(0.1, float(catalog_entry.get("sprite_scale", DEFAULT_SPRITE_SCALE)))
 	var color: Color = catalog_entry.get("color_hint", Color.WHITE)
 	_display_color = color
 	_preferred_biomes.clear()
@@ -236,9 +240,9 @@ func _load_sprite_art() -> void:
 		_sprite = AnimatedSprite2D.new()
 		_sprite.name = "SpiritSprite"
 		_sprite.position = Vector2(0.0, SPRITE_Y_OFFSET)
-		_sprite.scale = Vector2.ONE * SPRITE_SCALE
 		add_child(_sprite)
 		move_child(_sprite, 0)
+	_sprite.scale = Vector2.ONE * _sprite_scale
 	_sprite.sprite_frames = frames
 	_set_sprite_art_enabled(true)
 	_update_sprite_animation(false, Vector2.ZERO)
@@ -248,7 +252,9 @@ func _set_sprite_art_enabled(enabled: bool) -> void:
 	if _sprite != null:
 		_sprite.visible = enabled
 	if _label != null:
-		var label_y: float = SPRITE_LABEL_Y if enabled else PLACEHOLDER_LABEL_Y
+		var scaled_sprite_half_height: float = SPRITE_FRAME_SIZE * _sprite_scale * 0.5
+		var scaled_sprite_label_y: float = minf(SPRITE_LABEL_Y, -(scaled_sprite_half_height + SPRITE_LABEL_PADDING))
+		var label_y: float = scaled_sprite_label_y if enabled else PLACEHOLDER_LABEL_Y
 		_label.position = Vector2(_label.position.x, label_y)
 	queue_redraw()
 
