@@ -72,6 +72,9 @@ func _draw_hex(center: Vector2, radius: float, color: Color, outline: bool) -> v
 		draw_colored_polygon(pts, color)
 
 func _on_play() -> void:
+	var save_service: Node = get_node_or_null("/root/SaveGameService")
+	if save_service != null and save_service.has_method("start_session"):
+		save_service.start_session()
 	get_tree().change_scene_to_packed(GARDEN_SCENE)
 
 func _on_settings() -> void:
