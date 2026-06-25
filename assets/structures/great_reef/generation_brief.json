@@ -1,0 +1,7 @@
+{
+  "entity_id": "great_reef",
+  "display_name": "Great Reef",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}

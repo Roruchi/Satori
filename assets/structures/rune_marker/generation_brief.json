@@ -1,0 +1,7 @@
+{
+  "entity_id": "rune_marker",
+  "display_name": "Rune Marker",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}

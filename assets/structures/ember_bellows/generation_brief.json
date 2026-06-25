@@ -1,0 +1,7 @@
+{
+  "entity_id": "ember_bellows",
+  "display_name": "Ember Bellows",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}

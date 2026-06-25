@@ -4,6 +4,8 @@
 extends Node2D
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const _TerrainTilesheet = preload("res://src/rendering/terrain_tilesheet.gd")
+const _TERRAIN_TILESET_TEXTURE: Texture2D = preload("res://assets/tiles/satori_terrain_tilesheet.png")
 
 ## Emitted when the player clicks a biome hex.
 signal biome_selected(biome: int)
@@ -241,7 +243,11 @@ func _draw_hex(idx: int) -> void:
 		draw_colored_polygon(PackedVector2Array([a, b, bl, al]), col.darkened(shade))
 
 	# --- Top face ---
-	draw_colored_polygon(pts, col)
+	var drew_sprite: bool = _draw_seed_tile_sprite(idx, c)
+	if not drew_sprite:
+		draw_colored_polygon(pts, col)
+	elif not is_sel:
+		draw_colored_polygon(pts, Color(0.02, 0.02, 0.04, 0.20 if is_hov else 0.34))
 
 	# --- Directional edge shading (light from upper-right) ---
 	for i: int in range(6):
@@ -273,6 +279,18 @@ func _draw_hex(idx: int) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, Color(0.0, 0.0, 0.0, 0.55))
 	var text_col: Color = Color.WHITE if is_sel else Color(0.72, 0.72, 0.72, 0.85)
 	draw_string(font, lpos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, text_col)
+
+func _draw_seed_tile_sprite(idx: int, center: Vector2) -> bool:
+	if idx < 0 or idx >= _seed_biomes.size():
+		return false
+	var biome: int = _seed_biomes[idx]
+	if _TERRAIN_TILESET_TEXTURE == null or not _TerrainTilesheet.supports_biome(biome):
+		return false
+	var region: Rect2 = _TerrainTilesheet.region_for(Vector2i(idx, biome), biome, false)
+	var draw_size: Vector2 = Vector2(_RADIUS * 2.18, _RADIUS * 2.18)
+	var rect: Rect2 = Rect2(center - draw_size * 0.5 + Vector2(0.0, -1.5), draw_size)
+	draw_texture_rect_region(_TERRAIN_TILESET_TEXTURE, rect, region)
+	return true
 
 func _draw_building_badge(idx: int) -> void:
 	var c: Vector2 = _centers[idx]

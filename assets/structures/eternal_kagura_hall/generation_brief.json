@@ -1,0 +1,7 @@
+{
+  "entity_id": "eternal_kagura_hall",
+  "display_name": "Eternal Kagura Hall",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}

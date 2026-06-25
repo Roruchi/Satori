@@ -8,6 +8,7 @@ const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const SatoriIdsScript = preload("res://src/satori/SatoriIds.gd")
 const PatternLoaderScript = preload("res://src/biomes/pattern_loader.gd")
 const DiscoveryCatalogDataScript = preload("res://src/biomes/discovery_catalog_data.gd")
+const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 
 signal satori_moment_fired(condition_id: StringName)
 signal satori_changed(current: int, cap: int)
@@ -87,6 +88,8 @@ func _load_conditions() -> void:
 func _load_structure_definitions() -> void:
 	_structure_defs.clear()
 	var catalog_data: DiscoveryCatalogData = DiscoveryCatalogDataScript.new()
+	var structure_catalog: RefCounted = StructureCatalogDataScript.new()
+	var structure_assets_by_id: Dictionary = structure_catalog.get_entries_by_id()
 	var all_entries: Array[Dictionary] = []
 	all_entries.append_array(catalog_data.get_tier1_entries())
 	all_entries.append_array(catalog_data.get_tier2_entries())
@@ -95,34 +98,97 @@ func _load_structure_definitions() -> void:
 		var did_from_catalog: String = str(meta.get("discovery_id", ""))
 		if did_from_catalog.is_empty():
 			continue
-		var effect_params_variant: Variant = meta.get("effect_params", {})
-		var effect_params: Dictionary = {}
-		if effect_params_variant is Dictionary:
-			effect_params = (effect_params_variant as Dictionary).duplicate(true)
-		_structure_defs[did_from_catalog] = {
-			"discovery_id": did_from_catalog,
-			"tier": int(meta.get("tier", 0)),
-			"cap_increase": int(meta.get("cap_increase", 0)),
-			"is_unique": bool(meta.get("is_unique", false)),
-			"housing_capacity": int(meta.get("housing_capacity", 0)),
-			"effect_type": str(meta.get("effect_type", "")),
-			"effect_params": effect_params,
-		}
+		_structure_defs[did_from_catalog] = _make_structure_definition(
+			did_from_catalog,
+			int(meta.get("tier", 0)),
+			int(meta.get("cap_increase", 0)),
+			bool(meta.get("is_unique", false)),
+			int(meta.get("housing_capacity", 0)),
+			str(meta.get("effect_type", "")),
+			_dictionary_from_variant(meta.get("effect_params", {})),
+			structure_assets_by_id
+		)
 	var loader: PatternLoader = PatternLoaderScript.new()
 	var patterns: Array[PatternDefinition] = loader.load_patterns()
 	for pattern: PatternDefinition in patterns:
 		var did: String = pattern.discovery_id
 		if did.is_empty():
 			continue
-		_structure_defs[did] = {
-			"discovery_id": did,
-			"tier": pattern.tier,
-			"cap_increase": pattern.cap_increase,
-			"is_unique": pattern.is_unique,
-			"housing_capacity": pattern.housing_capacity,
-			"effect_type": pattern.effect_type,
-			"effect_params": pattern.effect_params.duplicate(true),
-		}
+		var existing: Dictionary = get_structure_definition(did)
+		var effect_params: Dictionary = pattern.effect_params.duplicate(true)
+		if effect_params.is_empty() and existing.has("effect_params"):
+			effect_params = _dictionary_from_variant(existing.get("effect_params", {}))
+		var housing_capacity: int = pattern.housing_capacity
+		if housing_capacity == 0:
+			housing_capacity = int(existing.get("housing_capacity", 0))
+		_structure_defs[did] = _make_structure_definition(
+			did,
+			pattern.tier,
+			pattern.cap_increase,
+			pattern.is_unique,
+			housing_capacity,
+			pattern.effect_type,
+			effect_params,
+			structure_assets_by_id
+		)
+
+func _make_structure_definition(
+	discovery_id: String,
+	tier: int,
+	cap_increase: int,
+	is_unique: bool,
+	housing_capacity: int,
+	effect_type: String,
+	effect_params: Dictionary,
+	structure_assets_by_id: Dictionary
+) -> Dictionary:
+	var asset_entry: Dictionary = _asset_entry_for_structure(discovery_id, structure_assets_by_id)
+	var effects: Array[Dictionary] = _effects_from_legacy(effect_type, effect_params, housing_capacity)
+	if effects.is_empty() and asset_entry.get("effects", []) is Array:
+		effects = _effects_array_from_variant(asset_entry.get("effects", []))
+	return {
+		"discovery_id": discovery_id,
+		"tier": tier,
+		"cap_increase": cap_increase,
+		"is_unique": is_unique,
+		"housing_capacity": housing_capacity,
+		"effect_type": effect_type,
+		"effect_params": effect_params.duplicate(true),
+		"effects": effects,
+		"asset_path": str(asset_entry.get("asset_path", "")),
+		"sprite_frames_path": str(asset_entry.get("sprite_frames_path", "")),
+	}
+
+func _asset_entry_for_structure(discovery_id: String, structure_assets_by_id: Dictionary) -> Dictionary:
+	var entry_variant: Variant = structure_assets_by_id.get(discovery_id, {})
+	if entry_variant is Dictionary:
+		return (entry_variant as Dictionary).duplicate(true)
+	return {}
+
+func _effects_from_legacy(effect_type: String, effect_params: Dictionary, housing_capacity: int) -> Array[Dictionary]:
+	var effects: Array[Dictionary] = []
+	if not effect_type.is_empty():
+		var params: Dictionary = effect_params.duplicate(true)
+		if effect_type == "dwelling" and housing_capacity > 0 and not params.has("capacity"):
+			params["capacity"] = housing_capacity
+		effects.append({"type": effect_type, "params": params})
+	if housing_capacity > 0 and effect_type != "dwelling":
+		effects.append({"type": "housing", "params": {"capacity": housing_capacity}})
+	return effects
+
+func _effects_array_from_variant(value: Variant) -> Array[Dictionary]:
+	var effects: Array[Dictionary] = []
+	if not (value is Array):
+		return effects
+	for effect_variant: Variant in value as Array:
+		if effect_variant is Dictionary:
+			effects.append((effect_variant as Dictionary).duplicate(true))
+	return effects
+
+func _dictionary_from_variant(value: Variant) -> Dictionary:
+	if value is Dictionary:
+		return (value as Dictionary).duplicate(true)
+	return {}
 
 func _on_progress_event(_coord: Vector2i, _biome: int) -> void:
 	evaluate()
@@ -380,6 +446,9 @@ func _recompute_structures_from_grid() -> void:
 			"housing_capacity": int(def.get("housing_capacity", 0)),
 			"effect_type": str(def.get("effect_type", "")),
 			"effect_params": (def.get("effect_params", {}) as Dictionary).duplicate(true),
+			"effects": _effects_array_from_variant(def.get("effects", [])),
+			"asset_path": str(def.get("asset_path", "")),
+			"sprite_frames_path": str(def.get("sprite_frames_path", "")),
 		}
 		_structures.append(structure)
 

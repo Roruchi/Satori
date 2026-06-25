@@ -1,0 +1,7 @@
+{
+  "entity_id": "bridge_of_sighs",
+  "display_name": "Bridge Of Sighs",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}

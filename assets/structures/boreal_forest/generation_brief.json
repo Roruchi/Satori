@@ -1,0 +1,7 @@
+{
+  "entity_id": "boreal_forest",
+  "display_name": "Boreal Forest",
+  "asset_role": "completed structure sprite",
+  "generator": "tools/build_structure_static_sprites.ps1",
+  "style": "transparent top-down symbolic structure sprite matching Satori structure asset scale"
+}
