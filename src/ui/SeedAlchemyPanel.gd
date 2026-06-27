@@ -273,7 +273,7 @@ func _update_ui() -> void:
 		if pouch_variant is SeedPouch:
 			pouch = pouch_variant as SeedPouch
 	if pouch == null:
-		_pouch_status_label.text = "Placeables: 0/0 | Empty"
+		_pouch_status_label.text = "0/0 | Empty"
 	else:
 		_pouch_status_label.text = _format_place_inventory_status(pouch)
 	if not _last_feedback.is_empty():
@@ -781,9 +781,9 @@ func _recipe_display_name(recipe: SeedRecipe) -> String:
 
 func _format_place_inventory_status(pouch: SeedPouch) -> String:
 	if pouch == null:
-		return "Placeables: 0/0 | Empty"
+		return "0/0 | Empty"
 	if pouch.size() == 0:
-		return "Placeables: 0/%d | Empty" % pouch.capacity
+		return "0/%d | Empty" % pouch.capacity
 	var placeable_parts: Array[String] = []
 	for i: int in range(pouch.size()):
 		if pouch.get_entry_kind_at(i) == &"building_item":
@@ -795,7 +795,7 @@ func _format_place_inventory_status(pouch: SeedPouch) -> String:
 			var uses: int = pouch.get_uses_at(i)
 			if recipe != null and uses > 0:
 				placeable_parts.append("%s x%d" % [_recipe_display_name(recipe), uses])
-	var prefix: String = "Placeables: %d/%d" % [pouch.size(), pouch.capacity]
+	var prefix: String = "%d/%d" % [pouch.size(), pouch.capacity]
 	if placeable_parts.is_empty():
 		return "%s | Empty" % prefix
 	return "%s | %s" % [prefix, ", ".join(placeable_parts)]
@@ -812,7 +812,7 @@ func _building_display_name(type_key: StringName) -> String:
 	return raw.capitalize()
 
 func _form_display_name(type_key: StringName) -> String:
-	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService") if is_inside_tree() else null
 	if alchemy != null and alchemy.has_method("get_form_display_name"):
 		return str(alchemy.get_form_display_name(type_key))
 	return ""
