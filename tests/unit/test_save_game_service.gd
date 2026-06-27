@@ -98,6 +98,51 @@ func test_save_service_roundtrips_discovery_and_satori_state() -> void:
 	discovery.call("restore_discovery_persistence_state", original_discovery)
 	satori.restore_satori_state(original_satori)
 
+func test_save_service_roundtrips_seed_alchemy_ku_unlock() -> void:
+	var root: Node = get_tree().root
+	var alchemy: SeedAlchemyServiceNode = root.get_node_or_null("/root/SeedAlchemyService") as SeedAlchemyServiceNode
+	if alchemy == null:
+		fail_test("SeedAlchemyService autoload is required")
+		return
+	var original_alchemy: Dictionary = alchemy.serialize_seed_alchemy_state()
+	var service: Node = SaveGameServiceScript.new()
+	add_child_autofree(service)
+	service.set_paths_for_testing(TEST_DIR, TEST_SAVE, TEST_TEMP, TEST_BACKUP)
+
+	alchemy.restore_seed_alchemy_state({})
+	alchemy.unlock_element(GodaiElement.Value.KU)
+	alchemy.set_element_charge_for_testing(GodaiElement.Value.KU, 2)
+
+	assert_true(service.save_now("ku_unlock_roundtrip"))
+	alchemy.restore_seed_alchemy_state({})
+	assert_false(alchemy.is_ku_unlocked())
+	assert_true(service.load_game())
+	assert_true(alchemy.is_ku_unlocked())
+	assert_eq(alchemy.get_element_charge(GodaiElement.Value.KU), 2)
+
+	alchemy.restore_seed_alchemy_state(original_alchemy)
+
+func test_game_state_roundtrip_preserves_void_island_separation() -> void:
+	var source: Node = GameStateScript.new()
+	source._ready()
+	source.place_tile_from_seed(Vector2i(1, 0), BiomeType.Value.KU)
+	source.place_tile_from_seed(Vector2i(2, 0), BiomeType.Value.RIVER)
+	var source_left_island: String = str(source.grid.get_island_id(Vector2i.ZERO))
+	var source_right_island: String = str(source.grid.get_island_id(Vector2i(2, 0)))
+	assert_false(source_left_island.is_empty())
+	assert_false(source_right_island.is_empty())
+	assert_ne(source_left_island, source_right_island)
+
+	var restored: Node = GameStateScript.new()
+	assert_true(restored.restore_game_state(source.serialize_game_state()))
+	assert_eq(restored.grid.get_island_id(Vector2i(1, 0)), "")
+	assert_eq(str(restored.grid.get_island_id(Vector2i.ZERO)), source_left_island)
+	assert_eq(str(restored.grid.get_island_id(Vector2i(2, 0))), source_right_island)
+	assert_ne(str(restored.grid.get_island_id(Vector2i.ZERO)), str(restored.grid.get_island_id(Vector2i(2, 0))))
+
+	source.free()
+	restored.free()
+
 func _state_with_tiles(coords: Array[Vector2i]) -> Dictionary:
 	var tiles: Array[Dictionary] = []
 	for coord: Vector2i in coords:

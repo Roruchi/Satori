@@ -27,7 +27,7 @@ River Otter,0,River; Wetlands,The long winding river remembers every curve…,
 Rock Badger,0,Ember Field; Prismatic Terraces; The Ashfall,A stubborn presence at the garden’s outermost edge…,
 Sky Whale,5000,Stone; River; Ember Field; Meadow; Wetlands; Badlands; Whistling Canyons; Prismatic Terraces; Frostlands; The Ashfall,"A thousand tiles, perfectly balanced, call to the sky…",
 Stone Golem,0,Stone,"Nine stones locked together, a fortress of will…",
-Rain Kami Suijin,500,River; Moonlit Pool,A reed nest rests where second-island rain gathers.,A water kami drawn by a Reed Nest and a gathered rain cluster. This first Rain path stays shrine-focused and does not require spirit assistants.
+Rain Kami Suijin,1000,River; Sacred Stone; Moonlit Pool,"Where ten calm waters hold no flame, place Sacred Stone and let Satori reach the rain.","A water kami invited when Sacred Stone is placed on an island with ten water tiles, no fire-based tiles, and Satori 1000."
 Sun Lizard,0,Ember Field; Badlands; The Ashfall,The basking warmth of four earthen companions…,
 Swamp Crane,0,Wetlands; River; Stone,"Reed, river, and forest weave a crane’s sanctuary…",
 Tree Frog,0,Stone; River; Wetlands,Green toes dip where two worlds meet…,

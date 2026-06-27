@@ -433,50 +433,81 @@ func _remove_file(path: String) -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 
-func test_rain_kami_path_opens_after_reed_nest_on_second_island() -> void:
+func test_alpha_endgame_spine_invites_suijin_and_survives_save_load() -> void:
+	_cleanup_test_save_files()
 	var ctx: Dictionary = _setup_context()
 	var game_state: Node = ctx["game_state"]
-	var discovery: DiscoveryPersistenceStub = ctx["discovery"]
+	var spirit_persistence: SpiritPersistenceStub = ctx["spirit_persistence"]
 	var growth: SeedGrowthServiceNode = ctx["growth"]
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var spirit_service: SpiritService = ctx["spirit_service"]
+	var satori_service: SatoriServiceNode = get_tree().root.get_node_or_null("/root/SatoriService") as SatoriServiceNode
+	assert_not_null(satori_service)
+	var original_satori: Dictionary = satori_service.serialize_satori_state()
 
-	game_state.place_tile_from_seed(Vector2i(1, 0), BiomeType.Value.KU)
-	var rain_coords: Array[Vector2i] = [Vector2i(2, 0), Vector2i(3, 0), Vector2i(2, 1)]
-	for coord: Vector2i in rain_coords:
+	spirit_service._current_era = SatoriIds.ERA_AWAKENING
+	var mist_coords: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1)]
+	spirit_service._on_discovery_triggered("spirit_mist_stag", mist_coords)
+	assert_true(spirit_service._is_spirit_active_anywhere("spirit_mist_stag"))
+	assert_true(alchemy.is_ku_unlocked())
+
+	var ku_result: RitualAttemptResult = alchemy.attempt_ritual(["essence:ku"])
+	assert_true(ku_result.is_success())
+	assert_eq(ku_result.result_id, &"recipe_ku")
+	var ku_recipe: SeedRecipe = _recipe_from_pouch(growth, &"recipe_ku")
+	_plant_and_bloom_now(growth, ku_recipe, Vector2i(1, 0))
+	assert_eq(game_state.grid.get_island_id(Vector2i(1, 0)), "")
+
+	for i: int in range(10):
+		var coord: Vector2i = Vector2i(2 + i, 0)
 		game_state.place_tile_from_seed(coord, BiomeType.Value.RIVER)
 
 	var second_island_id: String = str(game_state.grid.get_island_id(Vector2i(2, 0)))
 	assert_false(second_island_id.is_empty())
 	assert_false(second_island_id == str(game_state.grid.get_island_id(Vector2i.ZERO)))
 
-	var spawned: Array[Dictionary] = game_state.evaluate_material_spawns(100.0)
-	assert_true(spawned.size() > 0)
-	game_state.evaluate_material_spawns(60.0)
-	var reed_coord: Vector2i = Vector2i.ZERO
-	for node: Dictionary in spawned:
-		if StringName(str(node.get("material_id", &""))) == &"reed_fiber":
-			var coord_variant: Variant = node.get("coord", Vector2i.ZERO)
-			if coord_variant is Vector2i:
-				reed_coord = coord_variant as Vector2i
-			break
-	assert_false(reed_coord == Vector2i.ZERO)
-	var harvest_result: Dictionary = game_state.harvest_material_at(reed_coord)
-	assert_eq(StringName(str(harvest_result.get("outcome", &""))), &"success")
-	assert_eq(alchemy.get_material_count(&"reed_fiber"), 1)
-
-	var reed_result: RitualAttemptResult = alchemy.attempt_ritual(["material:reed_fiber", "essence:water"])
-	assert_true(reed_result.is_success())
-	assert_eq(reed_result.result_id, &"form_reed_nest")
-	assert_true(discovery.discovered_ids.has("disc_reed_nest"))
-
-	_place_form_on_tile(growth, &"form_reed_nest", Vector2i(2, 0))
-	var reed_nest_tile: GardenTile = game_state.grid.get_tile(Vector2i(2, 0))
-	assert_eq(str(reed_nest_tile.metadata.get("structure_discovery_id", "")), "building_reed_nest")
-
-	spirit_service._current_era = SatoriIds.ERA_AWAKENING
-	spirit_service._on_tile_placed(Vector2i(2, 1), game_state.grid.get_tile(Vector2i(2, 1)))
+	var sacred_result: RitualAttemptResult = alchemy.attempt_ritual(["essence:earth", "essence:ku"])
+	assert_true(sacred_result.is_success())
+	assert_eq(sacred_result.result_id, &"recipe_chi_ku")
+	var sacred_recipe: SeedRecipe = _recipe_from_pouch(growth, &"recipe_chi_ku")
+	_plant_and_bloom_now(growth, sacred_recipe, Vector2i(12, 0))
+	satori_service.set_cap_for_testing(1000)
+	satori_service.set_satori_for_testing(1000)
+	spirit_service._on_discovery_triggered("spirit_suijin", [Vector2i(12, 0)])
 	assert_true(spirit_service._is_spirit_active_anywhere("spirit_suijin"))
 	assert_eq(_count_active_spirits(spirit_service, "spirit_suijin"), 1)
 
+	var service: Node = SaveGameServiceScript.new()
+	add_child(service)
+	service.set_paths_for_testing(TEST_SAVE_DIR, TEST_SAVE_PATH, TEST_TEMP_PATH, TEST_BACKUP_PATH)
+	assert_true(service.save_now("alpha_endgame_spine"))
+
+	game_state._initialize_fresh_garden()
+	growth.restore_seed_growth_state({"active_seeds": [], "pouch": {"capacity": 8, "entries": []}})
+	alchemy.restore_seed_alchemy_state({})
+	spirit_persistence.restore_spirit_persistence_state({"instances": []})
+	satori_service.set_satori_for_testing(0)
+	assert_true(service.load_game())
+	assert_true(alchemy.is_ku_unlocked())
+	assert_eq(game_state.grid.get_island_id(Vector2i(1, 0)), "")
+	assert_false(str(game_state.grid.get_island_id(Vector2i(2, 0))).is_empty())
+	assert_eq(game_state.grid.get_tile(Vector2i(12, 0)).biome, BiomeType.Value.SACRED_STONE)
+	assert_eq(satori_service.get_current_satori(), 1000)
+
+	var restored_service: SpiritService = SpiritService.new()
+	restored_service._catalog = SpiritCatalog.new()
+	restored_service._catalog.load_from_data(SpiritCatalogData.new())
+	restored_service._riddle_evaluator = SpiritRiddleEvaluator.new()
+	restored_service._sky_whale_evaluator = SkyWhaleEvaluator.new()
+	restored_service._spawner = SpiritSpawner.new()
+	add_child(restored_service)
+	restored_service.restore_from_persistence()
+	assert_true(restored_service._is_spirit_active_anywhere("spirit_suijin"))
+	assert_eq(_count_active_spirits(restored_service, "spirit_suijin"), 1)
+
+	remove_child(restored_service)
+	restored_service.free()
+	remove_child(service)
+	service.free()
+	satori_service.restore_satori_state(original_satori)
 	_cleanup_context(ctx)

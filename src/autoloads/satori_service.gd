@@ -302,6 +302,9 @@ func _progression_duration(duration_seconds: float) -> float:
 func get_current_satori() -> int:
 	return _current_satori
 
+func get_satori_for_island(_island_id: String) -> int:
+	return _current_satori
+
 func get_current_cap() -> int:
 	return _current_cap
 

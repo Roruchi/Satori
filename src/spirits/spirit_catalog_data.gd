@@ -402,11 +402,11 @@ func get_entries() -> Array[Dictionary]:
 		{
 		"spirit_id": "spirit_suijin",
 		"display_name": "Rain Kami Suijin",
-		"riddle_text": "A reed nest rests where second-island rain gathers.",
+		"riddle_text": "Where ten calm waters hold no flame, place Sacred Stone and let Satori reach the rain.",
 		"pattern_id": "spirit_suijin",
 		"wander_radius": 6,
 		"wander_speed": 2.0,
-		"preferred_biomes": [1, 11],
+		"preferred_biomes": [1, 10, 11],
 		"disliked_biomes": [],
 		"harmony_partner_id": "",
 		"tension_partner_id": "",

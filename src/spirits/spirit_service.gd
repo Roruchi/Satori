@@ -22,6 +22,9 @@ const ESSENCE_CHARGE_TICK_SECONDS: float = 1.0
 const STILLNESS_SPIRIT_HOUSING_BUFFER: int = 2
 const AWAKENING_SPIRIT_HOUSING_BUFFER: int = 4
 const SETTLE_HINT_TEXT: String = "A presence lingers at the edge of the island. A dwelling would help it settle."
+const SUJIN_SPIRIT_ID: String = "spirit_suijin"
+const SUJIN_REQUIRED_WATER_TILES: int = 10
+const SUJIN_REQUIRED_SATORI: int = 1000
 const _UPGRADED_HOUSES_BY_SPIRIT: Dictionary = {
 	"spirit_red_fox": ["building_fox_den"],
 }
@@ -153,6 +156,8 @@ func _on_discovery_triggered(discovery_id: String, triggering_coords: Array[Vect
 	var island_id: String = _island_for_coords(triggering_coords)
 	var game_state: Node = get_node_or_null("/root/GameState")
 	var grid: RefCounted = _grid_from_game_state(game_state)
+	if discovery_id == SUJIN_SPIRIT_ID and not _is_suijin_invitation_eligible(island_id, grid):
+		return
 	if _is_spirit_active_on_island(discovery_id, island_id, grid):
 		return
 	if not _can_spawn_under_era_pacing(discovery_id, island_id):
@@ -269,6 +274,8 @@ func _try_spawn_spirits_for_island(coord: Vector2i, grid: RefCounted) -> void:
 	for payload: DiscoverySignal in matches:
 		var spirit_id: String = payload.discovery_id
 		if not spirit_id.begins_with("spirit_") or spirit_id == SkyWhaleEvaluator.SPIRIT_ID:
+			continue
+		if spirit_id == SUJIN_SPIRIT_ID and not _is_suijin_invitation_eligible(island_id, grid):
 			continue
 		if _is_spirit_active_on_island(spirit_id, island_id, grid):
 			continue
@@ -635,10 +642,67 @@ func _maybe_mark_shrine_buildable(instance: SpiritInstance) -> void:
 func _is_ku_deity_spirit(spirit_id: String) -> bool:
 	return [
 		"spirit_oyamatsumi",
-		"spirit_suijin",
+		SUJIN_SPIRIT_ID,
 		"spirit_kagutsuchi",
 		"spirit_fujin",
 	].has(spirit_id)
+
+func _is_suijin_invitation_eligible(island_id: String, grid: RefCounted) -> bool:
+	if island_id.is_empty():
+		return false
+	if grid == null or not grid.has_method("get_tile") or not grid.has_method("get_island_id"):
+		return false
+	if _is_spirit_active_on_island(SUJIN_SPIRIT_ID, island_id, grid):
+		return false
+	var persistence: Node = get_node_or_null("/root/SpiritPersistence")
+	if persistence != null and persistence.has_method("is_summoned_on_island"):
+		if bool(persistence.is_summoned_on_island(SUJIN_SPIRIT_ID, island_id)):
+			return false
+	var water_tiles: int = 0
+	var has_chi_ku_biome: bool = false
+	for coord_variant: Variant in grid.tiles.keys():
+		var coord: Vector2i = coord_variant as Vector2i
+		if str(grid.get_island_id(coord)) != island_id:
+			continue
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		if _is_fire_based_biome(tile.biome):
+			return false
+		if _is_water_biome(tile.biome):
+			water_tiles += 1
+		if _is_chi_ku_invitation_biome(tile.biome):
+			has_chi_ku_biome = true
+	if not has_chi_ku_biome:
+		return false
+	if water_tiles < SUJIN_REQUIRED_WATER_TILES:
+		return false
+	return _satori_for_island(island_id) >= SUJIN_REQUIRED_SATORI
+
+func _satori_for_island(island_id: String) -> int:
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service == null:
+		return 0
+	if satori_service.has_method("get_satori_for_island"):
+		return int(satori_service.get_satori_for_island(island_id))
+	if satori_service.has_method("get_current_satori"):
+		return int(satori_service.get_current_satori())
+	return 0
+
+func _is_chi_ku_invitation_biome(biome: int) -> bool:
+	return biome == BiomeTypeScript.Value.SACRED_STONE
+
+func _is_water_biome(biome: int) -> bool:
+	return biome == BiomeTypeScript.Value.RIVER \
+		or biome == BiomeTypeScript.Value.WETLANDS \
+		or biome == BiomeTypeScript.Value.MOONLIT_POOL
+
+func _is_fire_based_biome(biome: int) -> bool:
+	return biome == BiomeTypeScript.Value.EMBER_FIELD \
+		or biome == BiomeTypeScript.Value.BADLANDS \
+		or biome == BiomeTypeScript.Value.PRISMATIC_TERRACES \
+		or biome == BiomeTypeScript.Value.THE_ASHFALL \
+		or biome == BiomeTypeScript.Value.EMBER_SHRINE
 
 func _maybe_queue_godai_charge_drop(spirit_id: String, entry: Dictionary) -> void:
 	var elements: Array[int] = _elements_for_spirit_charge(entry)

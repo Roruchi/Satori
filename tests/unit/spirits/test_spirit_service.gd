@@ -14,6 +14,25 @@ class GameStateStub:
 	extends Node
 	var grid: RefCounted
 
+class SatoriStub:
+	extends Node
+	var value: int = 0
+
+	func get_satori_for_island(_island_id: String) -> int:
+		return value
+
+	func get_current_satori() -> int:
+		return value
+
+class CodexStub:
+	extends Node
+	var discovered: Array[StringName] = []
+
+	func mark_discovered(entry_id: StringName) -> void:
+		if discovered.has(entry_id):
+			return
+		discovered.append(entry_id)
+
 
 func _make_grid() -> RefCounted:
 	return GridMapScript.new()
@@ -30,12 +49,51 @@ func _make_game_state() -> Node:
 	return game_state
 
 
+func _replace_root_node(p_name: String, node: Node) -> Node:
+	var root: Node = get_tree().root
+	var existing: Node = root.get_node_or_null("/root/%s" % p_name)
+	if existing != null:
+		root.remove_child(existing)
+	node.name = p_name
+	root.add_child(node)
+	return existing
+
+
+func _restore_root_node(p_name: String, replacement: Node, original: Node) -> void:
+	var root: Node = get_tree().root
+	if replacement != null:
+		if replacement.get_parent() != null:
+			replacement.get_parent().remove_child(replacement)
+		replacement.free()
+	if original != null:
+		original.name = p_name
+		root.add_child(original)
+
+
 func _active_instance_for(svc: SpiritService, spirit_id: String) -> SpiritInstance:
 	for key_variant: Variant in svc._active_instances.keys():
 		var instance: SpiritInstance = svc._active_instances.get(key_variant, null)
 		if instance != null and instance.spirit_id == spirit_id:
 			return instance
 	return null
+
+
+func _active_instance_count_for(svc: SpiritService, spirit_id: String) -> int:
+	var count: int = 0
+	for key_variant: Variant in svc._active_instances.keys():
+		var instance: SpiritInstance = svc._active_instances.get(key_variant, null)
+		if instance != null and instance.spirit_id == spirit_id:
+			count += 1
+	return count
+
+
+func _place_calm_water_island(grid: RefCounted, anchor_x: int, include_sacred: bool = true) -> Vector2i:
+	for i: int in range(10):
+		grid.place_tile(Vector2i(anchor_x + i, 0), BiomeType.Value.RIVER)
+	var sacred_coord: Vector2i = Vector2i(anchor_x + 10, 0)
+	if include_sacred:
+		grid.place_tile(sacred_coord, BiomeType.Value.SACRED_STONE)
+	return sacred_coord
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +286,6 @@ func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 	svc._current_era = SatoriIds.ERA_FLOW
 	var deity_ids: Array[String] = [
 		"spirit_oyamatsumi",
-		"spirit_suijin",
 		"spirit_kagutsuchi",
 		"spirit_fujin",
 	]
@@ -237,6 +294,80 @@ func test_new_ku_deities_can_be_summoned_from_discoveries() -> void:
 		svc._on_discovery_triggered(deity_id, coords)
 		assert_not_null(_active_instance_for(svc, deity_id), "Expected active instance for %s" % deity_id)
 	svc.queue_free()
+
+func test_suijin_requires_ten_water_tiles_chi_ku_and_satori_1000() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	for i: int in range(9):
+		grid.place_tile(Vector2i(40 + i, 0), BiomeType.Value.RIVER)
+	var sacred_coord: Vector2i = Vector2i(49, 0)
+	grid.place_tile(sacred_coord, BiomeType.Value.SACRED_STONE)
+
+	var satori_stub: SatoriStub = SatoriStub.new()
+	satori_stub.value = 1000
+	var original_satori: Node = _replace_root_node("SatoriService", satori_stub)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._current_era = SatoriIds.ERA_AWAKENING
+	svc._on_discovery_triggered("spirit_suijin", [sacred_coord])
+	assert_null(_active_instance_for(svc, "spirit_suijin"), "Suijin should wait for ten water tiles")
+
+	grid.place_tile(Vector2i(50, 0), BiomeType.Value.RIVER)
+	svc._on_discovery_triggered("spirit_suijin", [sacred_coord])
+	assert_not_null(_active_instance_for(svc, "spirit_suijin"), "Suijin should arrive on a qualifying calm water island")
+
+	svc.queue_free()
+	_restore_root_node("SatoriService", satori_stub, original_satori)
+
+func test_suijin_rejects_fire_based_tiles_on_candidate_island() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var sacred_coord: Vector2i = _place_calm_water_island(grid, 60)
+	grid.place_tile(Vector2i(71, 0), BiomeType.Value.EMBER_FIELD)
+
+	var satori_stub: SatoriStub = SatoriStub.new()
+	satori_stub.value = 1000
+	var original_satori: Node = _replace_root_node("SatoriService", satori_stub)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._current_era = SatoriIds.ERA_AWAKENING
+	svc._on_discovery_triggered("spirit_suijin", [sacred_coord])
+	assert_null(_active_instance_for(svc, "spirit_suijin"), "Any fire-based tile on the island should block Suijin")
+
+	svc.queue_free()
+	_restore_root_node("SatoriService", satori_stub, original_satori)
+
+func test_suijin_invitation_is_island_local_duplicate_safe_and_marks_codex() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	_place_calm_water_island(grid, 80)
+	var wrong_island_sacred: Vector2i = Vector2i(100, 0)
+	grid.place_tile(wrong_island_sacred, BiomeType.Value.KU)
+	grid.place_tile(Vector2i(101, 0), BiomeType.Value.SACRED_STONE)
+
+	var satori_stub: SatoriStub = SatoriStub.new()
+	satori_stub.value = 1000
+	var original_satori: Node = _replace_root_node("SatoriService", satori_stub)
+	var codex_stub: CodexStub = CodexStub.new()
+	var original_codex: Node = _replace_root_node("CodexService", codex_stub)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	svc._current_era = SatoriIds.ERA_AWAKENING
+	svc._on_discovery_triggered("spirit_suijin", [Vector2i(101, 0)])
+	assert_null(_active_instance_for(svc, "spirit_suijin"), "Water on another island must not satisfy Suijin")
+
+	var sacred_coord: Vector2i = Vector2i(90, 0)
+	svc._on_discovery_triggered("spirit_suijin", [sacred_coord])
+	svc._on_discovery_triggered("spirit_suijin", [sacred_coord])
+	assert_eq(_active_instance_count_for(svc, "spirit_suijin"), 1, "Repeated scans should not duplicate Suijin")
+	assert_true(codex_stub.discovered.has(&"spirit_suijin"), "Suijin arrival should mark the Codex entry")
+
+	svc.queue_free()
+	_restore_root_node("CodexService", codex_stub, original_codex)
+	_restore_root_node("SatoriService", satori_stub, original_satori)
 
 func test_housing_snapshot_reports_housed_and_unhoused_counts() -> void:
 	var game_state: Node = _make_game_state()

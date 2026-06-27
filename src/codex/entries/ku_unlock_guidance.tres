@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"ku_unlock_guidance"
 category = 0
-hint_text = "Seek the Mist Stag. Follow its trail through ancient growth and wetland signs; patience reveals Kū."
+hint_text = "Seek the Mist Stag. Follow ancient growth and wetland signs; patience reveals Kū, then Kū Seed opens Void."
 full_name = "Kū Awakening"
-full_description = "You have walked the Mist Stag's path and awakened Kū. Pair Kū with Chi, Sui, Ka, or Fu to shape new seeds."
+full_description = "You have walked the Mist Stag's path and awakened Kū. Kū Seed opens Void between islands; pair Chi and Kū to shape Sacred Stone for the Suijin invitation."
 always_hidden = false

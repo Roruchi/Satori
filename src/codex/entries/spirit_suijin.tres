@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"spirit_suijin"
 category = 2
-hint_text = "A reed nest rests where second-island rain gathers."
+hint_text = "Where ten calm waters hold no flame, place Sacred Stone and let Satori reach the rain."
 full_name = "Rain Kami Suijin"
-full_description = "A water kami drawn by a Reed Nest and a gathered rain cluster. This first Rain path stays shrine-focused and does not require spirit assistants."
+full_description = "A water kami invited when Sacred Stone is placed on an island with ten water tiles, no fire-based tiles, and Satori 1000."
 always_hidden = false
