@@ -354,6 +354,21 @@ func is_spirit_housed(spirit_id: String, island_id: String = "") -> bool:
 		return bool((housed_keys_variant as Dictionary).get(key, false))
 	return false
 
+func has_housed_spirit(spirit_id: String) -> bool:
+	var assignment: Dictionary = _get_housing_assignment()
+	var housed_keys_variant: Variant = assignment.get("housed_keys", {})
+	if not (housed_keys_variant is Dictionary):
+		return false
+	var housed_keys: Dictionary = housed_keys_variant as Dictionary
+	for key_variant: Variant in _active_instances.keys():
+		var key: String = str(key_variant)
+		if not bool(housed_keys.get(key, false)):
+			continue
+		var instance: SpiritInstance = _active_instances.get(key_variant, null)
+		if instance != null and instance.spirit_id == spirit_id:
+			return true
+	return false
+
 func get_house_owner_at_coord(coord: Vector2i) -> Dictionary:
 	_get_housing_assignment()
 	var house_key: String = _coord_to_key(coord)

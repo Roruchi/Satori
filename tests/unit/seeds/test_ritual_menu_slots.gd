@@ -56,7 +56,7 @@ func _cleanup_context(ctx: Dictionary) -> void:
 				node.get_parent().remove_child(node)
 			node.free()
 
-func _add_active_red_fox(ctx: Dictionary) -> SpiritService:
+func _add_active_red_fox(ctx: Dictionary, housed: bool = false) -> SpiritService:
 	var spirit_service: SpiritService = SpiritService.new()
 	spirit_service.name = "SpiritService"
 	var root: Node = get_tree().root
@@ -66,9 +66,29 @@ func _add_active_red_fox(ctx: Dictionary) -> SpiritService:
 		existing.free()
 	root.add_child(spirit_service)
 	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
-	spirit_service._active_instances["spirit_red_fox"] = fox
+	if housed:
+		var game_state: Node = ctx["game_state"]
+		var grid: RefCounted = game_state.get("grid")
+		var house: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeTypeScript.Value.MEADOW)
+		house.metadata["is_building_complete"] = true
+		house.metadata["structure_discovery_id"] = "building_meadow_dwelling"
+		var fox_coord: Vector2i = Vector2i(1, 0)
+		if grid.get_tile(fox_coord) == null:
+			grid.place_tile(fox_coord, BiomeTypeScript.Value.MEADOW)
+		var island_id: String = str(grid.get_island_id(fox_coord))
+		fox.spawn_coord = fox_coord
+		fox.island_id = island_id
+		spirit_service._active_instances[spirit_service._spirit_key("spirit_red_fox", island_id)] = fox
+	else:
+		spirit_service._active_instances["spirit_red_fox"] = fox
 	ctx["spirit_service"] = spirit_service
 	return spirit_service
+
+func _has_ritual_input_key(alchemy: SeedAlchemyServiceNode, key: String) -> bool:
+	for input_def: Dictionary in alchemy.get_ritual_input_definitions():
+		if str(input_def.get("key", "")) == key:
+			return true
+	return false
 
 func test_duplicate_ritual_inputs_are_rejected_without_consumption() -> void:
 	var ctx: Dictionary = _setup_context()
@@ -148,14 +168,30 @@ func test_living_wood_and_fire_shape_warm_hollow() -> void:
 	assert_true(pouch.find_building_index(&"form_warm_hollow") >= 0)
 	_cleanup_context(ctx)
 
-func test_living_wood_and_red_fox_shape_fox_den_without_fire_charge() -> void:
+func test_active_unhoused_red_fox_is_not_ritual_input() -> void:
 	var ctx: Dictionary = _setup_context()
 	_add_active_red_fox(ctx)
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
+	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	assert_false(_has_ritual_input_key(alchemy, "spirit:spirit_red_fox"))
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "spirit:spirit_red_fox"])
+	assert_eq(result.outcome, RitualAttemptResultScript.OUTCOME_LOCKED_INPUT)
+	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_eq(pouch.find_building_index(&"form_fox_den"), -1)
+	_cleanup_context(ctx)
+
+func test_living_wood_and_housed_red_fox_shape_fox_den_without_fire_charge() -> void:
+	var ctx: Dictionary = _setup_context()
+	_add_active_red_fox(ctx, true)
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	var discovery: DiscoveryStub = ctx["discovery"]
 	alchemy.add_material_for_testing(&"living_wood", 1)
 	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.KA, 0)
 	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	assert_true(_has_ritual_input_key(alchemy, "spirit:spirit_red_fox"))
 	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "spirit:spirit_red_fox"])
 	assert_true(result.is_success())
 	assert_eq(result.result_kind, &"form")
@@ -170,7 +206,7 @@ func test_living_wood_and_red_fox_shape_fox_den_without_fire_charge() -> void:
 
 func test_red_fox_is_not_generic_fire_replacement() -> void:
 	var ctx: Dictionary = _setup_context()
-	_add_active_red_fox(ctx)
+	_add_active_red_fox(ctx, true)
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.add_material_for_testing(&"ember_clay", 1)
 	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.KA, 0)

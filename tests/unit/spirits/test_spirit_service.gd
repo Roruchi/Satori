@@ -287,6 +287,24 @@ func test_housing_assignment_is_cached_until_marked_dirty() -> void:
 	assert_eq(svc.get_housing_recompute_count(), recomputes_after_first_lookup + 1)
 	svc.queue_free()
 
+func test_has_housed_spirit_matches_island_scoped_assignments() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var house: GardenTile = grid.place_tile(Vector2i.ZERO, BiomeType.Value.MEADOW)
+	house.metadata["is_building_complete"] = true
+	grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var island_id: String = str(grid.get_island_id(Vector2i(1, 0)))
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 0), Rect2i())
+	fox.island_id = island_id
+	svc._active_instances[svc._spirit_key("spirit_red_fox", island_id)] = fox
+
+	assert_true(svc.has_housed_spirit("spirit_red_fox"))
+	assert_false(svc.has_housed_spirit("spirit_hare"))
+	svc.queue_free()
+
 func test_housing_does_not_use_houses_from_other_islands() -> void:
 	var root: Node = get_tree().root
 	var game_state: Node = _make_game_state()

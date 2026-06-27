@@ -549,6 +549,13 @@ func _spirit_component_inputs() -> Array[Dictionary]:
 			active = bool(spirit_service.has_active_spirit(spirit_id))
 		if not active:
 			continue
+		var housed: bool = false
+		if spirit_service != null and spirit_service.has_method("has_housed_spirit"):
+			housed = bool(spirit_service.has_housed_spirit(spirit_id))
+		elif spirit_service != null and spirit_service.has_method("is_spirit_housed"):
+			housed = bool(spirit_service.is_spirit_housed(spirit_id, ""))
+		if not housed:
+			continue
 		inputs.append({
 			"kind": INPUT_KIND_SPIRIT,
 			"id": StringName(spirit_id),
