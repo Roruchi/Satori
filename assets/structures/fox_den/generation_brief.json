@@ -1,0 +1,8 @@
+{
+  "entity_id": "fox_den",
+  "prompt": "Static top-down Satori structure sprite: a compact living-wood fox den with moss, warm foxfire glow, and a curled red-fox tail motif over the entrance.",
+  "frame_size": 128,
+  "style_source": "assets/structures/style_guide.md",
+  "source_image": "assets/structures/fox_den/source/fox_den_imagegen_chroma.png",
+  "notes": "Created with imagegen on a chroma-key background, then locally cut out to a transparent 128x128 PNG for building_fox_den."
+}

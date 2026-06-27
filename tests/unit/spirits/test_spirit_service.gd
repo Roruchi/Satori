@@ -363,6 +363,40 @@ func test_house_binding_remains_with_spirit_after_recompute() -> void:
 
 	svc.queue_free()
 
+func test_red_fox_rebinds_to_fox_den_upgrade() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var meadow_house_coord: Vector2i = Vector2i(20, 0)
+	var meadow_house: GardenTile = grid.place_tile(meadow_house_coord, BiomeType.Value.MEADOW)
+	meadow_house.metadata["is_building_complete"] = true
+	meadow_house.metadata["structure_discovery_id"] = "building_meadow_dwelling"
+	grid.place_tile(Vector2i(20, 1), BiomeType.Value.MEADOW)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var island_id: String = str(grid.get_island_id(Vector2i(20, 1)))
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(20, 1), Rect2i())
+	fox.island_id = island_id
+	var fox_key: String = "island_%s|spirit_spirit_red_fox" % island_id
+	svc._active_instances[fox_key] = fox
+
+	svc.get_housing_snapshot()
+	assert_eq(str(svc._house_binding_by_spirit.get(fox_key, "")), "20,0")
+
+	var fox_den_coord: Vector2i = Vector2i(21, 0)
+	var fox_den: GardenTile = grid.place_tile(fox_den_coord, BiomeType.Value.MEADOW)
+	fox_den.metadata["is_building_complete"] = true
+	fox_den.metadata["structure_discovery_id"] = "building_fox_den"
+	svc.mark_housing_dirty()
+	var snapshot: Dictionary = svc.get_housing_snapshot()
+
+	assert_eq(str(svc._house_binding_by_spirit.get(fox_key, "")), "21,0")
+	assert_eq(int(snapshot.get("housed_count", -1)), 1)
+	assert_eq(int(snapshot.get("upgraded_housed_count", -1)), 1)
+	assert_eq(str(svc.get_house_owner_at_coord(fox_den_coord).get("spirit_id", "")), "spirit_red_fox")
+
+	svc.queue_free()
+
 func test_get_house_owner_at_coord_returns_bound_spirit() -> void:
 	var root: Node = get_tree().root
 	var game_state: Node = _make_game_state()

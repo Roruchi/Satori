@@ -13,9 +13,20 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const INVALID_ELEMENT: int = -1
 const INPUT_KIND_ESSENCE: StringName = &"essence"
 const INPUT_KIND_MATERIAL: StringName = &"material"
+const INPUT_KIND_SPIRIT: StringName = &"spirit"
 const STARTING_LIVING_WOOD: int = 0
 const DEFAULT_MATERIAL_CAPACITY: int = 99
 const MATERIAL_DISPLAY_ORDER: Array[StringName] = [&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"]
+const SPIRIT_COMPONENTS: Array[Dictionary] = [
+	{
+		"id": &"spirit_red_fox",
+		"key": "spirit:spirit_red_fox",
+		"display_name": "Red Fox",
+	},
+]
+const SPIRIT_INTENT_RITUALS_BY_INPUT_KEY: Dictionary = {
+	"spirit:spirit_red_fox": [&"ritual_fox_den"],
+}
 
 signal element_unlocked(element_id: int)
 signal recipe_discovered(recipe_id: StringName)
@@ -105,6 +116,7 @@ func get_ritual_input_definitions() -> Array[Dictionary]:
 			"available_for_selection": get_material_count(material_id) > 0,
 			"unlocked": true,
 		})
+	inputs.append_array(_spirit_component_inputs())
 	return inputs
 
 func get_material_count(material_id: StringName) -> int:
@@ -237,11 +249,12 @@ func _resolve_ritual(slot_keys: Array[String], confirm: bool) -> RitualAttemptRe
 		var available_count: int = int(input_def.get("available_count", 0))
 		if available_count <= 0:
 			return RitualAttemptResultScript.locked_input(key)
-	if not has_essence:
-		return RitualAttemptResultScript.missing_essence()
-
 	var normalized_keys: Array[String] = keys.duplicate()
 	normalized_keys.sort()
+	if not has_essence:
+		if not _has_ritual_specific_spirit_intent(normalized_keys):
+			return RitualAttemptResultScript.missing_essence()
+
 	var form_result: RitualAttemptResultScript = _resolve_form_ritual(normalized_keys, confirm)
 	if form_result != null:
 		return form_result
@@ -474,6 +487,58 @@ func _ritual_material_input_ids() -> Array[StringName]:
 		seen[material_id_ordered] = true
 		ids.append(material_id_ordered)
 	return ids
+
+func _spirit_component_inputs() -> Array[Dictionary]:
+	var inputs: Array[Dictionary] = []
+	var spirit_service: Node = _resolve_spirit_service()
+	for component: Dictionary in SPIRIT_COMPONENTS:
+		var spirit_id: String = str(component.get("id", ""))
+		var active: bool = false
+		if spirit_service != null and spirit_service.has_method("has_active_spirit"):
+			active = bool(spirit_service.has_active_spirit(spirit_id))
+		if not active:
+			continue
+		inputs.append({
+			"kind": INPUT_KIND_SPIRIT,
+			"id": StringName(spirit_id),
+			"key": str(component.get("key", "")),
+			"display_name": str(component.get("display_name", spirit_id)),
+			"available_count": 1,
+			"available_for_selection": true,
+			"unlocked": true,
+		})
+	return inputs
+
+func _has_ritual_specific_spirit_intent(normalized_keys: Array[String]) -> bool:
+	if _ritual_catalog == null:
+		return false
+	var entry = _ritual_catalog.lookup_form(normalized_keys)
+	if entry == null:
+		return false
+	var has_spirit_key: bool = false
+	for key: String in normalized_keys:
+		if not key.begins_with("spirit:"):
+			continue
+		has_spirit_key = true
+		var allowed_variant: Variant = SPIRIT_INTENT_RITUALS_BY_INPUT_KEY.get(key, [])
+		if not (allowed_variant is Array):
+			return false
+		var allowed_ids: Array = allowed_variant as Array
+		if not allowed_ids.has(entry.ritual_id):
+			return false
+	return has_spirit_key
+
+func _resolve_spirit_service() -> Node:
+	var direct: Node = get_node_or_null("/root/SpiritService")
+	if direct != null:
+		return direct
+	var garden_path: Node = get_node_or_null("/root/Garden/SpiritService")
+	if garden_path != null:
+		return garden_path
+	var voxel_path: Node = get_node_or_null("/root/VoxelGarden/SpiritService")
+	if voxel_path != null:
+		return voxel_path
+	return null
 
 func _material_display_name(material_id: StringName) -> String:
 	match material_id:

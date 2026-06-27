@@ -1,0 +1,18 @@
+{
+  "entity_id": "fox_den",
+  "frame_width": 128,
+  "frame_height": 128,
+  "directions": [
+    "down"
+  ],
+  "layout": "static-generated",
+  "source": "imagegen chroma-key source plus local alpha cleanup",
+  "animations": [
+    {
+      "name": "idle_down",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ]
+}

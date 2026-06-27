@@ -22,6 +22,9 @@ const ESSENCE_CHARGE_TICK_SECONDS: float = 1.0
 const STILLNESS_SPIRIT_HOUSING_BUFFER: int = 2
 const AWAKENING_SPIRIT_HOUSING_BUFFER: int = 4
 const SETTLE_HINT_TEXT: String = "A presence lingers at the edge of the island. A dwelling would help it settle."
+const _UPGRADED_HOUSES_BY_SPIRIT: Dictionary = {
+	"spirit_red_fox": ["building_fox_den"],
+}
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -338,7 +341,9 @@ func get_housing_snapshot() -> Dictionary:
 	return {
 		"housed_count": int(assignment.get("housed_count", 0)),
 		"unhoused_count": int(assignment.get("unhoused_count", 0)),
+		"upgraded_housed_count": int(assignment.get("upgraded_housed_count", 0)),
 		"housed_by_island": (assignment.get("housed_by_island", {}) as Dictionary).duplicate(true),
+		"upgraded_housed_by_island": (assignment.get("upgraded_housed_by_island", {}) as Dictionary).duplicate(true),
 	}
 
 func is_spirit_housed(spirit_id: String, island_id: String = "") -> bool:
@@ -370,6 +375,9 @@ func get_house_owner_at_coord(coord: Vector2i) -> Dictionary:
 func mark_housing_dirty() -> void:
 	_housing_cache_dirty = true
 
+func has_active_spirit(spirit_id: String) -> bool:
+	return _is_spirit_active_anywhere(spirit_id)
+
 func get_housing_recompute_count() -> int:
 	return _housing_recompute_count
 
@@ -386,9 +394,12 @@ func _get_housing_assignment() -> Dictionary:
 func _compute_housing_assignment() -> Dictionary:
 	var housed_count: int = 0
 	var unhoused_count: int = 0
+	var upgraded_housed_count: int = 0
 	var housed_by_island: Dictionary = {}
+	var upgraded_housed_by_island: Dictionary = {}
 	var housed_keys: Dictionary = {}
 	var houses_by_island: Dictionary = _collect_available_houses_by_island()
+	var house_info_by_key: Dictionary = _collect_house_info_by_key(houses_by_island)
 	_cleanup_house_bindings(houses_by_island)
 	# Preserve existing bindings first so houses remain bound to their current spirit.
 	for key_variant: Variant in _active_instances.keys():
@@ -399,14 +410,19 @@ func _compute_housing_assignment() -> Dictionary:
 		var bound_house_key: String = str(_house_binding_by_spirit.get(key, ""))
 		if bound_house_key.is_empty():
 			continue
+		if _has_better_upgraded_house_available(houses_by_island, instance.island_id, instance.spirit_id, bound_house_key, house_info_by_key):
+			continue
 		var assigned_island: String = _consume_bound_house(houses_by_island, instance.island_id, bound_house_key)
 		if assigned_island.is_empty():
 			continue
 		housed_count += 1
 		housed_keys[key] = true
 		housed_by_island[assigned_island] = int(housed_by_island.get(assigned_island, 0)) + 1
+		if _is_upgraded_house_for_spirit(instance.spirit_id, str((house_info_by_key.get(bound_house_key, {}) as Dictionary).get("structure_id", ""))):
+			upgraded_housed_count += 1
+			upgraded_housed_by_island[assigned_island] = int(upgraded_housed_by_island.get(assigned_island, 0)) + 1
 
-	# Assign unbound spirits: preferred-biome houses first, then any house on the same island.
+	# Assign unbound spirits: species upgrades first, then preferred-biome houses, then any house on the same island.
 	for key_variant: Variant in _active_instances.keys():
 		var key: String = str(key_variant)
 		var instance: SpiritInstance = _active_instances.get(key, null)
@@ -418,7 +434,8 @@ func _compute_housing_assignment() -> Dictionary:
 			continue
 		var entry: Dictionary = _catalog.lookup(instance.spirit_id)
 		var preferred: Array[int] = _preferred_biomes(entry)
-		var assigned_island: String = _assign_house_for_spirit(houses_by_island, instance.island_id, preferred, key)
+		var assignment: Dictionary = _assign_house_for_spirit(houses_by_island, instance.island_id, preferred, key, instance.spirit_id, house_info_by_key)
+		var assigned_island: String = str(assignment.get("island_id", ""))
 		if assigned_island.is_empty():
 			_house_binding_by_spirit.erase(key)
 			unhoused_count += 1
@@ -426,10 +443,15 @@ func _compute_housing_assignment() -> Dictionary:
 		housed_count += 1
 		housed_keys[key] = true
 		housed_by_island[assigned_island] = int(housed_by_island.get(assigned_island, 0)) + 1
+		if bool(assignment.get("upgraded", false)):
+			upgraded_housed_count += 1
+			upgraded_housed_by_island[assigned_island] = int(upgraded_housed_by_island.get(assigned_island, 0)) + 1
 	return {
 		"housed_count": housed_count,
 		"unhoused_count": unhoused_count,
+		"upgraded_housed_count": upgraded_housed_count,
 		"housed_by_island": housed_by_island,
+		"upgraded_housed_by_island": upgraded_housed_by_island,
 		"housed_keys": housed_keys,
 	}
 
@@ -721,9 +743,29 @@ func _collect_available_houses_by_island() -> Dictionary:
 			"coord": coord,
 			"biome": tile.biome,
 			"key": _coord_to_key(coord),
+			"structure_id": str(tile.metadata.get("structure_discovery_id", "")),
 		})
 		houses_by_island[island_id] = arr
 	return houses_by_island
+
+func _collect_house_info_by_key(houses_by_island: Dictionary) -> Dictionary:
+	var info_by_key: Dictionary = {}
+	for island_variant: Variant in houses_by_island.keys():
+		var island_id: String = str(island_variant)
+		var arr_variant: Variant = houses_by_island.get(island_id, null)
+		if not (arr_variant is Array):
+			continue
+		for house_variant: Variant in (arr_variant as Array):
+			if not (house_variant is Dictionary):
+				continue
+			var house: Dictionary = house_variant as Dictionary
+			var house_key: String = str(house.get("key", ""))
+			if house_key.is_empty():
+				continue
+			var copy: Dictionary = house.duplicate(true)
+			copy["island_id"] = island_id
+			info_by_key[house_key] = copy
+	return info_by_key
 
 func _preferred_biomes(entry: Dictionary) -> Array[int]:
 	var preferred: Array[int] = []
@@ -733,16 +775,70 @@ func _preferred_biomes(entry: Dictionary) -> Array[int]:
 			preferred.append(int(biome_variant))
 	return preferred
 
-func _assign_house_for_spirit(houses_by_island: Dictionary, preferred_island: String, preferred_biomes: Array[int], spirit_key: String) -> String:
+func _assign_house_for_spirit(houses_by_island: Dictionary, preferred_island: String, preferred_biomes: Array[int], spirit_key: String, spirit_id: String, house_info_by_key: Dictionary) -> Dictionary:
 	if preferred_island.is_empty():
-		return ""
-	var consumed_house_key: String = _consume_matching_house(houses_by_island, preferred_island, preferred_biomes)
+		return {}
+	var consumed_house_key: String = _consume_upgraded_house(houses_by_island, preferred_island, spirit_id)
+	if consumed_house_key.is_empty():
+		consumed_house_key = _consume_matching_house(houses_by_island, preferred_island, preferred_biomes)
 	if consumed_house_key.is_empty():
 		consumed_house_key = _consume_any_house(houses_by_island, preferred_island)
-	if not consumed_house_key.is_empty():
-		_house_binding_by_spirit[spirit_key] = consumed_house_key
-		return preferred_island
+	if consumed_house_key.is_empty():
+		return {}
+	_house_binding_by_spirit[spirit_key] = consumed_house_key
+	var structure_id: String = str((house_info_by_key.get(consumed_house_key, {}) as Dictionary).get("structure_id", ""))
+	return {
+		"island_id": preferred_island,
+		"house_key": consumed_house_key,
+		"upgraded": _is_upgraded_house_for_spirit(spirit_id, structure_id),
+	}
+
+func _consume_upgraded_house(houses_by_island: Dictionary, island_id: String, spirit_id: String) -> String:
+	var arr_variant: Variant = houses_by_island.get(island_id, null)
+	if not (arr_variant is Array):
+		return ""
+	var houses: Array = arr_variant as Array
+	for i: int in range(houses.size()):
+		var house_variant: Variant = houses[i]
+		if not (house_variant is Dictionary):
+			continue
+		var house: Dictionary = house_variant as Dictionary
+		var structure_id: String = str(house.get("structure_id", ""))
+		if not _is_upgraded_house_for_spirit(spirit_id, structure_id):
+			continue
+		var house_key: String = str(house.get("key", ""))
+		houses.remove_at(i)
+		houses_by_island[island_id] = houses
+		return house_key
 	return ""
+
+func _has_better_upgraded_house_available(houses_by_island: Dictionary, island_id: String, spirit_id: String, bound_house_key: String, house_info_by_key: Dictionary) -> bool:
+	var bound_info_variant: Variant = house_info_by_key.get(bound_house_key, {})
+	if bound_info_variant is Dictionary:
+		var bound_structure_id: String = str((bound_info_variant as Dictionary).get("structure_id", ""))
+		if _is_upgraded_house_for_spirit(spirit_id, bound_structure_id):
+			return false
+	var arr_variant: Variant = houses_by_island.get(island_id, null)
+	if not (arr_variant is Array):
+		return false
+	for house_variant: Variant in (arr_variant as Array):
+		if not (house_variant is Dictionary):
+			continue
+		var house: Dictionary = house_variant as Dictionary
+		if str(house.get("key", "")) == bound_house_key:
+			continue
+		if _is_upgraded_house_for_spirit(spirit_id, str(house.get("structure_id", ""))):
+			return true
+	return false
+
+func _is_upgraded_house_for_spirit(spirit_id: String, structure_id: String) -> bool:
+	var ids_variant: Variant = _UPGRADED_HOUSES_BY_SPIRIT.get(spirit_id, [])
+	if not (ids_variant is Array):
+		return false
+	for id_variant: Variant in ids_variant as Array:
+		if str(id_variant) == structure_id:
+			return true
+	return false
 
 func _consume_matching_house(houses_by_island: Dictionary, island_id: String, preferred_biomes: Array[int]) -> String:
 	var arr_variant: Variant = houses_by_island.get(island_id, null)

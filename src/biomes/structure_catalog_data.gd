@@ -10,10 +10,12 @@ const _BUILDING_ASSET_FOLDERS: Dictionary = {
 	"building_house": "house",
 	"building_meadow_dwelling": "meadow_dwelling",
 	"building_scorched_hollow": "scorched_hollow",
+	"building_fox_den": "fox_den",
 }
 
 const _FORM_EFFECTS: Dictionary = {
 	"form_warm_hollow": [{"type": "shelter_form", "params": {"contextual_role": true}}],
+	"form_fox_den": [{"type": "spirit_dwelling_upgrade", "params": {"spirit_id": "spirit_red_fox", "counts_as": "fire"}}],
 	"form_dew_bowl": [{"type": "storage_cap", "params": {"target": "wind_essence"}}],
 	"form_root_network": [{"type": "material_spawn_speed", "params": {"material_id": "living_wood", "radius": 1}}],
 	"form_wind_chime": [{"type": "auto_harvest", "params": {"material_id": "living_wood", "radius": 1}}],
@@ -45,6 +47,10 @@ const _BUILDING_EFFECTS: Dictionary = {
 	"building_house": [{"type": "dwelling", "params": {"capacity": 1}}],
 	"building_meadow_dwelling": [{"type": "dwelling", "params": {"capacity": 1, "preferred_biome": "meadow"}}],
 	"building_scorched_hollow": [{"type": "dwelling", "params": {"capacity": 1, "pressure": "fire"}}],
+	"building_fox_den": [
+		{"type": "dwelling", "params": {"capacity": 1, "preferred_biome": "meadow", "spirit_id": "spirit_red_fox", "upgraded": true}},
+		{"type": "satori_rate_bonus", "params": {"per_minute": 1}},
+	],
 }
 
 func get_all_entries() -> Array[Dictionary]:

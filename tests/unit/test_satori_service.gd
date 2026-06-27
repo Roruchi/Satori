@@ -124,6 +124,22 @@ func test_stillness_housed_spirits_remain_better_than_unhoused() -> void:
 	assert_true(int(housed_result["applied_delta"]) > int(unsettled_result["applied_delta"]))
 	service.queue_free()
 
+func test_upgraded_house_generates_extra_satori_rate() -> void:
+	var service: SatoriServiceNode = SatoriServiceNode.new()
+	add_child(service)
+	service.set_cap_for_testing(250)
+	service.set_satori_for_testing(100)
+	var result: Dictionary = service.process_minute_tick({
+		"housed_count": 1,
+		"unhoused_count": 0,
+		"upgraded_housed_count": 1,
+		"housed_by_island": {"island_a": 1},
+		"upgraded_housed_by_island": {"island_a": 1}
+	})
+	assert_eq(int(result["applied_delta"]), 2)
+	assert_eq(int(result["new_satori"]), 102)
+	service.queue_free()
+
 func test_minute_tick_clamps_to_cap_on_overflow() -> void:
 	var service: SatoriServiceNode = SatoriServiceNode.new()
 	add_child(service)

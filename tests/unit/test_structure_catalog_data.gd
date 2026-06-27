@@ -23,6 +23,10 @@ func test_structure_catalog_exposes_recipe_effects_for_forms() -> void:
 	var meadow_dwelling: Dictionary = catalog.get_entry("building_meadow_dwelling")
 	assert_true(_has_effect(meadow_dwelling, "dwelling"), "Meadow Dwelling should expose its housing effect")
 
+	var fox_den: Dictionary = catalog.get_entry("building_fox_den")
+	assert_true(_has_effect(fox_den, "dwelling"), "Fox Den should expose its housing effect")
+	assert_true(_has_effect(fox_den, "satori_rate_bonus"), "Fox Den should expose its upgraded Satori rate effect")
+
 
 func test_structure_catalog_entries_have_loadable_assets() -> void:
 	var catalog: RefCounted = StructureCatalogDataScript.new()

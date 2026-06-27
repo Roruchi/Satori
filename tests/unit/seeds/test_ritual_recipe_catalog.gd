@@ -13,6 +13,15 @@ func test_form_rituals_load_from_csv() -> void:
 	assert_eq(entry.required_material_counts.get(&"living_wood", 0), 1)
 	assert_true(entry.required_elements.has(GodaiElement.Value.KA))
 
+	var fox_den_entry = catalog.lookup_form(["material:living_wood", "spirit:spirit_red_fox"])
+	assert_not_null(fox_den_entry)
+	assert_eq(fox_den_entry.ritual_id, &"ritual_fox_den")
+	assert_eq(fox_den_entry.result_kind, &"form")
+	assert_eq(fox_den_entry.result_id, &"form_fox_den")
+	assert_eq(fox_den_entry.discovery_id, &"disc_fox_den")
+	assert_eq(fox_den_entry.required_material_counts.get(&"living_wood", 0), 1)
+	assert_false(fox_den_entry.required_elements.has(GodaiElement.Value.KA), "Red Fox should not be parsed as a generic Fire Essence component")
+
 	var reed_entry = catalog.lookup_form(["material:reed_fiber", "essence:water"])
 	assert_not_null(reed_entry)
 	assert_eq(reed_entry.ritual_id, &"ritual_reed_nest")
@@ -33,6 +42,7 @@ func test_tier1_material_family_form_rituals_are_complete() -> void:
 	var catalog = RitualRecipeCatalogScript.new()
 	var expected: Array[Dictionary] = [
 		{"inputs": ["material:living_wood", "essence:fire"], "result": &"form_warm_hollow", "discovery": &"disc_warm_hollow"},
+		{"inputs": ["material:living_wood", "spirit:spirit_red_fox"], "result": &"form_fox_den", "discovery": &"disc_fox_den"},
 		{"inputs": ["material:living_wood", "essence:water"], "result": &"form_dew_bowl", "discovery": &"disc_dew_bowl"},
 		{"inputs": ["material:living_wood", "essence:earth"], "result": &"form_root_network", "discovery": &"disc_root_network"},
 		{"inputs": ["material:living_wood", "essence:wind"], "result": &"form_wind_chime", "discovery": &"disc_wind_chime"},
@@ -86,6 +96,10 @@ func test_form_placement_rules_are_data_driven() -> void:
 	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.MEADOW), &"building_meadow_dwelling")
 	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.EMBER_FIELD), &"building_scorched_hollow")
 	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.RIVER), &"")
+	assert_true(catalog.is_placeable_form(&"form_fox_den"))
+	assert_eq(catalog.resolve_form_placement(&"form_fox_den", BiomeType.Value.MEADOW), &"building_fox_den")
+	assert_eq(catalog.resolve_form_placement(&"form_fox_den", BiomeType.Value.BADLANDS), &"building_fox_den")
+	assert_eq(catalog.resolve_form_placement(&"form_fox_den", BiomeType.Value.RIVER), &"")
 	assert_true(catalog.is_placeable_form(&"form_reed_nest"))
 	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.RIVER), &"building_reed_nest")
 	assert_eq(catalog.resolve_form_placement(&"form_reed_nest", BiomeType.Value.WETLANDS), &"building_reed_nest")

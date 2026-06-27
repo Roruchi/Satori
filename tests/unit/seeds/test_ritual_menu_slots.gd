@@ -48,13 +48,27 @@ func _setup_context() -> Dictionary:
 	return {"game_state": game_state, "growth": growth, "alchemy": alchemy, "discovery": discovery}
 
 func _cleanup_context(ctx: Dictionary) -> void:
-	for key: String in ["growth", "alchemy", "discovery"]:
+	for key: String in ["growth", "alchemy", "discovery", "spirit_service"]:
 		var node_variant: Variant = ctx.get(key, null)
 		if node_variant is Node:
 			var node: Node = node_variant as Node
 			if node.get_parent() != null:
 				node.get_parent().remove_child(node)
 			node.free()
+
+func _add_active_red_fox(ctx: Dictionary) -> SpiritService:
+	var spirit_service: SpiritService = SpiritService.new()
+	spirit_service.name = "SpiritService"
+	var root: Node = get_tree().root
+	var existing: Node = root.get_node_or_null("/root/SpiritService")
+	if existing != null:
+		root.remove_child(existing)
+		existing.free()
+	root.add_child(spirit_service)
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i.ZERO, Rect2i())
+	spirit_service._active_instances["spirit_red_fox"] = fox
+	ctx["spirit_service"] = spirit_service
+	return spirit_service
 
 func test_duplicate_ritual_inputs_are_rejected_without_consumption() -> void:
 	var ctx: Dictionary = _setup_context()
@@ -132,6 +146,42 @@ func test_living_wood_and_fire_shape_warm_hollow() -> void:
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
 	assert_true(pouch.find_building_index(&"form_warm_hollow") >= 0)
+	_cleanup_context(ctx)
+
+func test_living_wood_and_red_fox_shape_fox_den_without_fire_charge() -> void:
+	var ctx: Dictionary = _setup_context()
+	_add_active_red_fox(ctx)
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var discovery: DiscoveryStub = ctx["discovery"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
+	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.KA, 0)
+	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "spirit:spirit_red_fox"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_fox_den")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), 0)
+	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood - 1)
+	assert_true(discovery.discovered_ids.has(&"disc_fox_den"))
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_fox_den") >= 0)
+	_cleanup_context(ctx)
+
+func test_red_fox_is_not_generic_fire_replacement() -> void:
+	var ctx: Dictionary = _setup_context()
+	_add_active_red_fox(ctx)
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"ember_clay", 1)
+	alchemy.set_element_charge_for_testing(GodaiElementScript.Value.KA, 0)
+	var before_clay: int = alchemy.get_material_count(&"ember_clay")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:ember_clay", "spirit:spirit_red_fox"])
+	assert_eq(result.outcome, RitualAttemptResultScript.OUTCOME_MISSING_ESSENCE)
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), 0)
+	assert_eq(alchemy.get_material_count(&"ember_clay"), before_clay)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_eq(pouch.find_building_index(&"form_kiln_heart"), -1)
 	_cleanup_context(ctx)
 
 func test_reed_fiber_and_water_shape_reed_nest_and_record_discovery() -> void:

@@ -6,6 +6,9 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 
 const DEFAULT_RITUAL_CSV_PATH: String = "res://data/discovery_editor/runtime/rituals.csv.txt"
 const DEFAULT_MATERIAL_CSV_PATH: String = "res://data/discovery_editor/runtime/materials.csv.txt"
+const _SPIRIT_COMPONENT_IDS: Dictionary = {
+	"red fox": "spirit_red_fox",
+}
 
 class RitualEntry extends RefCounted:
 	var ritual_id: StringName = &""
@@ -169,6 +172,9 @@ func _input_key_for_component(component: String) -> String:
 	var material_variant: Variant = _material_name_to_id.get(lower, null)
 	if material_variant != null:
 		return "material:%s" % str(material_variant)
+	var spirit_variant: Variant = _SPIRIT_COMPONENT_IDS.get(lower, null)
+	if spirit_variant != null:
+		return "spirit:%s" % str(spirit_variant)
 	return ""
 
 func _element_for_essence_component(component: String) -> int:

@@ -147,7 +147,7 @@ Living Wood is the first material family. In the opening phase, every Living Woo
 | Dew Bowl | Living Wood + Water Essence | Increases Wind Essence storage cap; later may soothe visiting spirits | "A bowl of dew teaches the wind where to rest." |
 | Root Network | Living Wood + Earth Essence | Increases material generation speed for nearby Meadow tiles; later may route harvested materials toward storage | "Roots do not hurry by running. They hurry by already being there." |
 | Wind Chime | Living Wood + Wind Essence | Grants freedom/flow; improves invite speed and can auto-harvest nearby Living Wood from Meadow tiles | "The meadow has a voice only wind can teach it." |
-| Fox Den variant | Meadow Dwelling + Fire Essence + Red Fox | Red Fox-specialized dwelling or later upgrade | "The fox does not ask for walls. It asks for a warm hollow." |
+| Fox Den variant | Living Wood + Red Fox | Red Fox-specialized upgraded dwelling. Red Fox supplies fire intent only for this Fox Den ritual and is not consumed | "The fox does not ask for walls. It asks for a warm hollow." |
 | Hare Hollow variant | Meadow Dwelling + Earth Essence + Hare | Hare-specialized dwelling or later upgrade | "Four soft steps return to one hidden hollow." |
 | Tiny Shrine | Living Wood + Ku Essence | Increases rare visitors; opens deeper ritual hints | "A small shrine is not small to a spirit that has nowhere to bow." |
 
@@ -241,7 +241,7 @@ Assistant examples:
 
 | Spirit | Counts As | Example Assistant Ritual |
 |--------|-----------|--------------------------|
-| Red Fox | Fire | Living Wood + Earth Essence + Red Fox → Cozy Fox Den |
+| Red Fox | Fox Den fire intent only | Living Wood + Red Fox → Fox Den |
 | Crane Spirit | Wind | Mist Thread + Wind component + Crane Spirit → Whisper Path variant |
 | Frog Spirit | Water | Stone Basin + Ku Essence + Frog Spirit → Rain Kami invitation path |
 | Tanuki | Earth | Foundation component + Earth Essence + Tanuki → Hidden Storehouse |
@@ -330,7 +330,7 @@ Design implication: Fox Den should not be the base Meadow house. Meadow Dwelling
 
 ### Current Material Spawn Catalog
 
-These are loaded from `data/discovery_editor/runtime/materials.csv.txt` for editor/runtime reference and mirrored by `GameState._material_definition_for_biome()` for actual spawn behavior. Material nodes spawn on matching biome clusters, skip completed structures and shrine/build tiles, and harvest into `SeedAlchemyService` material inventory with a default capacity of 99.
+These are loaded from `data/discovery_editor/runtime/materials.csv.txt` for editor/runtime reference and mirrored by `GameState._material_definition_for_biome()` for actual spawn behavior. Material nodes spawn on matching biome clusters, skip completed structures and shrine/build tiles, grow through four visible stages over 60 progression-scaled seconds, and only harvest into `SeedAlchemyService` material inventory once fully grown. The default material capacity is 99.
 
 | Material | Material ID | Current Spawn Biomes | Visual ID | Current Ritual Use |
 |----------|-------------|----------------------|-----------|--------------------|
@@ -360,6 +360,7 @@ These rows are loaded from `data/discovery_editor/runtime/rituals.csv.txt` by `R
 | `ritual_id` | Inputs | Produces | Inventory Key | Discovery Entry | Placement Outcome |
 |-------------|--------|----------|---------------|-----------------|-------------------|
 | `ritual_warm_hollow` | Living Wood + Fire Essence | Warm Hollow | `form_warm_hollow` | `disc_warm_hollow` | Meadow -> `building_meadow_dwelling`; Ember Field / Ember Shrine -> `building_scorched_hollow` |
+| `ritual_fox_den` | Living Wood + Red Fox | Fox Den | `form_fox_den` | `disc_fox_den` | Meadow / Badlands -> `building_fox_den` |
 | `ritual_dew_bowl` | Living Wood + Water Essence | Dew Bowl | `form_dew_bowl` | `disc_dew_bowl` | Meadow / Cloud Ridge -> `building_dew_bowl` |
 | `ritual_root_network` | Living Wood + Earth Essence | Root Network | `form_root_network` | `disc_root_network` | Meadow / Cloud Ridge -> `building_root_network` |
 | `ritual_wind_chime` | Living Wood + Wind Essence | Wind Chime | `form_wind_chime` | `disc_wind_chime` | Meadow / Cloud Ridge -> `building_wind_chime` |

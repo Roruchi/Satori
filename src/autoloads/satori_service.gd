@@ -25,6 +25,7 @@ const UNIQUE_ALREADY_BUILT_REASON: String = "unique_already_built"
 const HOUSED_GAIN_INTERVAL_SECONDS: float = 60.0
 const UNHOUSED_LOSS_INTERVAL_SECONDS: float = 30.0
 const STILLNESS_UNHOUSED_LOSS_INTERVAL_SECONDS: float = 120.0
+const UPGRADED_HOUSE_BONUS_PER_MINUTE: int = 1
 const DISCOVERY_CAP_PER_UNIQUE: int = 50
 
 var _conditions: Array[SatoriConditionSet] = []
@@ -319,9 +320,12 @@ func process_minute_tick(snapshot_override: Dictionary = {}) -> Dictionary:
 	var snapshot: Dictionary = snapshot_override if not snapshot_override.is_empty() else _snapshot_from_services()
 	var housed_count: int = int(snapshot.get("housed_count", 0))
 	var unhoused_count: int = int(snapshot.get("unhoused_count", 0))
+	var upgraded_housed_count: int = int(snapshot.get("upgraded_housed_count", 0))
 	var unhoused_loss_interval: float = _unhoused_loss_interval_for_current_era()
 	var base_delta: float = (
 		float(housed_count) * (TICK_INTERVAL_SECONDS / HOUSED_GAIN_INTERVAL_SECONDS)
+	) + (
+		float(upgraded_housed_count * UPGRADED_HOUSE_BONUS_PER_MINUTE) * (TICK_INTERVAL_SECONDS / 60.0)
 	) - (
 		float(unhoused_count) * (TICK_INTERVAL_SECONDS / unhoused_loss_interval)
 	)
@@ -384,7 +388,9 @@ func _emit_satori_if_changed() -> void:
 func _snapshot_from_services() -> Dictionary:
 	var housed_count: int = 0
 	var unhoused_count: int = 0
+	var upgraded_housed_count: int = 0
 	var housed_by_island: Dictionary = {}
+	var upgraded_housed_by_island: Dictionary = {}
 	var spirit_service: Node = get_node_or_null("/root/Garden/SpiritService")
 	if spirit_service == null:
 		spirit_service = get_node_or_null("/root/SpiritService")
@@ -392,13 +398,19 @@ func _snapshot_from_services() -> Dictionary:
 		var snap: Dictionary = spirit_service.get_housing_snapshot()
 		housed_count = int(snap.get("housed_count", 0))
 		unhoused_count = int(snap.get("unhoused_count", 0))
+		upgraded_housed_count = int(snap.get("upgraded_housed_count", 0))
 		var by_island_variant: Variant = snap.get("housed_by_island", {})
 		if by_island_variant is Dictionary:
 			housed_by_island = (by_island_variant as Dictionary).duplicate(true)
+		var upgraded_by_island_variant: Variant = snap.get("upgraded_housed_by_island", {})
+		if upgraded_by_island_variant is Dictionary:
+			upgraded_housed_by_island = (upgraded_by_island_variant as Dictionary).duplicate(true)
 	return {
 		"housed_count": housed_count,
 		"unhoused_count": unhoused_count,
+		"upgraded_housed_count": upgraded_housed_count,
 		"housed_by_island": housed_by_island,
+		"upgraded_housed_by_island": upgraded_housed_by_island,
 	}
 
 func _recompute_structures_from_grid() -> void:
