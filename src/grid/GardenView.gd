@@ -416,27 +416,52 @@ func _draw_material_nodes() -> void:
 		if not (node_variant is Dictionary):
 			continue
 		var material_node: Dictionary = node_variant as Dictionary
-		if StringName(str(material_node.get("state", &""))) != &"ready":
+		var state: StringName = StringName(str(material_node.get("state", &"")))
+		if state == &"collected":
 			continue
-		var material_id: StringName = StringName(str(material_node.get("material_id", &"")))
-		_draw_material_node_visual(coord, material_id, interact_mode)
+		_draw_material_node_visual(coord, material_node, interact_mode)
 
-func _draw_material_node_visual(coord: Vector2i, material_id: StringName, interact_mode: bool) -> void:
+func _draw_material_node_visual(coord: Vector2i, material_node: Dictionary, interact_mode: bool) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-	_draw_collect_ring(center, _material_color(material_id), coord)
+	var material_id: StringName = StringName(str(material_node.get("material_id", &"")))
+	var state: StringName = StringName(str(material_node.get("state", &"")))
+	var ready: bool = state == &"ready"
+	var stage: int = _material_growth_stage(material_node)
+	if ready:
+		_draw_collect_ring(center, _material_color(material_id), coord)
+	else:
+		_draw_growth_ring(center, _material_color(material_id), material_node)
 	match material_id:
 		&"living_wood":
-			_draw_living_wood_node(coord)
+			_draw_living_wood_node(coord, stage)
 		&"reed_fiber":
-			_draw_reed_fiber_node(coord)
+			_draw_reed_fiber_node(coord, stage)
 		&"spirit_stone":
-			_draw_spirit_stone_node(coord)
+			_draw_spirit_stone_node(coord, stage)
 		&"ember_clay":
-			_draw_ember_clay_node(coord)
+			_draw_ember_clay_node(coord, stage)
 		_:
 			draw_circle(center, 6.0, _material_color(material_id))
-	var label: String = "Tap: %s" % _material_label(material_id) if interact_mode else _material_label(material_id)
-	_draw_seed_overlay_text(center + Vector2(-36.0, -29.0), label, 10, _material_color(material_id).lightened(0.35))
+	if ready:
+		var label: String = "Tap: %s" % _material_label(material_id) if interact_mode else _material_label(material_id)
+		_draw_seed_overlay_text(center + Vector2(-36.0, -29.0), label, 10, _material_color(material_id).lightened(0.35))
+
+func _material_growth_stage(material_node: Dictionary) -> int:
+	if StringName(str(material_node.get("state", &""))) == &"ready":
+		return 3
+	return clampi(int(material_node.get("growth_stage", 0)), 0, 3)
+
+func _material_growth_scale(stage: int) -> float:
+	var scales: Array = [0.42, 0.62, 0.82, 1.0]
+	return float(scales[clampi(stage, 0, scales.size() - 1)])
+
+func _draw_growth_ring(center: Vector2, color: Color, material_node: Dictionary) -> void:
+	var duration: float = maxf(0.1, float(material_node.get("growth_duration", 60.0)))
+	var elapsed: float = clampf(float(material_node.get("growth_elapsed", 0.0)), 0.0, duration)
+	var progress: float = elapsed / duration
+	var ring_radius: float = TILE_RADIUS * 0.68
+	draw_arc(center, ring_radius, 0.0, TAU, 32, Color(color.r, color.g, color.b, 0.22), 1.6)
+	draw_arc(center, ring_radius, -PI * 0.5, -PI * 0.5 + TAU * progress, 20, Color(color.r, color.g, color.b, 0.74), 2.2)
 
 func _draw_collect_ring(center: Vector2, color: Color, coord: Vector2i) -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_anim_time * 2.4 + float(hash(coord) % 19))
@@ -445,27 +470,43 @@ func _draw_collect_ring(center: Vector2, color: Color, coord: Vector2i) -> void:
 	draw_arc(center, ring_radius, 0.0, TAU, 32, ring_color, 2.4)
 	draw_arc(center, ring_radius + 3.2, deg_to_rad(28.0), deg_to_rad(134.0), 10, Color(1.0, 1.0, 1.0, 0.34 + pulse * 0.22), 1.5)
 
-func _draw_living_wood_node(coord: Vector2i) -> void:
+func _draw_living_wood_node(coord: Vector2i, stage: int) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	var in_large_cluster: bool = _is_in_large_cluster(coord, BiomeType.Value.MEADOW)
-	var scale: float = 1.22 if in_large_cluster else 1.0
+	var scale: float = _material_growth_scale(stage) * (1.16 if in_large_cluster else 1.0)
 	var trunk_base: Vector2 = center + Vector2(0.0, 6.0)
+	draw_circle(center + Vector2(0.0, 7.0), 5.0 + scale * 3.0, Color(0.08, 0.18, 0.08, 0.24))
+	if stage == 0:
+		draw_line(center + Vector2(0.0, 5.0), center + Vector2(0.0, -5.0), Color(0.39, 0.28, 0.15, 0.96), 1.8)
+		draw_circle(center + Vector2(-2.8, -4.2), 3.2, Color(0.42, 0.76, 0.30, 0.96))
+		draw_circle(center + Vector2(3.0, -5.2), 2.8, Color(0.64, 0.88, 0.38, 0.95))
+		return
 	draw_line(trunk_base, center + Vector2(0.0, -6.0 * scale), Color(0.38, 0.24, 0.12, 0.98), 4.0 * scale)
-	draw_line(center + Vector2(-3.0, -1.0), center + Vector2(-9.0 * scale, -9.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
-	draw_line(center + Vector2(3.0, -2.0), center + Vector2(9.0 * scale, -11.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
-	draw_circle(center + Vector2(-7.0 * scale, -10.0 * scale), 6.2 * scale, Color(0.32, 0.62, 0.24, 0.96))
-	draw_circle(center + Vector2(0.0, -14.0 * scale), 7.4 * scale, Color(0.40, 0.72, 0.28, 0.96))
-	draw_circle(center + Vector2(8.0 * scale, -9.0 * scale), 5.8 * scale, Color(0.24, 0.55, 0.22, 0.96))
-	draw_circle(center + Vector2(1.5, -13.0 * scale), 2.5 * scale, Color(0.82, 0.96, 0.52, 0.94))
+	if stage >= 2:
+		draw_line(center + Vector2(-3.0, -1.0), center + Vector2(-9.0 * scale, -9.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
+		draw_line(center + Vector2(3.0, -2.0), center + Vector2(9.0 * scale, -11.0 * scale), Color(0.38, 0.24, 0.12, 0.90), 2.0 * scale)
+	draw_circle(center + Vector2(0.0, -12.0 * scale), 6.2 * scale, Color(0.40, 0.72, 0.28, 0.96))
+	if stage >= 2:
+		draw_circle(center + Vector2(-7.0 * scale, -10.0 * scale), 5.4 * scale, Color(0.32, 0.62, 0.24, 0.96))
+		draw_circle(center + Vector2(8.0 * scale, -9.0 * scale), 5.0 * scale, Color(0.24, 0.55, 0.22, 0.96))
+	if stage >= 3:
+		draw_circle(center + Vector2(1.5, -13.0 * scale), 2.5 * scale, Color(0.82, 0.96, 0.52, 0.94))
 
-func _draw_reed_fiber_node(coord: Vector2i) -> void:
+func _draw_reed_fiber_node(coord: Vector2i, stage: int) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
+	var scale: float = _material_growth_scale(stage)
 	var water_shadow: Color = Color(0.03, 0.14, 0.24, 0.40)
-	draw_circle(center + Vector2(1.0, 2.0), 9.2, water_shadow)
-	for reed_x: float in [-7.0, -3.5, 6.5]:
+	draw_circle(center + Vector2(1.0, 2.0), 5.0 + scale * 4.5, water_shadow)
+	var reed_offsets: Array = [-7.0, -3.5, 2.5, 6.5]
+	for index: int in range(stage + 1):
+		var reed_x: float = float(reed_offsets[index])
 		var base: Vector2 = center + Vector2(reed_x, 6.0)
-		draw_line(base, base + Vector2(1.4, -15.0), Color(0.58, 0.82, 0.38, 0.95), 1.7)
-		draw_circle(base + Vector2(1.5, -15.0), 1.8, Color(0.86, 0.77, 0.34, 0.90))
+		var height: float = (6.0 + float(stage) * 3.0) * (0.92 + float(index) * 0.06)
+		draw_line(base, base + Vector2(1.4, -height), Color(0.58, 0.82, 0.38, 0.95), 1.4 + scale * 0.5)
+		if stage >= 2:
+			draw_circle(base + Vector2(1.5, -height), 1.4 + scale * 0.5, Color(0.86, 0.77, 0.34, 0.90))
+	if stage < 3:
+		return
 	var fish_center: Vector2 = center + Vector2(2.5, -3.0 + sin(_anim_time * 2.2) * 1.2)
 	var fish_col: Color = Color(0.72, 0.94, 1.0, 0.94)
 	draw_colored_polygon(PackedVector2Array([
@@ -483,19 +524,23 @@ func _draw_reed_fiber_node(coord: Vector2i) -> void:
 	]), Color(0.44, 0.78, 0.95, 0.92))
 	draw_circle(fish_center + Vector2(5.0, -0.8), 0.9, Color(0.02, 0.08, 0.12, 0.90))
 
-func _draw_spirit_stone_node(coord: Vector2i) -> void:
+func _draw_spirit_stone_node(coord: Vector2i, stage: int) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-	draw_circle(center + Vector2(0.0, 6.5), 8.6, Color(0.05, 0.06, 0.08, 0.34))
+	var scale: float = _material_growth_scale(stage)
+	draw_circle(center + Vector2(0.0, 6.5), 4.5 + scale * 4.2, Color(0.05, 0.06, 0.08, 0.34))
 	var crystal_col: Color = Color(0.74, 0.82, 0.90, 0.96)
 	var glow_col: Color = Color(0.84, 0.96, 1.0, 0.58)
-	for crystal: Dictionary in [
+	var crystals: Array = [
 		{"offset": Vector2(-6.0, 1.0), "height": 13.0, "width": 5.0},
 		{"offset": Vector2(0.0, -2.0), "height": 17.0, "width": 6.5},
 		{"offset": Vector2(6.0, 2.0), "height": 11.0, "width": 4.5},
-	]:
+		{"offset": Vector2(1.0, 6.0), "height": 8.0, "width": 3.8},
+	]
+	for index: int in range(stage + 1):
+		var crystal: Dictionary = crystals[index]
 		var offset: Vector2 = crystal["offset"]
-		var height: float = float(crystal["height"])
-		var width: float = float(crystal["width"])
+		var height: float = float(crystal["height"]) * scale
+		var width: float = float(crystal["width"]) * scale
 		var base: Vector2 = center + offset
 		draw_colored_polygon(PackedVector2Array([
 			base + Vector2(-width, 4.0),
@@ -503,20 +548,25 @@ func _draw_spirit_stone_node(coord: Vector2i) -> void:
 			base + Vector2(width, 4.0),
 			base + Vector2(0.0, 7.0),
 		]), crystal_col)
-		draw_line(base + Vector2(0.0, -height + 1.0), base + Vector2(0.0, 5.5), glow_col, 1.4)
+		if stage >= 2:
+			draw_line(base + Vector2(0.0, -height + 1.0), base + Vector2(0.0, 5.5), glow_col, 1.2)
 
-func _draw_ember_clay_node(coord: Vector2i) -> void:
+func _draw_ember_clay_node(coord: Vector2i, stage: int) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-	draw_circle(center + Vector2(0.0, 5.0), 9.0, Color(0.16, 0.04, 0.02, 0.45))
+	var scale: float = _material_growth_scale(stage)
+	draw_circle(center + Vector2(0.0, 5.0), 4.5 + scale * 4.8, Color(0.16, 0.04, 0.02, 0.45))
 	var clay_col: Color = Color(0.70, 0.28, 0.16, 0.96)
 	var ember_col: Color = Color(1.0, 0.72, 0.25, 0.94)
-	for shard: Dictionary in [
+	var shards: Array = [
 		{"offset": Vector2(-5.0, 2.0), "radius": 5.0},
 		{"offset": Vector2(2.5, -2.0), "radius": 6.5},
 		{"offset": Vector2(7.0, 4.0), "radius": 4.2},
-	]:
+		{"offset": Vector2(0.0, 6.0), "radius": 3.6},
+	]
+	for index: int in range(stage + 1):
+		var shard: Dictionary = shards[index]
 		var offset: Vector2 = shard["offset"]
-		var radius: float = float(shard["radius"])
+		var radius: float = float(shard["radius"]) * scale
 		var shard_center: Vector2 = center + offset
 		draw_colored_polygon(PackedVector2Array([
 			shard_center + Vector2(-radius, 2.0),
@@ -524,7 +574,8 @@ func _draw_ember_clay_node(coord: Vector2i) -> void:
 			shard_center + Vector2(radius, -radius * 0.2),
 			shard_center + Vector2(radius * 0.35, radius),
 		]), clay_col)
-		draw_circle(shard_center + Vector2(1.0, -1.0), radius * 0.24, ember_col)
+		if stage >= 2:
+			draw_circle(shard_center + Vector2(1.0, -1.0), radius * 0.24, ember_col)
 
 func _draw_interact_hover_popover() -> void:
 	var hud: Node = get_node_or_null("../HUD")
@@ -542,13 +593,19 @@ func _draw_interact_hover_popover() -> void:
 	var node_variant: Variant = tile.metadata.get("material_node", null)
 	if node_variant is Dictionary:
 		material_node = node_variant as Dictionary
-	var has_ready_material: bool = not material_node.is_empty() and StringName(str(material_node.get("state", &""))) == &"ready"
-	if not is_house and not is_structure and not has_ready_material:
+	var has_material: bool = not material_node.is_empty() and StringName(str(material_node.get("state", &""))) != &"collected"
+	var has_ready_material: bool = has_material and StringName(str(material_node.get("state", &""))) == &"ready"
+	if not is_house and not is_structure and not has_material:
 		return
 	var lines: Array[String] = []
-	if has_ready_material:
+	if has_material:
 		lines.append("Material: %s" % _material_label(StringName(str(material_node.get("material_id", &"")))))
-		lines.append("Tap to harvest")
+		if has_ready_material:
+			lines.append("Tap to harvest")
+		else:
+			var duration: float = maxf(0.1, float(material_node.get("growth_duration", 60.0)))
+			var elapsed: float = clampf(float(material_node.get("growth_elapsed", 0.0)), 0.0, duration)
+			lines.append("Growing: %ds" % int(ceil(duration - elapsed)))
 	if is_house:
 		lines.append("Type: %s" % _structure_label_for_tile(tile))
 		var owner_label: String = "Owner: Unbound"

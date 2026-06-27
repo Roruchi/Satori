@@ -7,8 +7,10 @@ const _HexUtils = preload("res://src/grid/hex_utils.gd")
 const _GodaiElement = preload("res://src/seeds/GodaiElement.gd")
 const MATERIAL_OUTCOME_SUCCESS: StringName = &"success"
 const MATERIAL_OUTCOME_MISSING_NODE: StringName = &"missing_node"
+const MATERIAL_OUTCOME_NOT_READY: StringName = &"not_ready"
 const MATERIAL_OUTCOME_ALREADY_COLLECTED: StringName = &"already_collected"
 const MATERIAL_OUTCOME_INVENTORY_FULL: StringName = &"inventory_full"
+const MATERIAL_STATE_GROWING: StringName = &"growing"
 const MATERIAL_STATE_READY: StringName = &"ready"
 const MATERIAL_STATE_COLLECTED: StringName = &"collected"
 const MATERIAL_LIVING_WOOD: StringName = &"living_wood"
@@ -16,6 +18,8 @@ const MATERIAL_REED_FIBER: StringName = &"reed_fiber"
 const MATERIAL_SPIRIT_STONE: StringName = &"spirit_stone"
 const MATERIAL_EMBER_CLAY: StringName = &"ember_clay"
 const MATERIAL_BASE_TILE_SECONDS: float = 100.0
+const MATERIAL_GROWTH_DURATION_SECONDS: float = 60.0
+const MATERIAL_GROWTH_STAGE_COUNT: int = 4
 const MATERIAL_CAPACITY_BONUS_PER_STORAGE: int = 25
 const MATERIAL_STRUCTURE_EFFECT_RADIUS: int = 1
 const ESSENCE_CAPACITY_BONUS_PER_STRUCTURE: int = 1
@@ -155,6 +159,7 @@ func evaluate_material_spawns(delta_seconds: float) -> Array[Dictionary]:
 	if grid == null or delta_seconds <= 0.0:
 		return spawned
 	var scaled_delta_seconds: float = _progression_delta(delta_seconds)
+	_advance_material_node_growth(scaled_delta_seconds)
 	var active_cluster_keys: Dictionary = {}
 	for cluster: Dictionary in _collect_material_spawn_clusters():
 		var cluster_key: String = str(cluster.get("cluster_key", ""))
@@ -306,6 +311,9 @@ func harvest_material_at(coord: Vector2i, actor: StringName = &"player") -> Dict
 	if state == MATERIAL_STATE_COLLECTED:
 		material_harvest_blocked.emit(coord, MATERIAL_OUTCOME_ALREADY_COLLECTED)
 		return _material_result(MATERIAL_OUTCOME_ALREADY_COLLECTED, material_id, amount)
+	if state == MATERIAL_STATE_GROWING:
+		material_harvest_blocked.emit(coord, MATERIAL_OUTCOME_NOT_READY)
+		return _material_result(MATERIAL_OUTCOME_NOT_READY, material_id, amount)
 	if state != MATERIAL_STATE_READY or amount <= 0 or material_id == &"":
 		material_harvest_blocked.emit(coord, MATERIAL_OUTCOME_MISSING_NODE)
 		return _material_result(MATERIAL_OUTCOME_MISSING_NODE, material_id, amount)
@@ -358,7 +366,7 @@ func _collect_material_spawn_clusters() -> Array[Dictionary]:
 			queue_index += 1
 			cluster_coords.append(coord)
 			var tile: GardenTile = grid.get_tile(coord)
-			if tile != null and not _tile_has_ready_material(tile):
+			if tile != null and not _tile_has_active_material(tile):
 				spawnable_coords.append(coord)
 			for neighbor: Vector2i in _HexUtils.get_neighbors(coord):
 				if visited.has(neighbor):
@@ -397,6 +405,15 @@ func _is_material_spawn_tile(tile: GardenTile) -> bool:
 		return false
 	return not _material_definition_for_biome(tile.biome).is_empty()
 
+func _tile_has_active_material(tile: GardenTile) -> bool:
+	if tile == null:
+		return false
+	var node_variant: Variant = tile.metadata.get("material_node", null)
+	if not (node_variant is Dictionary):
+		return false
+	var node: Dictionary = node_variant as Dictionary
+	return StringName(str(node.get("state", &""))) != MATERIAL_STATE_COLLECTED
+
 func _tile_has_ready_material(tile: GardenTile) -> bool:
 	if tile == null:
 		return false
@@ -411,7 +428,7 @@ func _spawn_material_node_for_tile(coord: Vector2i, tile: GardenTile) -> Diction
 		return {}
 	if not _is_material_spawn_tile(tile):
 		return {}
-	if _tile_has_ready_material(tile):
+	if _tile_has_active_material(tile):
 		return {}
 	var material_def: Dictionary = _material_definition_for_biome(tile.biome)
 	if material_def.is_empty():
@@ -426,17 +443,55 @@ func _spawn_material_node_for_tile(coord: Vector2i, tile: GardenTile) -> Diction
 		"amount": 1,
 		"coord": coord,
 		"visual_id": visual_id,
-		"state": MATERIAL_STATE_READY,
+		"state": MATERIAL_STATE_GROWING,
+		"growth_elapsed": 0.0,
+		"growth_duration": MATERIAL_GROWTH_DURATION_SECONDS,
+		"growth_stage": 0,
 		"spawned_at": Time.get_unix_time_from_system(),
 	}
 	tile.metadata["material_node"] = node
 	material_node_spawned.emit(coord, material_id, 1)
-	if _try_auto_harvest_material_node(coord, material_id, 1):
-		var auto_node: Dictionary = node.duplicate(true)
-		auto_node["state"] = MATERIAL_STATE_COLLECTED
-		auto_node["auto_harvested"] = true
-		return auto_node
 	return node
+
+func _advance_material_node_growth(scaled_delta_seconds: float) -> void:
+	if grid == null or scaled_delta_seconds <= 0.0:
+		return
+	for coord_variant: Variant in grid.tiles.keys():
+		if not (coord_variant is Vector2i):
+			continue
+		var coord: Vector2i = coord_variant as Vector2i
+		var tile: GardenTile = grid.get_tile(coord)
+		if tile == null:
+			continue
+		var node_variant: Variant = tile.metadata.get("material_node", null)
+		if not (node_variant is Dictionary):
+			continue
+		var node: Dictionary = node_variant as Dictionary
+		var state: StringName = StringName(str(node.get("state", &"")))
+		if state != MATERIAL_STATE_GROWING:
+			continue
+		var material_id: StringName = StringName(str(node.get("material_id", &"")))
+		var amount: int = int(node.get("amount", 0))
+		var duration: float = maxf(0.1, float(node.get("growth_duration", MATERIAL_GROWTH_DURATION_SECONDS)))
+		var elapsed: float = minf(duration, float(node.get("growth_elapsed", 0.0)) + scaled_delta_seconds)
+		var previous_stage: int = int(node.get("growth_stage", 0))
+		var next_stage: int = _growth_stage_for_elapsed(elapsed, duration)
+		node["growth_elapsed"] = elapsed
+		node["growth_stage"] = next_stage
+		var ready: bool = elapsed >= duration
+		if ready:
+			node["state"] = MATERIAL_STATE_READY
+		tile.metadata["material_node"] = node
+		if next_stage != previous_stage or ready:
+			material_node_spawned.emit(coord, material_id, amount)
+		if ready and _try_auto_harvest_material_node(coord, material_id, amount):
+			continue
+
+func _growth_stage_for_elapsed(elapsed: float, duration: float) -> int:
+	if elapsed >= duration:
+		return MATERIAL_GROWTH_STAGE_COUNT - 1
+	var progress: float = clampf(elapsed / maxf(0.1, duration), 0.0, 0.999)
+	return clampi(floori(progress * float(MATERIAL_GROWTH_STAGE_COUNT - 1)), 0, MATERIAL_GROWTH_STAGE_COUNT - 2)
 
 func _try_auto_harvest_material_node(coord: Vector2i, material_id: StringName, amount: int) -> bool:
 	if material_id != MATERIAL_LIVING_WOOD:

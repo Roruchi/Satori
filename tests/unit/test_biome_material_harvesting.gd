@@ -57,6 +57,9 @@ func _spawn_materials(game_state: Node, delta_seconds: float) -> Array:
 		return spawned_variant as Array
 	return []
 
+func _mature_materials(game_state: Node, delta_seconds: float = 60.0) -> void:
+	game_state.evaluate_material_spawns(delta_seconds)
+
 func _complete_structure(game_state: Node, coord: Vector2i, biome: int, structure_id: String) -> GardenTile:
 	game_state.place_tile_from_seed(coord, biome)
 	var tile: GardenTile = game_state.grid.get_tile(coord)
@@ -84,8 +87,15 @@ func test_single_meadow_tile_spawns_living_wood_after_full_interval() -> void:
 	var node: Dictionary = game_state.get_material_node_at(coord)
 	assert_false(node.is_empty())
 	assert_eq(StringName(str(node.get("material_id", &""))), &"living_wood")
-	assert_eq(StringName(str(node.get("state", &""))), &"ready")
+	assert_eq(StringName(str(node.get("state", &""))), &"growing")
+	assert_eq(int(node.get("growth_stage", -1)), 0)
 	assert_eq(int(node.get("amount", 0)), 1)
+	assert_false(game_state.has_ready_material_at(coord))
+	assert_eq(StringName(str(game_state.harvest_material_at(coord).get("outcome", &""))), &"not_ready")
+	_mature_materials(game_state)
+	node = game_state.get_material_node_at(coord)
+	assert_eq(StringName(str(node.get("state", &""))), &"ready")
+	assert_eq(int(node.get("growth_stage", -1)), 3)
 	_cleanup_context(ctx)
 
 func test_ten_meadow_cluster_spawns_one_living_wood_after_ten_seconds() -> void:
@@ -100,6 +110,12 @@ func test_ten_meadow_cluster_spawns_one_living_wood_after_ten_seconds() -> void:
 	for index: int in range(10):
 		if game_state.has_ready_material_at(Vector2i(index + 1, 0)):
 			ready_count += 1
+	assert_eq(ready_count, 0)
+	_mature_materials(game_state)
+	ready_count = 0
+	for index: int in range(10):
+		if game_state.has_ready_material_at(Vector2i(index + 1, 0)):
+			ready_count += 1
 	assert_eq(ready_count, 1)
 	_cleanup_context(ctx)
 
@@ -109,6 +125,8 @@ func test_full_meadow_cluster_does_not_spawn_extra_materials() -> void:
 	var coord: Vector2i = Vector2i(1, 0)
 	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	assert_eq(_spawn_materials(game_state, 100.0).size(), 0)
+	_mature_materials(game_state)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 0)
 	assert_true(game_state.has_ready_material_at(coord))
 	_cleanup_context(ctx)
@@ -125,6 +143,7 @@ func test_material_spawn_skips_structure_tiles() -> void:
 	structure_tile.metadata["is_building_complete"] = true
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
 	assert_false(game_state.has_ready_material_at(structure_coord))
+	_mature_materials(game_state)
 	assert_true(game_state.has_ready_material_at(spawn_coord))
 	_cleanup_context(ctx)
 
@@ -143,6 +162,9 @@ func test_material_nodes_spawn_for_water_stone_and_fire_families_after_interval(
 		var node: Dictionary = game_state.get_material_node_at(coord)
 		assert_eq(StringName(str(node.get("material_id", &""))), StringName(str(case["material"])))
 		assert_eq(StringName(str(node.get("visual_id", &""))), StringName(str(case["visual"])))
+		assert_eq(StringName(str(node.get("state", &""))), &"growing")
+		_mature_materials(game_state)
+		node = game_state.get_material_node_at(coord)
 		assert_eq(StringName(str(node.get("state", &""))), &"ready")
 	_cleanup_context(ctx)
 
@@ -153,6 +175,7 @@ func test_harvesting_living_wood_adds_material_once() -> void:
 	var coord: Vector2i = Vector2i(1, 0)
 	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	_mature_materials(game_state)
 	var result: Dictionary = game_state.harvest_material_at(coord)
 	assert_eq(StringName(str(result.get("outcome", &""))), &"success")
 	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
@@ -168,6 +191,7 @@ func test_harvesting_non_wood_materials_updates_material_inventory() -> void:
 	var coord: Vector2i = Vector2i(1, 0)
 	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.RIVER)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	_mature_materials(game_state)
 	var result: Dictionary = game_state.harvest_material_at(coord)
 	assert_eq(StringName(str(result.get("outcome", &""))), &"success")
 	assert_eq(alchemy.get_material_count(&"reed_fiber"), 1)
@@ -181,6 +205,7 @@ func test_inventory_full_harvest_preserves_ready_node() -> void:
 	var coord: Vector2i = Vector2i(1, 0)
 	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	_mature_materials(game_state)
 	alchemy.add_material_for_testing(&"living_wood", alchemy.get_material_capacity(&"living_wood"))
 	var result: Dictionary = game_state.harvest_material_at(coord)
 	assert_eq(StringName(str(result.get("outcome", &""))), &"inventory_full")
@@ -226,6 +251,7 @@ func test_root_network_speeds_nearby_living_wood_spawn() -> void:
 	_complete_structure(game_state, root_coord, BiomeTypeScript.Value.MEADOW, "building_root_network")
 	assert_eq(_spawn_materials(game_state, 49.0).size(), 0)
 	assert_eq(_spawn_materials(game_state, 1.0).size(), 1)
+	_mature_materials(game_state)
 	assert_true(game_state.has_ready_material_at(meadow_coord))
 	_cleanup_context(ctx)
 
@@ -239,6 +265,7 @@ func test_kiln_heart_speeds_nearby_ember_clay_spawn() -> void:
 	assert_eq(_spawn_materials(game_state, 49.0).size(), 0)
 	var spawned: Array = _spawn_materials(game_state, 1.0)
 	assert_eq(spawned.size(), 1)
+	_mature_materials(game_state)
 	assert_true(game_state.has_ready_material_at(ember_coord))
 	_cleanup_context(ctx)
 
@@ -252,7 +279,8 @@ func test_wind_chime_auto_harvests_nearby_living_wood() -> void:
 	_complete_structure(game_state, chime_coord, BiomeTypeScript.Value.MEADOW, "building_wind_chime")
 	var spawned: Array = _spawn_materials(game_state, 100.0)
 	assert_eq(spawned.size(), 1)
-	assert_true(bool((spawned[0] as Dictionary).get("auto_harvested", false)))
+	assert_false(bool((spawned[0] as Dictionary).get("auto_harvested", false)))
+	_mature_materials(game_state)
 	assert_false(game_state.has_ready_material_at(meadow_coord))
 	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
 	_cleanup_context(ctx)
@@ -290,6 +318,7 @@ func test_first_session_loop_reaches_warm_hollow_after_harvest() -> void:
 	var coord: Vector2i = Vector2i(1, 0)
 	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.MEADOW)
 	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	_mature_materials(game_state)
 	var harvest_result: Dictionary = game_state.harvest_material_at(coord)
 	assert_eq(StringName(str(harvest_result.get("outcome", &""))), &"success")
 	var shaped: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])

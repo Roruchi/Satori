@@ -197,6 +197,7 @@ func test_building_placement_auto_harvests_material_under_structure() -> void:
 	var coord: Vector2i = Vector2i(123, 0)
 	game_state.place_tile_from_seed(coord, BiomeType.Value.MEADOW, false)
 	game_state.evaluate_material_spawns(100.0)
+	game_state.evaluate_material_spawns(60.0)
 	assert_true(game_state.has_ready_material_at(coord))
 	assert_eq(alchemy.get_material_count(&"living_wood"), 0)
 	assert_true(pouch.add_building(&"form_warm_hollow", 1))

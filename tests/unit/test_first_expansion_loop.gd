@@ -163,6 +163,7 @@ func test_first_expansion_loop_reaches_second_island_without_spirit_assistants()
 	_plant_and_bloom_now(growth, meadow_recipe, Vector2i(1, 0))
 
 	assert_eq(game_state.evaluate_material_spawns(100.0).size(), 1)
+	game_state.evaluate_material_spawns(60.0)
 	var harvest_result: Dictionary = game_state.harvest_material_at(Vector2i(1, 0))
 	assert_eq(StringName(str(harvest_result.get("outcome", &""))), &"success")
 	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
@@ -226,6 +227,7 @@ func test_rain_kami_path_opens_after_reed_nest_on_second_island() -> void:
 
 	var spawned: Array[Dictionary] = game_state.evaluate_material_spawns(100.0)
 	assert_true(spawned.size() > 0)
+	game_state.evaluate_material_spawns(60.0)
 	var reed_coord: Vector2i = Vector2i.ZERO
 	for node: Dictionary in spawned:
 		if StringName(str(node.get("material_id", &""))) == &"reed_fiber":
