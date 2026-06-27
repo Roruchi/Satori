@@ -122,7 +122,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 
 | Priority | Roadmap Phase | Owning Spec | Speckit Package | Alpha Status | Alpha Completion Gate |
 |----------|---------------|-------------|-----------------|--------------|-----------------------|
-| 1 | Phase 0 - Alpha Contract and State Audit | [026-alpha-contract-audit](../specs/026-alpha-contract-audit/spec.md) | Drafted | Not Started | Alpha checklist, current-state audit, and evidence-backed gate ownership are complete. |
+| 1 | Phase 0 - Alpha Contract and State Audit | [026-alpha-contract-audit](../specs/026-alpha-contract-audit/spec.md) | Drafted | Verified | Alpha checklist, current-state audit, and evidence-backed gate ownership are complete. |
 | 2 | Phase 1 - Playable First Session | [027-playable-first-session](../specs/027-playable-first-session/spec.md) | Drafted | Not Started | Fresh save reaches Meadow, Living Wood, Red Fox, Warm Hollow, automatically housed Red Fox in a Meadow dwelling, and save/load. |
 | 3 | Phase 2 - First Island Fun Loop | [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md) | Drafted | Not Started | First island supports Red Fox care, upgraded Fox Den, HUD/hover/Codex Satori feedback, Dew Bowl and Wind Chime, invalid-action clarity, and save/load. |
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Not Started | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. |

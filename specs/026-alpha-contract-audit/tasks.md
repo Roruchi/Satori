@@ -24,10 +24,10 @@
 
 ## Phase 4: User Story 2 - Audit Current Game State (Priority: P1)
 
-- [ ] T009 [US2] Run parse validation through `tools/godot.ps1`.
-- [ ] T010 [US2] Run boot smoke validation through `tools/godot.ps1`.
-- [ ] T011 [US2] Execute the manual alpha spine audit from `quickstart.md`.
-- [ ] T012 [US2] Record each incomplete or unverified gate against its owning alpha spec.
+- [x] T009 [US2] Run parse validation through `tools/godot.ps1`.
+- [x] T010 [US2] Run boot smoke validation through `tools/godot.ps1`.
+- [x] T011 [US2] Execute the manual alpha spine audit from `quickstart.md`.
+- [x] T012 [US2] Record each incomplete or unverified gate against its owning alpha spec.
 
 ## Phase 5: User Story 3 - Preserve Priority Order (Priority: P2)
 
