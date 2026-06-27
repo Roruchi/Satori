@@ -27,6 +27,31 @@ class DiscoveryPersistenceStub:
 		discovered_ids.append(discovery_id)
 		discovery_recorded.emit(discovery_id)
 
+	func serialize_discovery_persistence_state() -> Dictionary:
+		var entries: Array[Dictionary] = []
+		for discovery_id: String in discovered_ids:
+			entries.append({
+				"discovery_id": discovery_id,
+				"display_name": discovery_id,
+				"trigger_timestamp": 0,
+				"triggering_coords": [],
+			})
+		return {"entries": entries}
+
+	func restore_discovery_persistence_state(data: Dictionary) -> bool:
+		discovered_ids.clear()
+		var entries_variant: Variant = data.get("entries", [])
+		if not (entries_variant is Array):
+			return false
+		for entry_variant: Variant in entries_variant as Array:
+			if not (entry_variant is Dictionary):
+				continue
+			var entry: Dictionary = entry_variant as Dictionary
+			var discovery_id: String = str(entry.get("discovery_id", ""))
+			if not discovery_id.is_empty() and not discovered_ids.has(discovery_id):
+				discovered_ids.append(discovery_id)
+		return true
+
 
 class SpiritPersistenceStub:
 	extends Node
@@ -234,6 +259,106 @@ func test_first_session_housed_red_fox_survives_save_load() -> void:
 	restored_service.free()
 	remove_child(service)
 	service.free()
+	_cleanup_context(ctx)
+
+func test_first_island_fun_loop_survives_save_load() -> void:
+	_cleanup_test_save_files()
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var discovery: DiscoveryPersistenceStub = ctx["discovery"]
+	var spirit_persistence: SpiritPersistenceStub = ctx["spirit_persistence"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var spirit_service: SpiritService = ctx["spirit_service"]
+	var satori_service: SatoriServiceNode = get_tree().root.get_node_or_null("/root/SatoriService") as SatoriServiceNode
+	assert_not_null(satori_service)
+	var original_satori: Dictionary = satori_service.serialize_satori_state()
+
+	var meadow_coords: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(2, 0),
+		Vector2i(1, 1),
+		Vector2i(2, 1),
+		Vector2i(3, 0),
+	]
+	for coord: Vector2i in meadow_coords:
+		game_state.place_tile_from_seed(coord, BiomeType.Value.MEADOW)
+
+	var pouch: SeedPouch = growth.get_pouch()
+	assert_true(pouch.add_building(&"form_warm_hollow", 1))
+	assert_true(pouch.add_building(&"form_fox_den", 1))
+	assert_true(pouch.add_building(&"form_dew_bowl", 1))
+	assert_true(pouch.add_building(&"form_wind_chime", 1))
+	for discovery_id: String in ["disc_warm_hollow", "disc_fox_den", "disc_dew_bowl", "disc_wind_chime"]:
+		discovery.record_discovery(DiscoveryPayload.create(discovery_id, [], {"display_name": discovery_id}))
+
+	_place_form_on_tile(growth, &"form_warm_hollow", Vector2i(1, 0))
+	var island_id: String = str(game_state.grid.get_island_id(Vector2i(1, 0)))
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 1), Rect2i())
+	fox.island_id = island_id
+	spirit_service._active_instances[spirit_service._spirit_key("spirit_red_fox", island_id)] = fox
+	spirit_persistence.record_instance(fox)
+	assert_true(spirit_service.is_spirit_housed("spirit_red_fox", island_id))
+
+	_place_form_on_tile(growth, &"form_fox_den", Vector2i(2, 0))
+	spirit_service.mark_housing_dirty()
+	var fox_den_owner: Dictionary = spirit_service.get_house_owner_at_coord(Vector2i(2, 0))
+	assert_eq(str(fox_den_owner.get("spirit_id", "")), "spirit_red_fox")
+
+	_place_form_on_tile(growth, &"form_dew_bowl", Vector2i(2, 1))
+	_place_form_on_tile(growth, &"form_wind_chime", Vector2i(3, 0))
+	satori_service.set_satori_for_testing(140)
+	var satori_tick: Dictionary = satori_service.process_minute_tick({
+		"housed_count": 1,
+		"unhoused_count": 0,
+		"upgraded_housed_count": 1,
+		"housed_by_island": {island_id: 1},
+		"upgraded_housed_by_island": {island_id: 1},
+	})
+	assert_eq(int(satori_tick.get("applied_delta", 0)), 2)
+
+	var service: Node = SaveGameServiceScript.new()
+	add_child(service)
+	service.set_paths_for_testing(TEST_SAVE_DIR, TEST_SAVE_PATH, TEST_TEMP_PATH, TEST_BACKUP_PATH)
+	assert_true(service.save_now("first_island_fun_loop"))
+
+	game_state._initialize_fresh_garden()
+	growth.restore_seed_growth_state({"active_seeds": [], "pouch": {"capacity": 8, "entries": []}})
+	discovery.restore_discovery_persistence_state({"entries": []})
+	spirit_persistence.restore_spirit_persistence_state({"instances": []})
+	satori_service.set_satori_for_testing(0)
+	assert_true(service.load_game())
+
+	var restored_fox_den: GardenTile = game_state.grid.get_tile(Vector2i(2, 0))
+	var restored_dew_bowl: GardenTile = game_state.grid.get_tile(Vector2i(2, 1))
+	var restored_wind_chime: GardenTile = game_state.grid.get_tile(Vector2i(3, 0))
+	assert_not_null(restored_fox_den)
+	assert_not_null(restored_dew_bowl)
+	assert_not_null(restored_wind_chime)
+	assert_eq(str(restored_fox_den.metadata.get("structure_discovery_id", "")), "building_fox_den")
+	assert_eq(str(restored_dew_bowl.metadata.get("structure_discovery_id", "")), "building_dew_bowl")
+	assert_eq(str(restored_wind_chime.metadata.get("structure_discovery_id", "")), "building_wind_chime")
+	assert_true(discovery.discovered_ids.has("disc_fox_den"))
+	assert_true(discovery.discovered_ids.has("disc_dew_bowl"))
+	assert_true(discovery.discovered_ids.has("disc_wind_chime"))
+	assert_eq(satori_service.get_current_satori(), int(satori_tick.get("new_satori", 0)))
+
+	var restored_service: SpiritService = SpiritService.new()
+	restored_service._catalog = SpiritCatalog.new()
+	restored_service._catalog.load_from_data(SpiritCatalogData.new())
+	restored_service._riddle_evaluator = SpiritRiddleEvaluator.new()
+	restored_service._sky_whale_evaluator = SkyWhaleEvaluator.new()
+	restored_service._spawner = SpiritSpawner.new()
+	restored_service._spirit_patterns = PatternLoader.new().load_patterns("res://src/biomes/patterns/spirits")
+	add_child(restored_service)
+	restored_service.restore_from_persistence()
+	assert_true(restored_service.is_spirit_housed("spirit_red_fox", island_id))
+	assert_eq(str(restored_service.get_house_owner_at_coord(Vector2i(2, 0)).get("spirit_id", "")), "spirit_red_fox")
+
+	remove_child(restored_service)
+	restored_service.free()
+	remove_child(service)
+	service.free()
+	satori_service.restore_satori_state(original_satori)
 	_cleanup_context(ctx)
 
 

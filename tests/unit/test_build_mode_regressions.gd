@@ -309,6 +309,7 @@ func test_invalid_recipe_confirm_flashes_and_does_not_start_countdown() -> void:
 	assert_false(bool(sample_tile.metadata.get("project_recipe_valid", false)))
 	assert_false(controller._toggle_build_block(Vector2i(40, 0)))
 	assert_true(sample_tile.metadata.has("project_invalid_flash_started_at"))
+	assert_eq(str(sample_tile.metadata.get("project_invalid_feedback", "")), "Finish the structure shape.")
 	assert_false(bool(sample_tile.metadata.get("build_countdown_started", false)))
 
 	controller.queue_free()
@@ -406,6 +407,7 @@ func test_can_start_new_project_while_previous_project_counts_down() -> void:
 
 	var first_project_tile: GardenTile = game_state.grid.get_tile(Vector2i(60, 0))
 	assert_false(bool(first_project_tile.metadata.get("build_countdown_started", false)))
+	assert_eq(str(first_project_tile.metadata.get("project_invalid_feedback", "")), "Use one tile for dwellings.")
 
 	assert_false(controller._toggle_build_block(Vector2i(70, 0)))
 	var second_project_tile: GardenTile = game_state.grid.get_tile(Vector2i(70, 0))

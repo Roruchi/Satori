@@ -124,7 +124,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 |----------|---------------|-------------|-----------------|--------------|-----------------------|
 | 1 | Phase 0 - Alpha Contract and State Audit | [026-alpha-contract-audit](../specs/026-alpha-contract-audit/spec.md) | Drafted | Verified | Alpha checklist, current-state audit, and evidence-backed gate ownership are complete. |
 | 2 | Phase 1 - Playable First Session | [027-playable-first-session](../specs/027-playable-first-session/spec.md) | Drafted | Verified | Fresh save reaches Meadow, Living Wood, Red Fox, Warm Hollow, automatically housed Red Fox in a Meadow dwelling, and save/load. Evidence: `specs/027-playable-first-session/evidence.md`. |
-| 3 | Phase 2 - First Island Fun Loop | [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md) | Drafted | Not Started | First island supports Red Fox care, upgraded Fox Den, HUD/hover/Codex Satori feedback, Dew Bowl and Wind Chime, invalid-action clarity, and save/load. |
+| 3 | Phase 2 - First Island Fun Loop | [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md) | Drafted | Verified | First island supports Red Fox care, upgraded Fox Den, HUD/hover/Codex Satori feedback, Dew Bowl and Wind Chime, invalid-action clarity, and save/load. Evidence: `specs/028-first-island-fun-loop/evidence.md`. |
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Not Started | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. |
 | 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Not Started | First-session, first-island, and endgame/kami states round-trip with schema/version safety. |
 | 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Not Started | Local Web build exports, runs, saves across reload, and is packageable for itch.io. |
@@ -210,7 +210,7 @@ Exit gates:
 ## Phase 2 - First Island Fun Loop
 
 Spec: [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md)  
-Alpha status: Not Started
+Alpha status: Verified
 
 Goal: turn the first island from a demo into a repeatable play loop.
 

@@ -24,6 +24,13 @@ func record_discovery(payload: DiscoveryPayload) -> void:
 func get_discovered_ids() -> Array[String]:
 	return _log.as_id_array()
 
+func serialize_discovery_persistence_state() -> Dictionary:
+	return _log.serialize()
+
+func restore_discovery_persistence_state(data: Dictionary) -> bool:
+	_log.deserialize(data)
+	return true
+
 func _load() -> void:
 	pass  # DISABLED for testing — re-enable when save/load is ready
 

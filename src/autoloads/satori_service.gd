@@ -316,6 +316,35 @@ func set_cap_for_testing(cap_value: int) -> void:
 	_apply_satori(_current_satori)
 	emit_signal("satori_cap_changed", _current_cap)
 
+func serialize_satori_state() -> Dictionary:
+	return {
+		"current_satori": _current_satori,
+		"current_cap": _current_cap,
+		"current_era": str(_current_era),
+		"tick_accumulator": _tick_accumulator,
+		"fractional_satori_delta": _fractional_satori_delta,
+		"fired": _fired.duplicate(true),
+	}
+
+func restore_satori_state(data: Dictionary) -> bool:
+	_recompute_structures_from_grid()
+	_recompute_cap_from_structures()
+	var restored_cap: int = maxi(int(data.get("current_cap", _current_cap)), SatoriIdsScript.BASE_SATORI_CAP)
+	_current_cap = restored_cap
+	_tick_accumulator = maxf(0.0, float(data.get("tick_accumulator", 0.0)))
+	_fractional_satori_delta = float(data.get("fractional_satori_delta", 0.0))
+	var fired_variant: Variant = data.get("fired", {})
+	_fired.clear()
+	if fired_variant is Dictionary:
+		_fired = (fired_variant as Dictionary).duplicate(true)
+	_apply_satori(int(data.get("current_satori", _current_satori)))
+	var restored_era: StringName = StringName(str(data.get("current_era", _current_era)))
+	if restored_era != _current_era:
+		_current_era = restored_era
+		era_changed.emit(_current_era)
+		_emit_satori_if_changed()
+	return true
+
 func process_minute_tick(snapshot_override: Dictionary = {}) -> Dictionary:
 	var snapshot: Dictionary = snapshot_override if not snapshot_override.is_empty() else _snapshot_from_services()
 	var housed_count: int = int(snapshot.get("housed_count", 0))

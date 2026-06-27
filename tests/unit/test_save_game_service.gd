@@ -64,6 +64,40 @@ func test_save_service_writes_to_user_save_path_and_loads_game_state() -> void:
 	assert_not_null(loaded_tile)
 	assert_eq(loaded_tile.biome, BiomeType.Value.RIVER)
 
+func test_save_service_roundtrips_discovery_and_satori_state() -> void:
+	var root: Node = get_tree().root
+	var discovery: Node = root.get_node_or_null("/root/DiscoveryPersistence")
+	var satori: SatoriServiceNode = root.get_node_or_null("/root/SatoriService") as SatoriServiceNode
+	if discovery == null or not discovery.has_method("serialize_discovery_persistence_state"):
+		fail_test("DiscoveryPersistence autoload with save hooks is required")
+		return
+	if satori == null:
+		fail_test("SatoriService autoload is required")
+		return
+	var original_discovery_variant: Variant = discovery.call("serialize_discovery_persistence_state")
+	var original_discovery: Dictionary = original_discovery_variant as Dictionary
+	var original_satori: Dictionary = satori.serialize_satori_state()
+	var service: Node = SaveGameServiceScript.new()
+	add_child_autofree(service)
+	service.set_paths_for_testing(TEST_DIR, TEST_SAVE, TEST_TEMP, TEST_BACKUP)
+
+	discovery.call("restore_discovery_persistence_state", {"entries": []})
+	var payload: DiscoveryPayload = DiscoveryPayload.create("disc_fox_den", [Vector2i(2, 0)], {"display_name": "Fox Den"})
+	discovery.call("record_discovery", payload)
+	satori.set_satori_for_testing(123)
+
+	assert_true(service.save_now("discovery_satori_roundtrip"))
+	discovery.call("restore_discovery_persistence_state", {"entries": []})
+	satori.set_satori_for_testing(0)
+	assert_true(service.load_game())
+	var restored_ids_variant: Variant = discovery.call("get_discovered_ids")
+	var restored_ids: Array = restored_ids_variant as Array
+	assert_true(restored_ids.has("disc_fox_den"))
+	assert_eq(satori.get_current_satori(), 123)
+
+	discovery.call("restore_discovery_persistence_state", original_discovery)
+	satori.restore_satori_state(original_satori)
+
 func _state_with_tiles(coords: Array[Vector2i]) -> Dictionary:
 	var tiles: Array[Dictionary] = []
 	for coord: Vector2i in coords:

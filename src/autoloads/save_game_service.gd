@@ -71,7 +71,11 @@ func load_game() -> bool:
 		return false
 	if not _restore_optional_service(payload, "seed_alchemy", "SeedAlchemyService", "restore_seed_alchemy_state", loaded_path):
 		return false
+	if not _restore_optional_service(payload, "discovery_persistence", "DiscoveryPersistence", "restore_discovery_persistence_state", loaded_path):
+		return false
 	if not _restore_optional_service(payload, "spirit_persistence", "SpiritPersistence", "restore_spirit_persistence_state", loaded_path):
+		return false
+	if not _restore_optional_service(payload, "satori", "SatoriService", "restore_satori_state", loaded_path):
 		return false
 	load_completed.emit(loaded_path)
 	return true
@@ -96,7 +100,9 @@ func save_now(reason: String = "autosave") -> bool:
 	}
 	_add_optional_service_payload(payload, "seed_growth", "SeedGrowthService", "serialize_seed_growth_state")
 	_add_optional_service_payload(payload, "seed_alchemy", "SeedAlchemyService", "serialize_seed_alchemy_state")
+	_add_optional_service_payload(payload, "discovery_persistence", "DiscoveryPersistence", "serialize_discovery_persistence_state")
 	_add_optional_service_payload(payload, "spirit_persistence", "SpiritPersistence", "serialize_spirit_persistence_state")
+	_add_optional_service_payload(payload, "satori", "SatoriService", "serialize_satori_state")
 	var text: String = JSON.stringify(payload, "\t")
 	var temp_file := FileAccess.open(_temp_path, FileAccess.WRITE)
 	if temp_file == null:

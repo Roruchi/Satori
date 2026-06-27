@@ -795,6 +795,8 @@ func _draw_build_progress_overlays() -> void:
 					var flash_alpha: float = elapsed_flash if elapsed_flash <= 1.0 else (2.0 - elapsed_flash)
 					flash_alpha = clampf(flash_alpha, 0.0, 1.0)
 					draw_polyline(pending_border, Color(1.0, 0.18, 0.15, 0.95 * flash_alpha), 3.3)
+					var invalid_feedback: String = str(tile.metadata.get("project_invalid_feedback", "Cannot confirm yet."))
+					_draw_seed_overlay_text(pending_center + Vector2(-46.0, 2.0), invalid_feedback, 9, Color(1.0, 0.82, 0.72, 0.95 * flash_alpha))
 			_draw_seed_overlay_text(pending_center + Vector2(-28.0, -26.0), "Confirm", 10, Color(0.96, 0.93, 0.80, 0.96))
 			_draw_seed_overlay_text(pending_center + Vector2(-34.0, -12.0), "RMB Cancel", 10, Color(0.95, 0.78, 0.72, 0.94))
 			continue

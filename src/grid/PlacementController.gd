@@ -300,6 +300,7 @@ func _mark_build_block_pending_confirm(tile: GardenTile, recipe_biome: int, pend
 	tile.metadata.erase("pending_structure_id")
 	tile.metadata.erase("pending_structure_anchor")
 	tile.metadata.erase("project_invalid_flash_started_at")
+	tile.metadata.erase("project_invalid_feedback")
 
 func _is_origin_shrine_build_selection(tile: GardenTile) -> bool:
 	if tile == null:
@@ -350,14 +351,14 @@ func _try_start_project_countdown(project_id: int) -> bool:
 	var requires_recipe: bool = _project_requires_structure_recipe(project_coords)
 	if not requires_recipe and project_coords.size() > 1:
 		# Generic houses can only be confirmed one tile at a time.
-		_mark_project_invalid_flash(project_coords)
+		_mark_project_invalid_flash(project_coords, "Use one tile for dwellings.")
 		_refresh_project_recipe_state(project_id)
 		return false
 	var structure_id: String = ""
 	if requires_recipe:
 		structure_id = _resolve_project_structure_id(project_coords)
 		if structure_id.is_empty():
-			_mark_project_invalid_flash(project_coords)
+			_mark_project_invalid_flash(project_coords, "Finish the structure shape.")
 			_refresh_project_recipe_state(project_id)
 			return false
 	_start_project_countdown(project_id, structure_id)
@@ -379,6 +380,7 @@ func _start_project_countdown(project_id: int, structure_id: String) -> void:
 		tile.metadata["build_started_at"] = now
 		tile.metadata["build_duration"] = _build_countdown_duration()
 		tile.metadata["build_completion_pending"] = true
+		tile.metadata.erase("project_invalid_feedback")
 		tile.metadata.erase("project_recipe_required")
 		tile.metadata.erase("project_recipe_valid")
 		tile.metadata.erase("project_invalid_flash_started_at")
@@ -564,13 +566,14 @@ func _refresh_project_recipe_state(project_id: int) -> void:
 		tile.metadata["project_recipe_required"] = requires_recipe
 		tile.metadata["project_recipe_valid"] = valid_recipe
 
-func _mark_project_invalid_flash(project_coords: Array[Vector2i]) -> void:
+func _mark_project_invalid_flash(project_coords: Array[Vector2i], feedback: String) -> void:
 	var now: float = Time.get_unix_time_from_system()
 	for coord: Vector2i in project_coords:
 		var tile: GardenTile = GameState.grid.get_tile(coord)
 		if tile == null:
 			continue
 		tile.metadata["project_invalid_flash_started_at"] = now
+		tile.metadata["project_invalid_feedback"] = feedback
 
 func _is_build_countdown_started(tile: GardenTile) -> bool:
 	return bool(tile.metadata.get("build_countdown_started", false))
