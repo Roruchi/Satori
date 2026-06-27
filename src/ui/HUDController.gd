@@ -4,14 +4,17 @@ extends CanvasLayer
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
 const MIX_PANEL_GAP: float = 16.0
-const MIX_PANEL_MIN_WIDTH: float = 360.0
-const MIX_PANEL_SCREEN_MARGIN: float = 16.0
+const MIX_PANEL_MIN_WIDTH: float = 440.0
+const MIX_PANEL_MAX_WIDTH: float = 480.0
+const MIX_PANEL_PREFERRED_HEIGHT: float = 520.0
+const MIX_PANEL_SCREEN_MARGIN: float = 12.0
+const MIX_PANEL_TOP_GAP: float = 12.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const RITUAL_ICON_CELL_SIZE: float = 32.0
-const MATERIAL_SLOT_ICON_SIZE: float = 18.0
-const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(88.0, 24.0)
+const MATERIAL_SLOT_ICON_SIZE: float = 16.0
+const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(56.0, 24.0)
 const _MATERIAL_ICON_INDEX: Dictionary = {
 	&"living_wood": 5,
 	&"reed_fiber": 6,
@@ -32,17 +35,22 @@ const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.71, 0.80, 0.90),
 	Color(0.58, 0.50, 0.32),
 ]
-const MODE_TAB_ACTIVE_BG := Color(0.95, 0.89, 0.73, 1.0)
-const MODE_TAB_INACTIVE_BG := Color(0.58, 0.48, 0.34, 0.94)
-const MODE_TAB_ACTIVE_BORDER := Color(0.61, 0.44, 0.22, 1.0)
-const MODE_TAB_INACTIVE_BORDER := Color(0.34, 0.24, 0.14, 0.90)
+const MODE_TAB_ACTIVE_BG := Color(0.90, 0.84, 0.66, 0.96)
+const MODE_TAB_INACTIVE_BG := Color(0.30, 0.24, 0.18, 0.82)
+const MODE_TAB_ACTIVE_BORDER := Color(0.59, 0.43, 0.23, 0.92)
+const MODE_TAB_INACTIVE_BORDER := Color(0.28, 0.23, 0.20, 0.84)
 const MODE_TAB_TEXT := Color(0.19, 0.13, 0.08, 1.0)
-const MODE_TAB_TEXT_MUTED := Color(0.89, 0.84, 0.74, 0.96)
-const MODE_TRAY_BG := Color(0.26, 0.18, 0.11, 0.92)
-const MODE_TRAY_BORDER := Color(0.60, 0.42, 0.21, 0.95)
+const MODE_TAB_TEXT_MUTED := Color(0.82, 0.78, 0.70, 0.92)
+const MODE_TRAY_BG := Color(0.10, 0.08, 0.07, 0.72)
+const MODE_TRAY_BORDER := Color(0.50, 0.37, 0.22, 0.72)
 const MODE_TAB_ANIMATION_TIME := 0.18
-const MODE_TAB_INDICATOR_INSET_X := 10.0
-const MODE_TAB_INDICATOR_INSET_Y := 8.0
+const MODE_TAB_INDICATOR_INSET_X := 6.0
+const MODE_TAB_INDICATOR_INSET_Y := 6.0
+const MODE_TAB_HEIGHT: float = 48.0
+const TOP_CHIP_BG := Color(0.05, 0.04, 0.07, 0.68)
+const TOP_CHIP_BORDER := Color(0.42, 0.36, 0.52, 0.62)
+const TOP_TEXT := Color(0.92, 0.90, 0.84, 0.96)
+const TOP_TEXT_MUTED := Color(0.74, 0.77, 0.82, 0.88)
 const _ELEMENT_METER_LABELS: Dictionary = {
 	GodaiElementScript.Value.CHI: "Chi",
 	GodaiElementScript.Value.SUI: "Sui",
@@ -63,6 +71,7 @@ enum Mode {
 @onready var _interact_button: Button = $Root/BottomBar/InteractButton
 @onready var _codex_button: Button = $Root/BottomBar/CodexButton
 @onready var _root: Control = $Root
+@onready var _top_bar: HBoxContainer = $Root/TopBar
 @onready var _bottom_bar: HBoxContainer = $Root/BottomBar
 @onready var _bottom_tray: Panel = $Root/BottomTray
 @onready var _active_tab_indicator: ColorRect = $Root/BottomTray/ActiveTabIndicator
@@ -111,6 +120,7 @@ func _ready() -> void:
 	_codex_panel.anchor_right = 0.0
 	_codex_panel.anchor_bottom = 0.0
 	_style_mode_tabs()
+	_style_top_hud()
 	_root.resized.connect(_layout_mix_panel)
 	_root.resized.connect(_layout_codex_panel)
 	_root.resized.connect(_layout_mode_tab_indicator)
@@ -128,6 +138,7 @@ func _ready() -> void:
 	if _pouch_display != null and _pouch_display.has_signal("building_item_selected"):
 		_pouch_display.building_item_selected.connect(_on_building_item_selected)
 	_init_material_slots()
+	_style_top_hud()
 	var settings: Node = get_node_or_null("/root/GardenSettings")
 	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
 		settings.growth_speed_multiplier_changed.connect(_on_growth_speed_multiplier_changed)
@@ -187,12 +198,17 @@ func _layout_mix_panel() -> void:
 		return
 	var bottom_y: float = _bottom_bar.position.y
 	if bottom_y <= 0.0:
-		bottom_y = root_size.y - 104.0
+		bottom_y = root_size.y - 76.0
+	var top_y: float = MIX_PANEL_SCREEN_MARGIN
+	if _top_bar != null:
+		top_y = maxf(MIX_PANEL_SCREEN_MARGIN, _top_bar.position.y + _top_bar.size.y + MIX_PANEL_TOP_GAP)
 	var min_size: Vector2 = _mix_panel.get_combined_minimum_size()
 	var available_width: float = maxf(300.0, root_size.x - (MIX_PANEL_SCREEN_MARGIN * 2.0))
-	var available_height: float = maxf(260.0, bottom_y - MIX_PANEL_GAP - MIX_PANEL_SCREEN_MARGIN)
-	var panel_width: float = minf(maxf(min_size.x, MIX_PANEL_MIN_WIDTH), available_width)
-	var panel_height: float = minf(maxf(min_size.y, _mix_panel.custom_minimum_size.y), available_height)
+	var available_height: float = maxf(260.0, bottom_y - MIX_PANEL_GAP - top_y)
+	var desired_width: float = minf(MIX_PANEL_MAX_WIDTH, maxf(min_size.x, MIX_PANEL_MIN_WIDTH))
+	var desired_height: float = maxf(maxf(min_size.y, _mix_panel.custom_minimum_size.y), minf(MIX_PANEL_PREFERRED_HEIGHT, available_height))
+	var panel_width: float = minf(desired_width, available_width)
+	var panel_height: float = minf(desired_height, available_height)
 	var panel_x: float = (root_size.x - panel_width) * 0.5
 	var panel_y: float = bottom_y - panel_height - MIX_PANEL_GAP
 	var max_panel_x: float = root_size.x - panel_width - MIX_PANEL_SCREEN_MARGIN
@@ -201,10 +217,10 @@ func _layout_mix_panel() -> void:
 		panel_x = maxf(0.0, panel_x)
 	else:
 		panel_x = clampf(panel_x, MIX_PANEL_SCREEN_MARGIN, max_panel_x)
-	if max_panel_y < MIX_PANEL_SCREEN_MARGIN:
+	if max_panel_y < top_y:
 		panel_y = maxf(0.0, panel_y)
 	else:
-		panel_y = clampf(panel_y, MIX_PANEL_SCREEN_MARGIN, max_panel_y)
+		panel_y = clampf(panel_y, top_y, max_panel_y)
 	_mix_panel.position = Vector2(panel_x, panel_y)
 	_mix_panel.size = Vector2(panel_width, panel_height)
 
@@ -289,10 +305,10 @@ func _resolve_spirit_service() -> Node:
 	return null
 
 func _on_satori_changed(current: int, cap: int) -> void:
-	_satori_label.text = "Satori: %d/%d" % [current, cap]
+	_satori_label.text = "%d/%d" % [current, cap]
 
 func _on_era_changed(new_era: StringName) -> void:
-	_era_label.text = "Era: %s" % str(new_era).capitalize()
+	_era_label.text = str(new_era).capitalize()
 
 func _on_element_charge_changed(_element_id: int, _charge: int) -> void:
 	_refresh_element_meters()
@@ -330,7 +346,7 @@ func _refresh_material_meter() -> void:
 		return
 	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy_service == null or not alchemy_service.has_method("get_material_count"):
-		_material_meter_label.text = "Materials: --"
+		_material_meter_label.text = "Mat --"
 		return
 	var material_ids: Array[StringName] = [&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"]
 	if alchemy_service.has_method("get_material_display_order"):
@@ -346,7 +362,7 @@ func _refresh_material_meter() -> void:
 		if label_variant is Label:
 			var slot_label: Label = label_variant as Label
 			slot_label.text = str(count)
-	_material_meter_label.text = "Materials:"
+	_material_meter_label.text = "Mat"
 
 func _init_material_slots() -> void:
 	var row_variant: Variant = get_node_or_null("Root/TopBar/InventoryStack/MaterialSlotRow")
@@ -404,7 +420,8 @@ func _create_material_slot(material_id: StringName) -> PanelContainer:
 	var fallback_label: Label = Label.new()
 	fallback_label.name = "IconFallback"
 	fallback_label.text = _material_short_label(material_id)
-	fallback_label.custom_minimum_size = Vector2(18.0, 18.0)
+	fallback_label.visible = icon.texture == null
+	fallback_label.custom_minimum_size = Vector2(16.0, 18.0)
 	fallback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	fallback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	fallback_label.add_theme_color_override("font_color", Color(0.82, 0.76, 0.59, 0.98))
@@ -413,7 +430,7 @@ func _create_material_slot(material_id: StringName) -> PanelContainer:
 	var count_label: Label = Label.new()
 	count_label.name = "CountLabel"
 	count_label.text = "0"
-	count_label.custom_minimum_size = Vector2(24.0, 18.0)
+	count_label.custom_minimum_size = Vector2(18.0, 18.0)
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	count_label.add_theme_color_override("font_color", Color(0.96, 0.91, 0.78, 0.98))
@@ -559,6 +576,84 @@ func _on_settings_pressed() -> void:
 	if _settings_menu != null:
 		_settings_menu.show_menu()
 
+func _style_top_hud() -> void:
+	_top_bar.add_theme_constant_override("separation", 8)
+	_inventory_stack.add_theme_constant_override("separation", 2)
+	_inventory_stack.custom_minimum_size = Vector2(244.0, 50.0)
+	_element_meter_row.add_theme_constant_override("separation", 4)
+	_style_chip_label(_pouch_display, TOP_TEXT, 12, Vector2(8.0, 3.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_plain_label(_material_meter_label, TOP_TEXT_MUTED, 11)
+	var essence_title: Label = _element_meter_row.get_node("EssenceTitle") as Label
+	if essence_title != null:
+		essence_title.text = "Ess"
+	_style_plain_label(essence_title, TOP_TEXT_MUTED, 11)
+	for meter_label: Label in [_chi_meter_label, _sui_meter_label, _ka_meter_label, _fu_meter_label, _ku_meter_label]:
+		_style_chip_label(meter_label, TOP_TEXT, 12, Vector2(7.0, 3.0), HORIZONTAL_ALIGNMENT_CENTER)
+	_style_plain_label(_satori_label, TOP_TEXT, 13)
+	_style_plain_label(_era_label, TOP_TEXT_MUTED, 12)
+	_style_top_button(_settings_button, _ritual_icon_texture_by_index(8), "Settings")
+	if _instant_badge != null:
+		_style_chip_label(_instant_badge, Color(1.0, 0.91, 0.66, 0.98), 12, Vector2(8.0, 3.0), HORIZONTAL_ALIGNMENT_CENTER)
+
+func _style_plain_label(label: Label, color: Color, font_size: int) -> void:
+	if label == null:
+		return
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.45))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+
+func _style_chip_label(label: Label, color: Color, font_size: int, padding: Vector2, alignment: HorizontalAlignment) -> void:
+	if label == null:
+		return
+	_style_plain_label(label, color, font_size)
+	label.horizontal_alignment = alignment
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = TOP_CHIP_BG
+	style.border_color = TOP_CHIP_BORDER
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 5
+	style.corner_radius_top_right = 5
+	style.corner_radius_bottom_left = 5
+	style.corner_radius_bottom_right = 5
+	style.content_margin_left = padding.x
+	style.content_margin_right = padding.x
+	style.content_margin_top = padding.y
+	style.content_margin_bottom = padding.y
+	label.add_theme_stylebox_override("normal", style)
+
+func _style_top_button(button: Button, icon_texture: Texture2D, tooltip: String) -> void:
+	if button == null:
+		return
+	button.text = ""
+	button.tooltip_text = tooltip
+	button.icon = icon_texture
+	button.expand_icon = false
+	button.custom_minimum_size = Vector2(42.0, 36.0)
+	button.add_theme_font_size_override("font_size", 12)
+	var normal_style: StyleBoxFlat = StyleBoxFlat.new()
+	normal_style.bg_color = TOP_CHIP_BG
+	normal_style.border_color = TOP_CHIP_BORDER
+	normal_style.border_width_left = 1
+	normal_style.border_width_top = 1
+	normal_style.border_width_right = 1
+	normal_style.border_width_bottom = 1
+	normal_style.corner_radius_top_left = 5
+	normal_style.corner_radius_top_right = 5
+	normal_style.corner_radius_bottom_left = 5
+	normal_style.corner_radius_bottom_right = 5
+	button.add_theme_stylebox_override("normal", normal_style)
+	var hover_style: StyleBoxFlat = normal_style.duplicate()
+	hover_style.bg_color = TOP_CHIP_BG.lightened(0.10)
+	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("pressed", normal_style)
+	button.add_theme_color_override("icon_normal_color", TOP_TEXT)
+	button.add_theme_color_override("icon_hover_color", Color.WHITE)
+
 func _style_mode_tabs() -> void:
 	var tray_style: StyleBoxFlat = StyleBoxFlat.new()
 	tray_style.bg_color = MODE_TRAY_BG
@@ -567,12 +662,12 @@ func _style_mode_tabs() -> void:
 	tray_style.border_width_top = 2
 	tray_style.border_width_right = 2
 	tray_style.border_width_bottom = 2
-	tray_style.corner_radius_top_left = 18
-	tray_style.corner_radius_top_right = 18
-	tray_style.corner_radius_bottom_left = 18
-	tray_style.corner_radius_bottom_right = 18
+	tray_style.corner_radius_top_left = 12
+	tray_style.corner_radius_top_right = 12
+	tray_style.corner_radius_bottom_left = 12
+	tray_style.corner_radius_bottom_right = 12
 	tray_style.shadow_color = Color(0.0, 0.0, 0.0, 0.18)
-	tray_style.shadow_size = 6
+	tray_style.shadow_size = 4
 	_bottom_tray.add_theme_stylebox_override("panel", tray_style)
 	var indicator_style: StyleBoxFlat = StyleBoxFlat.new()
 	indicator_style.bg_color = Color(0.97, 0.92, 0.78, 0.22)
@@ -581,17 +676,17 @@ func _style_mode_tabs() -> void:
 	indicator_style.border_width_top = 2
 	indicator_style.border_width_right = 2
 	indicator_style.border_width_bottom = 2
-	indicator_style.corner_radius_top_left = 14
-	indicator_style.corner_radius_top_right = 14
-	indicator_style.corner_radius_bottom_left = 12
-	indicator_style.corner_radius_bottom_right = 12
+	indicator_style.corner_radius_top_left = 8
+	indicator_style.corner_radius_top_right = 8
+	indicator_style.corner_radius_bottom_left = 8
+	indicator_style.corner_radius_bottom_right = 8
 	_active_tab_indicator.add_theme_stylebox_override("panel", indicator_style)
-	_bottom_bar.add_theme_constant_override("separation", 12)
+	_bottom_bar.add_theme_constant_override("separation", 8)
 	for button_index: int in 4:
 		var button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][button_index]
-		button.custom_minimum_size = Vector2(0, 72)
+		button.custom_minimum_size = Vector2(0, MODE_TAB_HEIGHT)
 		button.clip_text = false
-		button.add_theme_font_size_override("font_size", 18)
+		button.add_theme_font_size_override("font_size", 13)
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 		button.expand_icon = false
@@ -609,14 +704,14 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 	normal_style.border_width_top = 2
 	normal_style.border_width_right = 2
 	normal_style.border_width_bottom = 0 if is_active else 2
-	normal_style.corner_radius_top_left = 16
-	normal_style.corner_radius_top_right = 16
-	normal_style.corner_radius_bottom_left = 10
-	normal_style.corner_radius_bottom_right = 10
-	normal_style.content_margin_left = 12
-	normal_style.content_margin_top = 8
-	normal_style.content_margin_right = 12
-	normal_style.content_margin_bottom = 10
+	normal_style.corner_radius_top_left = 10
+	normal_style.corner_radius_top_right = 10
+	normal_style.corner_radius_bottom_left = 8
+	normal_style.corner_radius_bottom_right = 8
+	normal_style.content_margin_left = 8
+	normal_style.content_margin_top = 4
+	normal_style.content_margin_right = 8
+	normal_style.content_margin_bottom = 6
 	button.add_theme_stylebox_override("normal", normal_style)
 
 	var hover_style: StyleBoxFlat = normal_style.duplicate()

@@ -1,7 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://b4n7mfpqwvx2k"]
+[gd_scene load_steps=7 format=3 uid="uid://b4n7mfpqwvx2k"]
 
 [ext_resource type="Script" path="res://src/ui/TitleScreen.gd" id="1_title"]
 [ext_resource type="PackedScene" path="res://scenes/UI/SettingsMenu.tscn" id="2_settings"]
+[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-emblem.png" id="3_emblem"]
+[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-brush.png" id="4_brush"]
+[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-island.png" id="5_island"]
+[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-hybrid.png" id="6_hybrid"]
 
 [node name="TitleScreen" type="Node2D"]
 script = ExtResource("1_title")
@@ -18,46 +22,92 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Center" type="CenterContainer" parent="UILayer/Root"]
+[node name="Center" type="MarginContainer" parent="UILayer/Root"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 36
 
-[node name="Card" type="PanelContainer" parent="UILayer/Root/Center"]
+[node name="Content" type="VBoxContainer" parent="UILayer/Root/Center"]
 layout_mode = 2
-custom_minimum_size = Vector2(380, 0)
+theme_override_constants/separation = 14
+alignment = 1
 
-[node name="VBox" type="VBoxContainer" parent="UILayer/Root/Center/Card"]
+[node name="TopSpacer" type="Control" parent="UILayer/Root/Center/Content"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
+[node name="LogoTexture" type="TextureRect" parent="UILayer/Root/Center/Content"]
+custom_minimum_size = Vector2(640, 230)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("6_hybrid")
+expand_mode = 3
+stretch_mode = 5
+
+[node name="Card" type="PanelContainer" parent="UILayer/Root/Center/Content"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(430, 0)
+
+[node name="VBox" type="VBoxContainer" parent="UILayer/Root/Center/Content/Card"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 text = "SATORI"
 horizontal_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="UILayer/Root/Center/Card/VBox"]
+[node name="SubtitleLabel" type="Label" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
-text = "A Garden of Patterns"
+text = "A living garden of rituals, spirits and patterns"
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer" type="Control" parent="UILayer/Root/Center/Card/VBox"]
+[node name="Spacer" type="Control" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 10)
+custom_minimum_size = Vector2(0, 8)
 
-[node name="PlayButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+[node name="PlayButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 text = "Play"
 
-[node name="SettingsButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+[node name="SettingsButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 text = "Settings"
 
-[node name="QuitButton" type="Button" parent="UILayer/Root/Center/Card/VBox"]
+[node name="QuitButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 text = "Quit"
+
+[node name="LogoOptions" type="HBoxContainer" parent="UILayer/Root/Center/Content/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="HybridButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
+layout_mode = 2
+text = "Hybrid"
+
+[node name="EmblemButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
+layout_mode = 2
+text = "Emblem"
+
+[node name="BrushButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
+layout_mode = 2
+text = "Brush"
+
+[node name="IslandButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
+layout_mode = 2
+text = "Island"
+
+[node name="BottomSpacer" type="Control" parent="UILayer/Root/Center/Content"]
+layout_mode = 2
 
 [node name="SettingsOverlay" parent="." instance=ExtResource("2_settings")]
 visible = false

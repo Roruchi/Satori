@@ -37,34 +37,34 @@ mouse_filter = 2
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 16.0
-offset_top = 12.0
-offset_right = -16.0
-offset_bottom = 88.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = 68.0
 grow_horizontal = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 
 [node name="InventoryStack" type="VBoxContainer" parent="Root/TopBar"]
-custom_minimum_size = Vector2(300, 64)
+custom_minimum_size = Vector2(244, 50)
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
 [node name="SeedPouchDisplay" type="Label" parent="Root/TopBar/InventoryStack"]
 layout_mode = 2
 script = ExtResource("5")
-text = "Placeables: 0/8 | Empty"
+text = "0/8 | Empty"
 
 [node name="MaterialMeterLabel" type="Label" parent="Root/TopBar/InventoryStack"]
 layout_mode = 2
-text = "Materials: Living Wood x0"
+text = "Mat"
 
 [node name="ElementMeterRow" type="HBoxContainer" parent="Root/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="EssenceTitle" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
-text = "Essence:"
+text = "Ess"
 
 [node name="ChiMeterLabel" type="Label" parent="Root/TopBar/ElementMeterRow"]
 layout_mode = 2
@@ -96,7 +96,7 @@ layout_mode = 2
 text = "INSTANT"
 
 [node name="ProgressionSpeedButton" type="Button" parent="Root/TopBar"]
-custom_minimum_size = Vector2(54, 44)
+custom_minimum_size = Vector2(44, 36)
 layout_mode = 2
 text = "x1"
 script = ExtResource("7")
@@ -108,18 +108,18 @@ theme_override_constants/separation = 3
 
 [node name="SatoriLabel" type="Label" parent="Root/TopBar/StatusStack"]
 layout_mode = 2
-text = "Satori: 0/250"
+text = "0/250"
 horizontal_alignment = 2
 
 [node name="EraLabel" type="Label" parent="Root/TopBar/StatusStack"]
 layout_mode = 2
-text = "Era: Stillness"
+text = "Stillness"
 horizontal_alignment = 2
 
 [node name="SettingsButton" type="Button" parent="Root/TopBar"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(42, 36)
 layout_mode = 2
-text = "Settings"
+text = ""
 
 [node name="DebugInfoLabel" type="Label" parent="Root"]
 visible = false
@@ -128,9 +128,9 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -292.0
-offset_top = 94.0
+offset_top = 74.0
 offset_right = -12.0
-offset_bottom = 140.0
+offset_bottom = 120.0
 grow_horizontal = 0
 text = "FPS -- | 0.0 ms | Nodes --\nScan -- ms | Spirits -- | Housing --"
 horizontal_alignment = 2
@@ -141,9 +141,9 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 76.0
-offset_top = -96.0
-offset_right = -76.0
+offset_left = 92.0
+offset_top = -70.0
+offset_right = -92.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -151,10 +151,10 @@ mouse_filter = 2
 
 [node name="ActiveTabIndicator" type="ColorRect" parent="Root/BottomTray"]
 layout_mode = 0
-offset_left = 18.0
-offset_top = 10.0
-offset_right = 160.0
-offset_bottom = 76.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 140.0
+offset_bottom = 54.0
 mouse_filter = 2
 color = Color(0.95, 0.89, 0.73, 0.18)
 
@@ -164,33 +164,33 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 92.0
-offset_top = -92.0
-offset_right = -92.0
+offset_left = 106.0
+offset_top = -64.0
+offset_right = -106.0
 offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
 
 [node name="PlantButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PL\nPlace"
 
 [node name="MixButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "RI\nRitual"
 
 [node name="InteractButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "IN\nInteract"
 
 [node name="CodexButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "CO\nCodex"

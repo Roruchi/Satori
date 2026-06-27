@@ -75,7 +75,7 @@ func test_ritual_panel_scene_uses_three_slots_and_ritual_copy() -> void:
 	var wind_detail: Label = wind_button.get_node("Contents/Labels/Detail") as Label
 	assert_eq(wind_button.text, "")
 	assert_eq(wind_title.text, "Fu")
-	assert_eq(wind_detail.text, "Wind Essence 3/3")
+	assert_eq(wind_detail.text, "3/3")
 	assert_not_null(wind_icon.texture)
 	assert_true(wind_icon.texture is AtlasTexture)
 	assert_eq((wind_icon.texture as AtlasTexture).atlas.resource_path, "res://assets/ritual/ritual_input_icon_spritesheet.png")
@@ -157,7 +157,7 @@ func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	var reed_detail: Label = reed_button.get_node("Contents/Labels/Detail") as Label
 	var reed_input_icon: TextureRect = reed_button.get_node("Contents/Icon") as TextureRect
 	assert_eq(reed_button.text, "")
-	assert_eq(reed_title.text, "Reed Fiber")
+	assert_eq(reed_title.text, "Reed")
 	assert_eq(reed_detail.text, "x1")
 	assert_false(reed_button.disabled)
 	assert_not_null(reed_input_icon.texture)
@@ -181,7 +181,7 @@ func test_ritual_panel_blocks_depleted_essence_for_single_seed() -> void:
 	var wind_title: Label = wind_button.get_node("Contents/Labels/Title") as Label
 	var wind_detail: Label = wind_button.get_node("Contents/Labels/Detail") as Label
 	assert_eq(wind_title.text, "Fu")
-	assert_eq(wind_detail.text, "Wind Essence 0/3")
+	assert_eq(wind_detail.text, "0/3")
 	assert_true(wind_button.disabled)
 	panel.call("_on_input_tapped", "essence:wind")
 	var slot0: Button = panel.get_node("VBox/Grid/Slot0") as Button
@@ -232,8 +232,10 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 	var material_slot_row: HBoxContainer = hud.get_node("Root/TopBar/InventoryStack/MaterialSlotRow") as HBoxContainer
 	var essence_title: Label = hud.get_node("Root/TopBar/ElementMeterRow/EssenceTitle") as Label
 	var debug_label: Label = hud.get_node("Root/DebugInfoLabel") as Label
-	assert_true(pouch_label.text.begins_with("Placeables:"))
-	assert_eq(material_label.text, "Materials:")
+	var plant_button: Button = hud.get_node("Root/BottomBar/PlantButton") as Button
+	var bottom_tray: Panel = hud.get_node("Root/BottomTray") as Panel
+	assert_eq(pouch_label.text, "0/8 | Empty")
+	assert_eq(material_label.text, "Mat")
 	assert_not_null(material_slot_row.get_node_or_null("MaterialSlot_reed_fiber"))
 	var reed_count_label: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/CountLabel") as Label
 	var reed_icon: TextureRect = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/Icon") as TextureRect
@@ -244,15 +246,18 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 	assert_true(reed_icon.texture is AtlasTexture)
 	assert_eq((reed_icon.texture as AtlasTexture).atlas.resource_path, "res://assets/ritual/ritual_input_icon_spritesheet.png")
 	assert_eq(reed_icon_fallback.text, "RF")
+	assert_false(reed_icon_fallback.visible)
 	assert_eq(ember_count_label.text, "0")
 	assert_eq(ember_icon_fallback.text, "EC")
-	assert_eq(essence_title.text, "Essence:")
-	assert_gt(debug_label.offset_top, 88.0)
+	assert_eq(essence_title.text, "Ess")
+	assert_gt(debug_label.offset_top, 68.0)
+	assert_lte(plant_button.custom_minimum_size.y, 48.0)
+	assert_lte(bottom_tray.size.y, 70.0)
 
 	alchemy.add_material_for_testing(&"reed_fiber", 2)
 	alchemy.add_material_for_testing(&"spirit_stone", 1)
 	await get_tree().process_frame
-	assert_eq(material_label.text, "Materials:")
+	assert_eq(material_label.text, "Mat")
 	assert_eq(reed_count_label.text, "2")
 	assert_eq(ember_count_label.text, "0")
 
@@ -273,11 +278,32 @@ func test_ritual_tab_lays_out_panel_without_screen_resize() -> void:
 
 	var panel: Control = hud.get_node("Root/Panels/SeedAlchemyPanel") as Control
 	assert_true(panel.visible)
-	assert_true(panel.size.x >= 360.0)
-	assert_true(panel.size.y >= 260.0)
+	assert_true(panel.size.x >= 320.0)
+	assert_true(panel.size.y >= 420.0)
 	assert_true(panel.position.x >= 0.0)
 	assert_true(panel.position.y >= 0.0)
 
 	remove_child(hud)
 	hud.free()
+	_cleanup_context(ctx)
+
+func test_ritual_panel_uses_three_picker_columns_at_mobile_width() -> void:
+	var ctx: Dictionary = _setup_context()
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	panel.size = Vector2(390.0, 480.0)
+	await get_tree().process_frame
+
+	var essence_grid: GridContainer = panel.get_node("VBox/PickerScroll/PickerSections/Section_essence/Grid") as GridContainer
+	var material_grid: GridContainer = panel.get_node("VBox/PickerScroll/PickerSections/Section_material/Grid") as GridContainer
+	var wind_button: Button = panel.get_node("VBox/PickerScroll/PickerSections/Section_essence/Grid/Input_essence_wind") as Button
+	var wind_detail: Label = wind_button.get_node("Contents/Labels/Detail") as Label
+	assert_eq(essence_grid.columns, 3)
+	assert_eq(material_grid.columns, 3)
+	assert_eq(wind_detail.text, "3/3")
+
+	remove_child(panel)
+	panel.free()
 	_cleanup_context(ctx)

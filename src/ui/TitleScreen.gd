@@ -2,35 +2,52 @@ class_name TitleScreen
 extends Node2D
 
 const GARDEN_SCENE = preload("res://scenes/Garden.tscn")
+const LOGO_HYBRID = preload("res://assets/ui/title/satori-logo-hybrid.png")
+const LOGO_EMBLEM = preload("res://assets/ui/title/satori-logo-emblem.png")
+const LOGO_BRUSH = preload("res://assets/ui/title/satori-logo-brush.png")
+const LOGO_ISLAND = preload("res://assets/ui/title/satori-logo-island.png")
 
-const BG_COLOR := Color(0.10, 0.07, 0.04, 1.0)
-const HEX_FILL := Color(0.63, 0.74, 0.45, 0.06)
-const HEX_LINE := Color(0.63, 0.74, 0.45, 0.14)
-const CARD_BG := Color(0.16, 0.11, 0.07, 0.96)
-const CARD_BORDER := Color(0.60, 0.42, 0.21, 0.95)
-const TEXT_TITLE := Color(0.95, 0.89, 0.73, 1.0)
-const TEXT_SUBTITLE := Color(0.70, 0.62, 0.50, 0.80)
-const BTN_BG := Color(0.58, 0.48, 0.34, 0.94)
-const BTN_BORDER := Color(0.61, 0.44, 0.22, 1.0)
-const BTN_HOVER_BG := Color(0.95, 0.89, 0.73, 1.0)
-const BTN_TEXT := Color(0.89, 0.84, 0.74, 0.96)
-const BTN_HOVER_TEXT := Color(0.19, 0.13, 0.08, 1.0)
+const BG_TOP := Color(0.07, 0.11, 0.12, 1.0)
+const BG_BOTTOM := Color(0.14, 0.11, 0.07, 1.0)
+const MIST_COLOR := Color(0.60, 0.76, 0.70, 0.12)
+const HEX_FILL := Color(0.52, 0.70, 0.50, 0.07)
+const HEX_LINE := Color(0.86, 0.72, 0.40, 0.18)
+const CARD_BG := Color(0.09, 0.13, 0.12, 0.82)
+const CARD_BORDER := Color(0.74, 0.58, 0.30, 0.90)
+const TEXT_TITLE := Color(0.96, 0.90, 0.72, 1.0)
+const TEXT_SUBTITLE := Color(0.78, 0.86, 0.78, 0.86)
+const BTN_BG := Color(0.16, 0.26, 0.22, 0.92)
+const BTN_BORDER := Color(0.65, 0.52, 0.29, 0.92)
+const BTN_HOVER_BG := Color(0.92, 0.82, 0.55, 1.0)
+const BTN_TEXT := Color(0.91, 0.88, 0.76, 0.98)
+const BTN_HOVER_TEXT := Color(0.08, 0.13, 0.11, 1.0)
+const OPTION_BG := Color(0.08, 0.15, 0.14, 0.76)
+const OPTION_ACTIVE := Color(0.70, 0.55, 0.27, 0.95)
 
-const HEX_RADIUS: float = 44.0
-const HEX_COUNT: int = 28
+const HEX_RADIUS: float = 52.0
+const HEX_COUNT: int = 34
+const LOGO_OPTIONS: Array[Texture2D] = [LOGO_HYBRID, LOGO_EMBLEM, LOGO_BRUSH, LOGO_ISLAND]
 
 var _anim_time: float = 0.0
 var _bg_hexes: Array[Vector2] = []
 var _bg_phases: Array[float] = []
+var _selected_logo_index: int = 0
 
 @onready var _settings_overlay: SettingsMenu = $SettingsOverlay
-@onready var _card: PanelContainer = $UILayer/Root/Center/Card
-@onready var _vbox: VBoxContainer = $UILayer/Root/Center/Card/VBox
-@onready var _title_lbl: Label = $UILayer/Root/Center/Card/VBox/TitleLabel
-@onready var _subtitle_lbl: Label = $UILayer/Root/Center/Card/VBox/SubtitleLabel
-@onready var _play_btn: Button = $UILayer/Root/Center/Card/VBox/PlayButton
-@onready var _settings_btn: Button = $UILayer/Root/Center/Card/VBox/SettingsButton
-@onready var _quit_btn: Button = $UILayer/Root/Center/Card/VBox/QuitButton
+@onready var _center: MarginContainer = $UILayer/Root/Center
+@onready var _content: VBoxContainer = $UILayer/Root/Center/Content
+@onready var _logo_texture: TextureRect = $UILayer/Root/Center/Content/LogoTexture
+@onready var _card: PanelContainer = $UILayer/Root/Center/Content/Card
+@onready var _vbox: VBoxContainer = $UILayer/Root/Center/Content/Card/VBox
+@onready var _title_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/TitleLabel
+@onready var _subtitle_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/SubtitleLabel
+@onready var _play_btn: Button = $UILayer/Root/Center/Content/Card/VBox/PlayButton
+@onready var _settings_btn: Button = $UILayer/Root/Center/Content/Card/VBox/SettingsButton
+@onready var _quit_btn: Button = $UILayer/Root/Center/Content/Card/VBox/QuitButton
+@onready var _hybrid_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/HybridButton
+@onready var _emblem_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/EmblemButton
+@onready var _brush_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/BrushButton
+@onready var _island_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/IslandButton
 
 func _ready() -> void:
 	_init_bg_data()
@@ -38,6 +55,13 @@ func _ready() -> void:
 	_play_btn.pressed.connect(_on_play)
 	_settings_btn.pressed.connect(_on_settings)
 	_quit_btn.pressed.connect(_on_quit)
+	_hybrid_btn.pressed.connect(_set_logo.bind(0))
+	_emblem_btn.pressed.connect(_set_logo.bind(1))
+	_brush_btn.pressed.connect(_set_logo.bind(2))
+	_island_btn.pressed.connect(_set_logo.bind(3))
+	get_viewport().size_changed.connect(_layout_ui)
+	_set_logo(_selected_logo_index)
+	_layout_ui()
 
 func _init_bg_data() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -53,12 +77,32 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var vp: Vector2 = get_viewport_rect().size
-	draw_rect(Rect2(Vector2.ZERO, vp), BG_COLOR)
+	draw_rect(Rect2(Vector2.ZERO, vp), BG_BOTTOM)
+	for y: int in 18:
+		var t: float = float(y) / 17.0
+		var band := Rect2(0.0, vp.y * t, vp.x, vp.y / 17.0 + 1.0)
+		draw_rect(band, BG_TOP.lerp(BG_BOTTOM, t))
+	_draw_glow(vp)
 	for i: int in _bg_hexes.size():
 		var pulse: float = (sin(_anim_time * 0.25 + _bg_phases[i]) + 1.0) * 0.5
 		var r: float = HEX_RADIUS * (0.75 + pulse * 0.35)
 		_draw_hex(_bg_hexes[i], r, Color(HEX_FILL.r, HEX_FILL.g, HEX_FILL.b, HEX_FILL.a * (0.4 + pulse * 0.6)), false)
 		_draw_hex(_bg_hexes[i], r, Color(HEX_LINE.r, HEX_LINE.g, HEX_LINE.b, HEX_LINE.a * pulse), true)
+	_draw_mist(vp)
+
+func _draw_glow(vp: Vector2) -> void:
+	var center := Vector2(vp.x * 0.5, vp.y * 0.36)
+	for i: int in 8:
+		var alpha: float = 0.045 - float(i) * 0.004
+		draw_circle(center, 90.0 + float(i) * 74.0, Color(0.76, 0.66, 0.35, alpha))
+
+func _draw_mist(vp: Vector2) -> void:
+	for i: int in 5:
+		var y: float = vp.y * (0.24 + float(i) * 0.13)
+		var offset: float = sin(_anim_time * 0.13 + float(i)) * 34.0
+		var from := Vector2(-120.0 + offset, y)
+		var to := Vector2(vp.x + 120.0 + offset, y + sin(float(i)) * 24.0)
+		draw_line(from, to, MIST_COLOR, 18.0 + float(i) * 3.0, true)
 
 func _draw_hex(center: Vector2, radius: float, color: Color, outline: bool) -> void:
 	var pts := PackedVector2Array()
@@ -91,32 +135,37 @@ func _style_ui() -> void:
 	card_style.border_width_top = 2
 	card_style.border_width_right = 2
 	card_style.border_width_bottom = 2
-	card_style.corner_radius_top_left = 18
-	card_style.corner_radius_top_right = 18
-	card_style.corner_radius_bottom_left = 18
-	card_style.corner_radius_bottom_right = 18
-	card_style.content_margin_left = 36.0
-	card_style.content_margin_top = 32.0
-	card_style.content_margin_right = 36.0
-	card_style.content_margin_bottom = 32.0
-	card_style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
-	card_style.shadow_size = 14
+	card_style.corner_radius_top_left = 8
+	card_style.corner_radius_top_right = 8
+	card_style.corner_radius_bottom_left = 8
+	card_style.corner_radius_bottom_right = 8
+	card_style.content_margin_left = 32.0
+	card_style.content_margin_top = 26.0
+	card_style.content_margin_right = 32.0
+	card_style.content_margin_bottom = 28.0
+	card_style.shadow_color = Color(0.0, 0.0, 0.0, 0.46)
+	card_style.shadow_size = 18
 	_card.add_theme_stylebox_override("panel", card_style)
 
-	_title_lbl.add_theme_font_size_override("font_size", 48)
+	_title_lbl.visible = false
+	_title_lbl.add_theme_font_size_override("font_size", 38)
 	_title_lbl.add_theme_color_override("font_color", TEXT_TITLE)
 
-	_subtitle_lbl.add_theme_font_size_override("font_size", 14)
+	_subtitle_lbl.add_theme_font_size_override("font_size", 15)
 	_subtitle_lbl.add_theme_color_override("font_color", TEXT_SUBTITLE)
 
-	_vbox.add_theme_constant_override("separation", 10)
+	_vbox.add_theme_constant_override("separation", 11)
 
 	for child: Node in _vbox.get_children():
 		if child is Button:
 			_style_button(child as Button)
+		if child is HBoxContainer:
+			for option_child: Node in child.get_children():
+				if option_child is Button:
+					_style_option_button(option_child as Button)
 
 func _style_button(btn: Button) -> void:
-	btn.custom_minimum_size = Vector2(0, 54)
+	btn.custom_minimum_size = Vector2(0, 52)
 	btn.add_theme_font_size_override("font_size", 17)
 	var normal_style := StyleBoxFlat.new()
 	normal_style.bg_color = BTN_BG
@@ -125,10 +174,10 @@ func _style_button(btn: Button) -> void:
 	normal_style.border_width_top = 2
 	normal_style.border_width_right = 2
 	normal_style.border_width_bottom = 2
-	normal_style.corner_radius_top_left = 12
-	normal_style.corner_radius_top_right = 12
-	normal_style.corner_radius_bottom_left = 12
-	normal_style.corner_radius_bottom_right = 12
+	normal_style.corner_radius_top_left = 7
+	normal_style.corner_radius_top_right = 7
+	normal_style.corner_radius_bottom_left = 7
+	normal_style.corner_radius_bottom_right = 7
 	normal_style.content_margin_left = 16.0
 	normal_style.content_margin_right = 16.0
 	btn.add_theme_stylebox_override("normal", normal_style)
@@ -141,3 +190,67 @@ func _style_button(btn: Button) -> void:
 	btn.add_theme_color_override("font_hover_color", BTN_HOVER_TEXT)
 	btn.add_theme_color_override("font_pressed_color", BTN_HOVER_TEXT)
 	btn.add_theme_color_override("font_focus_color", BTN_TEXT)
+
+func _style_option_button(btn: Button) -> void:
+	btn.custom_minimum_size = Vector2(82, 34)
+	btn.add_theme_font_size_override("font_size", 12)
+	var normal_style := StyleBoxFlat.new()
+	normal_style.bg_color = OPTION_BG
+	normal_style.border_color = Color(0.48, 0.64, 0.55, 0.55)
+	normal_style.border_width_left = 1
+	normal_style.border_width_top = 1
+	normal_style.border_width_right = 1
+	normal_style.border_width_bottom = 1
+	normal_style.corner_radius_top_left = 7
+	normal_style.corner_radius_top_right = 7
+	normal_style.corner_radius_bottom_left = 7
+	normal_style.corner_radius_bottom_right = 7
+	btn.add_theme_stylebox_override("normal", normal_style)
+	var hover_style: StyleBoxFlat = normal_style.duplicate()
+	hover_style.bg_color = BTN_HOVER_BG
+	btn.add_theme_stylebox_override("hover", hover_style)
+	btn.add_theme_stylebox_override("focus", hover_style)
+	btn.add_theme_color_override("font_color", TEXT_SUBTITLE)
+	btn.add_theme_color_override("font_hover_color", BTN_HOVER_TEXT)
+	btn.add_theme_color_override("font_focus_color", BTN_HOVER_TEXT)
+
+func _set_logo(index: int) -> void:
+	_selected_logo_index = clampi(index, 0, LOGO_OPTIONS.size() - 1)
+	_logo_texture.texture = LOGO_OPTIONS[_selected_logo_index]
+	_update_logo_option_styles()
+
+func _update_logo_option_styles() -> void:
+	var buttons: Array[Button] = [_hybrid_btn, _emblem_btn, _brush_btn, _island_btn]
+	for i: int in buttons.size():
+		var btn: Button = buttons[i]
+		var style := StyleBoxFlat.new()
+		style.bg_color = OPTION_ACTIVE if i == _selected_logo_index else OPTION_BG
+		style.border_color = CARD_BORDER if i == _selected_logo_index else Color(0.48, 0.64, 0.55, 0.55)
+		style.border_width_left = 1
+		style.border_width_top = 1
+		style.border_width_right = 1
+		style.border_width_bottom = 1
+		style.corner_radius_top_left = 7
+		style.corner_radius_top_right = 7
+		style.corner_radius_bottom_left = 7
+		style.corner_radius_bottom_right = 7
+		btn.add_theme_stylebox_override("normal", style)
+		btn.add_theme_color_override("font_color", Color(0.08, 0.13, 0.11, 1.0) if i == _selected_logo_index else TEXT_SUBTITLE)
+
+func _layout_ui() -> void:
+	var vp: Vector2 = get_viewport_rect().size
+	var margin_x: int = int(clampf(vp.x * 0.055, 18.0, 56.0))
+	var margin_y: int = int(clampf(vp.y * 0.045, 16.0, 44.0))
+	_center.add_theme_constant_override("margin_left", margin_x)
+	_center.add_theme_constant_override("margin_right", margin_x)
+	_center.add_theme_constant_override("margin_top", margin_y)
+	_center.add_theme_constant_override("margin_bottom", margin_y)
+
+	var logo_width: float = clampf(vp.x * 0.62, 360.0, 760.0)
+	var logo_height: float = clampf(vp.y * 0.26, 150.0, 280.0)
+	if vp.x < 720.0:
+		logo_width = clampf(vp.x - float(margin_x * 2), 280.0, 520.0)
+		logo_height = 150.0
+	_logo_texture.custom_minimum_size = Vector2(logo_width, logo_height)
+	_card.custom_minimum_size = Vector2(clampf(vp.x * 0.35, 330.0, 470.0), 0.0)
+	_content.add_theme_constant_override("separation", int(clampf(vp.y * 0.018, 10.0, 18.0)))

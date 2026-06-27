@@ -35,22 +35,22 @@ func _on_seed_added(_recipe: SeedRecipe) -> void:
 func _refresh() -> void:
 	var growth: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth == null or not growth.has_method("get_pouch"):
-		text = "Placeables: 0/0 | Empty"
+		text = "0/0 | Empty"
 		return
 	var pouch: SeedPouch = growth.get_pouch()
 	if pouch == null:
-		text = "Placeables: 0/0 | Empty"
+		text = "0/0 | Empty"
 		return
 	if pouch.size() == 0:
-		text = "Placeables: 0/%d | Empty" % pouch.capacity
+		text = "0/%d | Empty" % pouch.capacity
 		return
 	text = _format_place_inventory_status(pouch)
 
 func _format_place_inventory_status(pouch: SeedPouch) -> String:
 	if pouch == null:
-		return "Placeables: 0/0 | Empty"
+		return "0/0 | Empty"
 	if pouch.size() == 0:
-		return "Placeables: 0/%d | Empty" % pouch.capacity
+		return "0/%d | Empty" % pouch.capacity
 	var placeable_parts: Array[String] = []
 	for i: int in range(pouch.size()):
 		if pouch.get_entry_kind_at(i) == &"building_item":
@@ -62,7 +62,7 @@ func _format_place_inventory_status(pouch: SeedPouch) -> String:
 			var uses: int = pouch.get_uses_at(i)
 			if recipe != null and uses > 0:
 				placeable_parts.append("%s x%d" % [_seed_display_name(recipe), uses])
-	var prefix: String = "Placeables: %d/%d" % [pouch.size(), pouch.capacity]
+	var prefix: String = "%d/%d" % [pouch.size(), pouch.capacity]
 	if placeable_parts.is_empty():
 		return "%s | Empty" % prefix
 	return "%s | %s" % [prefix, ", ".join(placeable_parts)]
@@ -72,8 +72,8 @@ func _seed_display_name(recipe: SeedRecipe) -> String:
 		return "Seed"
 	var biome_name: String = str(_BIOME_NAMES.get(recipe.produces_biome, recipe.recipe_id))
 	if biome_name.ends_with("Seed"):
-		return biome_name
-	return "%s Seed" % biome_name
+		return biome_name.trim_suffix(" Seed")
+	return biome_name
 
 func _building_display_name(type_key: StringName) -> String:
 	var form_name: String = _form_display_name(type_key)

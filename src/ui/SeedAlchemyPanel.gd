@@ -10,8 +10,14 @@ const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_inpu
 const SLOT_COUNT: int = 3
 const EMPTY_KEY: String = ""
 const RITUAL_ICON_CELL_SIZE: float = 32.0
-const INPUT_BUTTON_MIN_SIZE: Vector2 = Vector2(138.0, 68.0)
-const SLOT_BUTTON_MIN_SIZE: Vector2 = Vector2(116.0, 78.0)
+const INPUT_BUTTON_FULL_SIZE: Vector2 = Vector2(138.0, 68.0)
+const INPUT_BUTTON_COMPACT_SIZE: Vector2 = Vector2(104.0, 56.0)
+const INPUT_BUTTON_NARROW_SIZE: Vector2 = Vector2(86.0, 54.0)
+const SLOT_BUTTON_FULL_SIZE: Vector2 = Vector2(116.0, 78.0)
+const SLOT_BUTTON_COMPACT_SIZE: Vector2 = Vector2(92.0, 64.0)
+const SLOT_BUTTON_NARROW_SIZE: Vector2 = Vector2(80.0, 62.0)
+const COMPACT_WIDTH: float = 460.0
+const NARROW_WIDTH: float = 340.0
 
 const _INPUT_COLORS: Dictionary = {
 	"essence:earth": Color(0.62, 0.62, 0.62),
@@ -106,10 +112,13 @@ const _FEEDBACK_MESSAGES: Dictionary = {
 }
 
 @onready var _preview_label: Label = $VBox/Preview
+@onready var _vbox: VBoxContainer = $VBox
 @onready var _pouch_status_label: Label = $VBox/PouchStatus
 @onready var _feedback_label: Label = $VBox/Feedback
 @onready var _slots_label: Label = $VBox/Slots
 @onready var _choice_prompt_label: Label = $VBox/ChoicePrompt
+@onready var _slot_grid: GridContainer = $VBox/Grid
+@onready var _picker_scroll: ScrollContainer = $VBox/PickerScroll
 @onready var _picker_sections: VBoxContainer = $VBox/PickerScroll/PickerSections
 @onready var _slot_buttons: Array[Button] = [
 	$VBox/Grid/Slot0,
@@ -126,6 +135,8 @@ var _input_buttons_by_key: Dictionary = {}
 var _section_grids_by_kind: Dictionary = {}
 var _section_nodes_by_kind: Dictionary = {}
 var _input_icon_cache: Dictionary = {}
+var _compact_layout: bool = true
+var _narrow_layout: bool = false
 
 func _ready() -> void:
 	for _i: int in range(SLOT_COUNT):
@@ -150,11 +161,12 @@ func _ready() -> void:
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
 	_apply_panel_style()
+	_apply_responsive_layout()
 	_update_ui()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
-		_apply_responsive_picker_columns()
+		_apply_responsive_layout()
 
 func _apply_panel_style() -> void:
 	var bg := StyleBoxFlat.new()
@@ -239,8 +251,8 @@ func _update_ui() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	_ensure_selected_slot()
 	_refresh_input_controls()
+	_apply_responsive_layout()
 	_update_input_buttons()
-	_apply_responsive_picker_columns()
 	var occupied_count: int = _count_occupied_slots()
 	_slots_label.text = "Ritual slots: %d/%d" % [occupied_count, SLOT_COUNT]
 	_choice_prompt_label.text = _format_choice_prompt()
@@ -318,7 +330,7 @@ func _create_input_button(input_key: String) -> Button:
 	var btn: Button = Button.new()
 	btn.name = _node_name_for_input_key(input_key)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.custom_minimum_size = INPUT_BUTTON_MIN_SIZE
+	btn.custom_minimum_size = _input_button_min_size()
 	btn.clip_text = true
 	btn.pressed.connect(func() -> void: _on_input_tapped(input_key))
 	return btn
@@ -327,6 +339,7 @@ func _ensure_button_contents(btn: Button) -> Dictionary:
 	var existing: Node = btn.get_node_or_null("Contents")
 	if existing != null:
 		return {
+			"row": existing,
 			"icon": existing.get_node("Icon"),
 			"title": existing.get_node("Labels/Title"),
 			"detail": existing.get_node("Labels/Detail"),
@@ -370,10 +383,11 @@ func _ensure_button_contents(btn: Button) -> Dictionary:
 	detail.add_theme_font_size_override("font_size", 12)
 	labels.add_child(detail)
 	btn.add_child(row)
-	return {"icon": icon, "title": title, "detail": detail}
+	return {"row": row, "icon": icon, "title": title, "detail": detail}
 
 func _set_input_button_content(btn: Button, key: String, definition: Dictionary, available: int, unlocked: bool) -> void:
 	var parts: Dictionary = _ensure_button_contents(btn)
+	_apply_button_content_metrics(parts)
 	var icon: TextureRect = parts["icon"] as TextureRect
 	var title: Label = parts["title"] as Label
 	var detail: Label = parts["detail"] as Label
@@ -381,12 +395,15 @@ func _set_input_button_content(btn: Button, key: String, definition: Dictionary,
 		icon.texture = _icon_texture_for_key(key)
 		icon.modulate = Color.WHITE if unlocked else Color(0.45, 0.42, 0.50, 0.75)
 	if title != null:
-		title.text = _display_label_for_key(key, definition)
+		title.text = _compact_display_label_for_key(key) if _compact_layout else _display_label_for_key(key, definition)
 	if detail != null:
 		if not unlocked:
 			detail.text = "Locked"
 		elif key.begins_with("essence:"):
-			detail.text = "%s %d/%d" % [str(_INPUT_SUBLABELS.get(key, "Essence")), available, _capacity_for_definition(definition)]
+			if _compact_layout:
+				detail.text = "%d/%d" % [available, _capacity_for_definition(definition)]
+			else:
+				detail.text = "%s %d/%d" % [str(_INPUT_SUBLABELS.get(key, "Essence")), available, _capacity_for_definition(definition)]
 		else:
 			detail.text = "x%d" % available
 
@@ -413,22 +430,97 @@ func _ensure_section_grid(kind: StringName) -> GridContainer:
 	_section_grids_by_kind[kind] = grid
 	return grid
 
-func _apply_responsive_picker_columns() -> void:
+func _apply_responsive_layout() -> void:
 	var panel_width: float = size.x
 	if panel_width <= 0.0:
 		panel_width = custom_minimum_size.x
+	_compact_layout = panel_width < COMPACT_WIDTH
+	_narrow_layout = panel_width < NARROW_WIDTH
+	if _vbox != null:
+		_vbox.add_theme_constant_override("separation", 5 if _compact_layout else 8)
+	if _slot_grid != null:
+		_slot_grid.columns = SLOT_COUNT
+		_slot_grid.add_theme_constant_override("h_separation", 5 if _narrow_layout else 8)
+		_slot_grid.add_theme_constant_override("v_separation", 5 if _compact_layout else 8)
+	for slot_button: Button in _slot_buttons:
+		if slot_button != null:
+			slot_button.custom_minimum_size = _slot_button_min_size()
+	if _picker_scroll != null:
+		_picker_scroll.custom_minimum_size = Vector2(0.0, 164.0 if _compact_layout else 190.0)
+	var content_width: float = maxf(1.0, panel_width - 36.0)
+	var button_size: Vector2 = _input_button_min_size()
+	var gap: int = 5 if _compact_layout else 6
 	for kind_variant: Variant in _section_grids_by_kind.keys():
 		var kind: StringName = StringName(str(kind_variant))
 		var grid: GridContainer = _section_grids_by_kind[kind] as GridContainer
 		if grid == null:
 			continue
-		if kind == &"essence":
-			grid.columns = 2 if panel_width < 420.0 else 3
-		else:
-			grid.columns = 1 if panel_width < 360.0 else 2
+		grid.add_theme_constant_override("h_separation", gap)
+		grid.add_theme_constant_override("v_separation", gap)
+		grid.columns = mini(3, maxi(1, int(floor((content_width + float(gap)) / (button_size.x + float(gap))))))
+	var title_font_size: int = 12 if _compact_layout else 13
+	for kind_node_variant: Variant in _section_nodes_by_kind.keys():
+		var section_kind: StringName = StringName(str(kind_node_variant))
+		var section: VBoxContainer = _section_nodes_by_kind[section_kind] as VBoxContainer
+		if section == null:
+			continue
+		section.add_theme_constant_override("separation", 3 if _compact_layout else 4)
+		var title: Label = section.get_node_or_null("Title") as Label
+		if title != null:
+			title.text = _section_title(section_kind)
+			title.add_theme_font_size_override("font_size", title_font_size)
+	for key_variant: Variant in _input_buttons_by_key.keys():
+		var btn: Button = _input_buttons_by_key[key_variant] as Button
+		if btn != null:
+			btn.custom_minimum_size = button_size
 
 func _section_title(kind: StringName) -> String:
+	if _compact_layout:
+		match kind:
+			&"essence":
+				return "Essence"
+			&"material":
+				return "Materials"
+			&"component":
+				return "Components"
+			&"spirit":
+				return "Assistants"
 	return str(_SECTION_TITLES.get(kind, str(kind).replace("_", " ").capitalize()))
+
+func _input_button_min_size() -> Vector2:
+	if _narrow_layout:
+		return INPUT_BUTTON_NARROW_SIZE
+	if _compact_layout:
+		return INPUT_BUTTON_COMPACT_SIZE
+	return INPUT_BUTTON_FULL_SIZE
+
+func _slot_button_min_size() -> Vector2:
+	if _narrow_layout:
+		return SLOT_BUTTON_NARROW_SIZE
+	if _compact_layout:
+		return SLOT_BUTTON_COMPACT_SIZE
+	return SLOT_BUTTON_FULL_SIZE
+
+func _apply_button_content_metrics(parts: Dictionary) -> void:
+	var row: HBoxContainer = parts.get("row", null) as HBoxContainer
+	var icon: TextureRect = parts.get("icon", null) as TextureRect
+	var title: Label = parts.get("title", null) as Label
+	var detail: Label = parts.get("detail", null) as Label
+	var inset_x: float = 5.0 if _compact_layout else 8.0
+	var inset_y: float = 4.0 if _compact_layout else 6.0
+	if row != null:
+		row.offset_left = inset_x
+		row.offset_top = inset_y
+		row.offset_right = -inset_x
+		row.offset_bottom = -inset_y
+		row.add_theme_constant_override("separation", 5 if _compact_layout else 8)
+	if icon != null:
+		var icon_size: float = 26.0 if _compact_layout else 32.0
+		icon.custom_minimum_size = Vector2(icon_size, icon_size)
+	if title != null:
+		title.add_theme_font_size_override("font_size", 13 if _compact_layout else 14)
+	if detail != null:
+		detail.add_theme_font_size_override("font_size", 11 if _compact_layout else 12)
 
 func _node_name_for_input_key(input_key: String) -> String:
 	return "Input_%s" % input_key.replace(":", "_").replace("-", "_").replace(" ", "_")
@@ -436,7 +528,7 @@ func _node_name_for_input_key(input_key: String) -> String:
 func _update_slot_button(slot_index: int) -> void:
 	var key: String = _slot_keys[slot_index]
 	var btn: Button = _slot_buttons[slot_index]
-	btn.custom_minimum_size = SLOT_BUTTON_MIN_SIZE
+	btn.custom_minimum_size = _slot_button_min_size()
 	btn.clip_text = true
 	var selected: bool = slot_index == _selected_slot_index
 	if key.is_empty():
@@ -477,6 +569,7 @@ func _update_slot_button(slot_index: int) -> void:
 
 func _set_slot_button_content(btn: Button, texture: Texture2D, title_text: String, detail_text: String, show_icon: bool) -> void:
 	var parts: Dictionary = _ensure_button_contents(btn)
+	_apply_button_content_metrics(parts)
 	var icon: TextureRect = parts["icon"] as TextureRect
 	var title: Label = parts["title"] as Label
 	var detail: Label = parts["detail"] as Label
@@ -544,6 +637,11 @@ func _display_label_for_key(key: String, definition: Dictionary = {}) -> String:
 	if _INPUT_LABELS.has(key):
 		return str(_INPUT_LABELS[key])
 	return str(definition.get("display_name", key.replace(":", " ").replace("_", " ").capitalize()))
+
+func _compact_display_label_for_key(key: String) -> String:
+	if key.begins_with("material:"):
+		return _short_label_for_key(key)
+	return str(_INPUT_LABELS.get(key, _short_label_for_key(key)))
 
 func _short_label_for_key(key: String) -> String:
 	return str(_INPUT_SHORT_LABELS.get(key, _display_label_for_key(key).substr(0, mini(6, _display_label_for_key(key).length()))))
