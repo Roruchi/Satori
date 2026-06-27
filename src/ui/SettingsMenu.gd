@@ -17,11 +17,13 @@ const BTN_TEXT := Color(0.19, 0.13, 0.08, 1.0)
 @onready var _mute_check: CheckButton = $Root/Center/Panel/VBox/MuteRow/MuteCheck
 @onready var _growth_check: CheckButton = $Root/Center/Panel/VBox/GrowthRow/GrowthCheck
 @onready var _debug_check: CheckButton = $Root/Center/Panel/VBox/DebugRow/DebugCheck
+@onready var _version_lbl: Label = $Root/Center/Panel/VBox/VersionLabel
 @onready var _close_btn: Button = $Root/Center/Panel/VBox/CloseButton
 
 func _ready() -> void:
 	_style_ui()
 	_sync_from_settings()
+	_sync_version_label()
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	_mute_check.toggled.connect(_on_mute_toggled)
 	_growth_check.toggled.connect(_on_growth_toggled)
@@ -48,6 +50,7 @@ func _sync_from_settings() -> void:
 
 func show_menu() -> void:
 	_sync_from_settings()
+	_sync_version_label()
 	_growth_check.text = "Fast Progression (x16)"
 	_debug_check.text = ""
 	visible = true
@@ -101,6 +104,9 @@ func _style_ui() -> void:
 	_vbox.add_theme_constant_override("separation", 12)
 
 	for child: Node in _vbox.get_children():
+		if child == _version_lbl:
+			(child as Label).add_theme_color_override("font_color", TEXT_LIGHT)
+			(child as Label).add_theme_font_size_override("font_size", 13)
 		if child is HBoxContainer:
 			for row_child: Node in child.get_children():
 				if row_child is Label:
@@ -134,3 +140,9 @@ func _style_close_button(btn: Button) -> void:
 	btn.add_theme_color_override("font_color", BTN_TEXT)
 	btn.add_theme_color_override("font_hover_color", BTN_TEXT)
 	btn.add_theme_color_override("font_pressed_color", BTN_TEXT)
+
+func _sync_version_label() -> void:
+	var version: String = "0.1.0-alpha+local"
+	if ProjectSettings.has_setting("application/config/version"):
+		version = str(ProjectSettings.get_setting("application/config/version"))
+	_version_lbl.text = "Version %s" % version

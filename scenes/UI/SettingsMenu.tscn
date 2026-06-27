@@ -99,6 +99,12 @@ layout_mode = 2
 [node name="Sep2" type="HSeparator" parent="Root/Center/Panel/VBox"]
 layout_mode = 2
 
+[node name="VersionLabel" type="Label" parent="Root/Center/Panel/VBox"]
+layout_mode = 2
+text = "Version"
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="CloseButton" type="Button" parent="Root/Center/Panel/VBox"]
 layout_mode = 2
 text = "Close"

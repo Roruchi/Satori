@@ -3,6 +3,8 @@ extends Node
 
 const SAVE_PATH: String = "user://spirit_instances.json"
 
+signal spirit_instance_recorded(spirit_id: String)
+
 var _instances: Array[Dictionary] = []
 var _summoned_ids: Dictionary = {}
 
@@ -19,6 +21,7 @@ func record_instance(instance: SpiritInstance) -> void:
 		return
 	_summoned_ids[key] = true
 	_instances.append(instance.serialize())
+	spirit_instance_recorded.emit(instance.spirit_id)
 	_save()
 
 ## Return true if the given spirit has already been summoned on the given island.

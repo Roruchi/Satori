@@ -16,6 +16,7 @@ const CARD_BG := Color(0.09, 0.13, 0.12, 0.82)
 const CARD_BORDER := Color(0.74, 0.58, 0.30, 0.90)
 const TEXT_TITLE := Color(0.96, 0.90, 0.72, 1.0)
 const TEXT_SUBTITLE := Color(0.78, 0.86, 0.78, 0.86)
+const TEXT_WARNING := Color(0.96, 0.68, 0.48, 1.0)
 const BTN_BG := Color(0.16, 0.26, 0.22, 0.92)
 const BTN_BORDER := Color(0.65, 0.52, 0.29, 0.92)
 const BTN_HOVER_BG := Color(0.92, 0.82, 0.55, 1.0)
@@ -41,6 +42,7 @@ var _selected_logo_index: int = 0
 @onready var _vbox: VBoxContainer = $UILayer/Root/Center/Content/Card/VBox
 @onready var _title_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/TitleLabel
 @onready var _subtitle_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/SubtitleLabel
+@onready var _status_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/StatusLabel
 @onready var _play_btn: Button = $UILayer/Root/Center/Content/Card/VBox/PlayButton
 @onready var _settings_btn: Button = $UILayer/Root/Center/Content/Card/VBox/SettingsButton
 @onready var _quit_btn: Button = $UILayer/Root/Center/Content/Card/VBox/QuitButton
@@ -118,7 +120,9 @@ func _draw_hex(center: Vector2, radius: float, color: Color, outline: bool) -> v
 func _on_play() -> void:
 	var save_service: Node = get_node_or_null("/root/SaveGameService")
 	if save_service != null and save_service.has_method("start_session"):
-		save_service.start_session()
+		if not bool(save_service.start_session()):
+			_show_save_status(save_service)
+			return
 	get_tree().change_scene_to_packed(GARDEN_SCENE)
 
 func _on_settings() -> void:
@@ -153,6 +157,8 @@ func _style_ui() -> void:
 
 	_subtitle_lbl.add_theme_font_size_override("font_size", 15)
 	_subtitle_lbl.add_theme_color_override("font_color", TEXT_SUBTITLE)
+	_status_lbl.add_theme_font_size_override("font_size", 13)
+	_status_lbl.add_theme_color_override("font_color", TEXT_WARNING)
 
 	_vbox.add_theme_constant_override("separation", 11)
 
@@ -254,3 +260,13 @@ func _layout_ui() -> void:
 	_logo_texture.custom_minimum_size = Vector2(logo_width, logo_height)
 	_card.custom_minimum_size = Vector2(clampf(vp.x * 0.35, 330.0, 470.0), 0.0)
 	_content.add_theme_constant_override("separation", int(clampf(vp.y * 0.018, 10.0, 18.0)))
+
+func _show_save_status(save_service: Node) -> void:
+	var message: String = "The garden save could not be loaded safely."
+	if save_service != null and save_service.has_method("get_last_failure_message"):
+		var message_variant: Variant = save_service.get_last_failure_message()
+		var service_message: String = str(message_variant)
+		if not service_message.is_empty():
+			message = service_message
+	_status_lbl.text = message
+	_status_lbl.visible = true

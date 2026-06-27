@@ -126,7 +126,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 | 2 | Phase 1 - Playable First Session | [027-playable-first-session](../specs/027-playable-first-session/spec.md) | Drafted | Verified | Fresh save reaches Meadow, Living Wood, Red Fox, Warm Hollow, automatically housed Red Fox in a Meadow dwelling, and save/load. Evidence: `specs/027-playable-first-session/evidence.md`. |
 | 3 | Phase 2 - First Island Fun Loop | [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md) | Drafted | Verified | First island supports Red Fox care, upgraded Fox Den, HUD/hover/Codex Satori feedback, Dew Bowl and Wind Chime, invalid-action clarity, and save/load. Evidence: `specs/028-first-island-fun-loop/evidence.md`. |
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Verified | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. Evidence: `specs/029-alpha-endgame-kami-spine/evidence.md`. |
-| 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Not Started | First-session, first-island, and endgame/kami states round-trip with schema/version safety. |
+| 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Verified | First-session, first-island, and endgame/kami states round-trip with schema/version safety. Evidence: `specs/030-alpha-save-safety/evidence.md`. |
 | 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Not Started | Local Web build exports, runs, saves across reload, and is packageable for itch.io. |
 | 7 | Phase 6 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state. |
 | 8 | Phases 7-8 - Alpha Content and External Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Included content is wired and tester brief, known issues, versioning, Web playthrough, and Android playthrough are ready. |
@@ -290,7 +290,7 @@ Exit gates:
 ## Phase 4 - Save Safety and Testable Builds
 
 Spec: [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md)  
-Alpha status: Not Started
+Alpha status: Verified
 
 Goal: make alpha testing safe enough that testers do not lose gardens or hit obvious platform blockers.
 

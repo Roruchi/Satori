@@ -69,6 +69,12 @@ text = "A living garden of rituals, spirits and patterns"
 horizontal_alignment = 1
 autowrap_mode = 3
 
+[node name="StatusLabel" type="Label" parent="UILayer/Root/Center/Content/Card/VBox"]
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="Spacer" type="Control" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 8)
