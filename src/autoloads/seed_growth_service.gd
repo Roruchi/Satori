@@ -93,6 +93,41 @@ func get_tracker() -> GrowthSlotTracker:
 func get_pouch() -> SeedPouch:
 	return _pouch
 
+func serialize_seed_growth_state() -> Dictionary:
+	var active: Array[Dictionary] = []
+	for seed: SeedInstance in _tracker.active_seeds:
+		active.append(seed.serialize())
+	return {
+		"tracker_capacity": _tracker.capacity,
+		"active_seeds": active,
+		"pouch": _pouch.serialize(),
+		"growth_speed_multiplier": _growth_speed_multiplier,
+	}
+
+func restore_seed_growth_state(data: Dictionary) -> bool:
+	var raw_active: Variant = data.get("active_seeds", [])
+	var raw_pouch: Variant = data.get("pouch", {})
+	if not (raw_active is Array) or not (raw_pouch is Dictionary):
+		return false
+	var registry: SeedRecipeRegistry = SeedRecipeRegistry.new()
+	var tracker: GrowthSlotTracker = GrowthSlotTrackerScript.new()
+	tracker.capacity = int(data.get("tracker_capacity", tracker.capacity))
+	for raw_seed: Variant in raw_active:
+		if not (raw_seed is Dictionary):
+			continue
+		var seed: SeedInstance = SeedInstanceScript.deserialize(raw_seed as Dictionary)
+		if seed.recipe_id == &"":
+			continue
+		tracker.add(seed)
+	var pouch: SeedPouch = SeedPouchScript.new()
+	if not pouch.restore(raw_pouch as Dictionary, registry):
+		return false
+	_tracker = tracker
+	_pouch = pouch
+	_growth_speed_multiplier = clampf(float(data.get("growth_speed_multiplier", _growth_speed_multiplier)), 1.0, 16.0)
+	pouch_updated.emit()
+	return true
+
 func notify_pouch_updated() -> void:
 	pouch_updated.emit()
 

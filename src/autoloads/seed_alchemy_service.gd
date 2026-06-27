@@ -146,6 +146,57 @@ func add_material_for_testing(material_id: StringName, amount: int) -> void:
 	_material_counts[material_id] = maxi(0, current + amount)
 	material_count_changed.emit(material_id, get_material_count(material_id))
 
+func serialize_seed_alchemy_state() -> Dictionary:
+	var element_charges: Dictionary = {}
+	for element: int in range(GodaiElementScript.Value.CHI, GodaiElementScript.Value.KU + 1):
+		element_charges[str(element)] = _kusho_pool.get_charge(element)
+	var unlocked: Array[int] = []
+	for element_id: int in _unlocked_elements:
+		unlocked.append(element_id)
+	return {
+		"material_counts": _stringify_keyed_dictionary(_material_counts),
+		"unlocked_elements": unlocked,
+		"element_charges": element_charges,
+		"discovered": _stringify_keyed_dictionary(_discovered),
+		"building_discovered": _stringify_keyed_dictionary(_building_discovered),
+		"pending_shrine_charges": _pending_shrine_charges.duplicate(true),
+	}
+
+func restore_seed_alchemy_state(data: Dictionary) -> bool:
+	_material_counts.clear()
+	var material_counts: Dictionary = _dictionary_from_string_keys(data.get("material_counts", {}))
+	for material_id: StringName in MATERIAL_DISPLAY_ORDER:
+		_material_counts[material_id] = int(material_counts.get(material_id, 0))
+	var unlocked: Array[int] = []
+	var raw_unlocked: Variant = data.get("unlocked_elements", [])
+	if raw_unlocked is Array:
+		for element_variant: Variant in raw_unlocked:
+			var element: int = int(element_variant)
+			if not unlocked.has(element):
+				unlocked.append(element)
+	if unlocked.is_empty():
+		unlocked = [
+			GodaiElementScript.Value.CHI,
+			GodaiElementScript.Value.SUI,
+			GodaiElementScript.Value.KA,
+			GodaiElementScript.Value.FU,
+		]
+	_unlocked_elements = unlocked
+	var raw_charges: Variant = data.get("element_charges", {})
+	if raw_charges is Dictionary:
+		var charges: Dictionary = raw_charges as Dictionary
+		for element_restore: int in range(GodaiElementScript.Value.CHI, GodaiElementScript.Value.KU + 1):
+			_set_pool_charge(element_restore, int(charges.get(str(element_restore), 0)))
+	_discovered = _dictionary_from_string_keys(data.get("discovered", {}))
+	_building_discovered = _dictionary_from_string_keys(data.get("building_discovered", {}))
+	var raw_pending: Variant = data.get("pending_shrine_charges", {})
+	_pending_shrine_charges = raw_pending as Dictionary if raw_pending is Dictionary else {}
+	for material_key: StringName in MATERIAL_DISPLAY_ORDER:
+		material_count_changed.emit(material_key, get_material_count(material_key))
+	for unlocked_element: int in _unlocked_elements:
+		element_charge_changed.emit(unlocked_element, _kusho_pool.get_charge(unlocked_element))
+	return true
+
 func preview_ritual(slot_keys: Array[String]) -> RitualAttemptResultScript:
 	return _resolve_ritual(slot_keys, false)
 
@@ -552,6 +603,21 @@ func _material_display_name(material_id: StringName) -> String:
 			return "Ember Clay"
 		_:
 			return str(material_id).replace("_", " ").capitalize()
+
+func _stringify_keyed_dictionary(source: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for key_variant: Variant in source.keys():
+		result[str(key_variant)] = source[key_variant]
+	return result
+
+func _dictionary_from_string_keys(value: Variant) -> Dictionary:
+	var result: Dictionary = {}
+	if not (value is Dictionary):
+		return result
+	var source: Dictionary = value as Dictionary
+	for key_variant: Variant in source.keys():
+		result[StringName(str(key_variant))] = source[key_variant]
+	return result
 
 func _ritual_input_defs_by_key() -> Dictionary:
 	var defs: Dictionary = {}

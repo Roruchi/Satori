@@ -67,6 +67,12 @@ func load_game() -> bool:
 	if not restored:
 		load_failed.emit(loaded_path, "restore_failed")
 		return false
+	if not _restore_optional_service(payload, "seed_growth", "SeedGrowthService", "restore_seed_growth_state", loaded_path):
+		return false
+	if not _restore_optional_service(payload, "seed_alchemy", "SeedAlchemyService", "restore_seed_alchemy_state", loaded_path):
+		return false
+	if not _restore_optional_service(payload, "spirit_persistence", "SpiritPersistence", "restore_spirit_persistence_state", loaded_path):
+		return false
 	load_completed.emit(loaded_path)
 	return true
 
@@ -88,6 +94,9 @@ func save_now(reason: String = "autosave") -> bool:
 		"reason": reason,
 		"game_state": game_state_data,
 	}
+	_add_optional_service_payload(payload, "seed_growth", "SeedGrowthService", "serialize_seed_growth_state")
+	_add_optional_service_payload(payload, "seed_alchemy", "SeedAlchemyService", "serialize_seed_alchemy_state")
+	_add_optional_service_payload(payload, "spirit_persistence", "SpiritPersistence", "serialize_spirit_persistence_state")
 	var text: String = JSON.stringify(payload, "\t")
 	var temp_file := FileAccess.open(_temp_path, FileAccess.WRITE)
 	if temp_file == null:
@@ -124,6 +133,30 @@ func _ensure_save_dir() -> bool:
 	var relative_dir: String = _save_dir.replace("user://", "")
 	var err: Error = dir.make_dir_recursive(relative_dir)
 	return err == OK or err == ERR_ALREADY_EXISTS
+
+func _add_optional_service_payload(payload: Dictionary, payload_key: String, node_name: String, method_name: String) -> void:
+	var service: Node = get_node_or_null("/root/%s" % node_name)
+	if service == null or not service.has_method(method_name):
+		return
+	var data: Variant = service.call(method_name)
+	if data is Dictionary:
+		payload[payload_key] = data
+
+func _restore_optional_service(payload: Dictionary, payload_key: String, node_name: String, method_name: String, loaded_path: String) -> bool:
+	if not payload.has(payload_key):
+		return true
+	var service: Node = get_node_or_null("/root/%s" % node_name)
+	if service == null or not service.has_method(method_name):
+		load_failed.emit(loaded_path, "missing_%s_node" % payload_key)
+		return false
+	var data: Variant = payload.get(payload_key, {})
+	if not (data is Dictionary):
+		load_failed.emit(loaded_path, "missing_%s" % payload_key)
+		return false
+	if not bool(service.call(method_name, data as Dictionary)):
+		load_failed.emit(loaded_path, "%s_restore_failed" % payload_key)
+		return false
+	return true
 
 func _read_payload(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

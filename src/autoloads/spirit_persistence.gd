@@ -39,6 +39,28 @@ func get_summoned_ids() -> Array[String]:
 		ids.append(str(key))
 	return ids
 
+func serialize_spirit_persistence_state() -> Dictionary:
+	return {
+		"instances": _instances.duplicate(true),
+	}
+
+func restore_spirit_persistence_state(data: Dictionary) -> bool:
+	var raw_instances: Variant = data.get("instances", [])
+	if not (raw_instances is Array):
+		return false
+	_instances.clear()
+	_summoned_ids.clear()
+	for raw_instance: Variant in raw_instances:
+		if not (raw_instance is Dictionary):
+			continue
+		var instance_data: Dictionary = (raw_instance as Dictionary).duplicate(true)
+		var instance: SpiritInstance = SpiritInstance.deserialize(instance_data)
+		if instance.spirit_id.is_empty():
+			continue
+		_instances.append(instance_data)
+		_summoned_ids[_island_spirit_key(instance)] = true
+	return true
+
 ## Private helper — compute the deduplication key for an instance.
 func _island_spirit_key(instance: SpiritInstance) -> String:
 	if instance.island_id.is_empty():

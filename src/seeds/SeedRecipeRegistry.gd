@@ -68,6 +68,10 @@ func unlock_recipe(recipe_id: StringName) -> void:
 func is_recipe_known(recipe_id: StringName) -> bool:
 	return _recipes_by_id.has(recipe_id)
 
+func lookup_by_id(recipe_id: StringName) -> SeedRecipe:
+	var recipe: SeedRecipe = _recipes_by_id.get(recipe_id, null)
+	return recipe
+
 func all_known_recipes() -> Array[SeedRecipe]:
 	var result: Array[SeedRecipe] = []
 	for recipe_variant in _recipes.values():

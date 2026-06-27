@@ -88,6 +88,62 @@ func total_uses() -> int:
 		total += get_uses_at(i)
 	return total
 
+func serialize() -> Dictionary:
+	var entries: Array[Dictionary] = []
+	for entry: Dictionary in seeds:
+		var kind: StringName = StringName(str(entry.get("entry_kind", &"plant_recipe")))
+		if kind == &"building_item":
+			entries.append({
+				"entry_kind": "building_item",
+				"building_type_key": str(entry.get("building_type_key", "")),
+				"count": int(entry.get("count", 1)),
+			})
+			continue
+		var recipe_variant: Variant = entry.get("recipe", null)
+		if recipe_variant is SeedRecipe:
+			var recipe: SeedRecipe = recipe_variant as SeedRecipe
+			entries.append({
+				"entry_kind": "plant_recipe",
+				"recipe_id": str(recipe.recipe_id),
+				"uses": int(entry.get("uses", DEFAULT_USES_PER_CRAFT)),
+			})
+	return {
+		"capacity": capacity,
+		"entries": entries,
+	}
+
+func restore(data: Dictionary, registry: SeedRecipeRegistry) -> bool:
+	var raw_entries: Variant = data.get("entries", [])
+	if not (raw_entries is Array):
+		return false
+	seeds.clear()
+	capacity = int(data.get("capacity", capacity))
+	for raw_entry: Variant in raw_entries:
+		if not (raw_entry is Dictionary):
+			continue
+		var entry: Dictionary = raw_entry as Dictionary
+		var kind: StringName = StringName(str(entry.get("entry_kind", "plant_recipe")))
+		if kind == &"building_item":
+			var type_key: StringName = StringName(str(entry.get("building_type_key", "")))
+			var count: int = int(entry.get("count", 1))
+			if type_key != &"" and count > 0:
+				seeds.append({
+					"entry_kind": &"building_item",
+					"building_type_key": type_key,
+					"count": count,
+				})
+			continue
+		if registry == null:
+			continue
+		var recipe_id: StringName = StringName(str(entry.get("recipe_id", "")))
+		var recipe: SeedRecipe = registry.lookup_by_id(recipe_id)
+		if recipe != null:
+			seeds.append({
+				"recipe": recipe,
+				"uses": int(entry.get("uses", DEFAULT_USES_PER_CRAFT)),
+			})
+	return true
+
 # --- Building item inventory support ---
 
 func get_entry_kind_at(index: int) -> StringName:

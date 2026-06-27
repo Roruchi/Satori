@@ -1,6 +1,11 @@
 extends GutTest
 
 const PlacementControllerScript = preload("res://src/grid/PlacementController.gd")
+const SaveGameServiceScript = preload("res://src/autoloads/save_game_service.gd")
+const TEST_SAVE_DIR: String = "user://test_first_session_saves"
+const TEST_SAVE_PATH: String = "user://test_first_session_saves/autosave_test.json"
+const TEST_TEMP_PATH: String = "user://test_first_session_saves/autosave_test.tmp"
+const TEST_BACKUP_PATH: String = "user://test_first_session_saves/autosave_test.backup.json"
 
 class DiscoveryPersistenceStub:
 	extends Node
@@ -42,6 +47,19 @@ class SpiritPersistenceStub:
 		if instance == null:
 			return
 		instances.append(instance.serialize())
+
+	func serialize_spirit_persistence_state() -> Dictionary:
+		return {"instances": instances.duplicate(true)}
+
+	func restore_spirit_persistence_state(data: Dictionary) -> bool:
+		var raw_instances: Variant = data.get("instances", [])
+		if not (raw_instances is Array):
+			return false
+		instances.clear()
+		for raw_instance: Variant in raw_instances as Array:
+			if raw_instance is Dictionary:
+				instances.append((raw_instance as Dictionary).duplicate(true))
+		return true
 
 
 func _add_root_singleton(p_name: String, node: Node) -> void:
@@ -99,7 +117,10 @@ func _setup_context() -> Dictionary:
 func _cleanup_context(ctx: Dictionary) -> void:
 	var spirit_service: Variant = ctx.get("spirit_service", null)
 	if spirit_service is Node:
-		(spirit_service as Node).queue_free()
+		var service_node: Node = spirit_service as Node
+		if service_node.get_parent() != null:
+			service_node.get_parent().remove_child(service_node)
+		service_node.free()
 	for key: String in ["growth", "alchemy", "discovery", "spirit_persistence"]:
 		var node_variant: Variant = ctx.get(key, null)
 		if node_variant is Node:
@@ -107,6 +128,7 @@ func _cleanup_context(ctx: Dictionary) -> void:
 			if node.get_parent() != null:
 				node.get_parent().remove_child(node)
 			node.free()
+	_cleanup_test_save_files()
 
 
 func _plant_and_bloom_now(growth: SeedGrowthServiceNode, recipe: SeedRecipe, coord: Vector2i) -> void:
@@ -136,7 +158,8 @@ func _place_form_on_tile(growth: SeedGrowthServiceNode, type_key: StringName, co
 	session.update_anchor(coord, [coord], true, &"")
 	assert_true(controller.confirm_building_placement())
 	assert_eq(growth.get_pouch().find_building_index(type_key), -1)
-	controller.queue_free()
+	remove_child(controller)
+	controller.free()
 
 
 func _count_active_spirits(spirit_service: SpiritService, spirit_id: String) -> int:
@@ -146,6 +169,72 @@ func _count_active_spirits(spirit_service: SpiritService, spirit_id: String) -> 
 		if instance != null and instance.spirit_id == spirit_id:
 			count += 1
 	return count
+
+
+func test_first_session_housed_red_fox_survives_save_load() -> void:
+	_cleanup_test_save_files()
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var growth: SeedGrowthServiceNode = ctx["growth"]
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	var spirit_service: SpiritService = ctx["spirit_service"]
+
+	var meadow_result: RitualAttemptResult = alchemy.attempt_ritual(["essence:wind"])
+	assert_true(meadow_result.is_success())
+	assert_eq(meadow_result.result_id, &"recipe_fu")
+	var meadow_recipe: SeedRecipe = _recipe_from_pouch(growth, &"recipe_fu")
+	_plant_and_bloom_now(growth, meadow_recipe, Vector2i(1, 0))
+
+	assert_eq(game_state.evaluate_material_spawns(100.0).size(), 1)
+	game_state.evaluate_material_spawns(60.0)
+	var harvest_result: Dictionary = game_state.harvest_material_at(Vector2i(1, 0))
+	assert_eq(StringName(str(harvest_result.get("outcome", &""))), &"success")
+	assert_eq(alchemy.get_material_count(&"living_wood"), 1)
+	_plant_and_bloom_now(growth, meadow_recipe, Vector2i(2, 0))
+	_plant_and_bloom_now(growth, meadow_recipe, Vector2i(1, 1))
+
+	var hollow_result: RitualAttemptResult = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
+	assert_true(hollow_result.is_success())
+	assert_eq(hollow_result.result_id, &"form_warm_hollow")
+	_place_form_on_tile(growth, &"form_warm_hollow", Vector2i(1, 0))
+	spirit_service._on_tile_placed(Vector2i(1, 1), game_state.grid.get_tile(Vector2i(1, 1)))
+	var island_id: String = str(game_state.grid.get_island_id(Vector2i(1, 0)))
+	assert_true(spirit_service.is_spirit_housed("spirit_red_fox", island_id))
+
+	var service: Node = SaveGameServiceScript.new()
+	add_child(service)
+	service.set_paths_for_testing(TEST_SAVE_DIR, TEST_SAVE_PATH, TEST_TEMP_PATH, TEST_BACKUP_PATH)
+	assert_true(service.save_now("first_session_roundtrip"))
+
+	game_state._initialize_fresh_garden()
+	growth.restore_seed_growth_state({"active_seeds": [], "pouch": {"capacity": 8, "entries": []}})
+	alchemy.restore_seed_alchemy_state({})
+	var spirit_persistence: SpiritPersistenceStub = ctx["spirit_persistence"]
+	assert_true(spirit_persistence.restore_spirit_persistence_state({"instances": []}))
+	assert_true(service.load_game())
+
+	var restored_tile: GardenTile = game_state.grid.get_tile(Vector2i(1, 0))
+	assert_not_null(restored_tile)
+	assert_eq(str(restored_tile.metadata.get("structure_discovery_id", "")), "building_meadow_dwelling")
+	assert_eq(alchemy.get_material_count(&"living_wood"), 0)
+	assert_eq(growth.get_pouch().find_building_index(&"form_warm_hollow"), -1)
+
+	var restored_service: SpiritService = SpiritService.new()
+	restored_service._catalog = SpiritCatalog.new()
+	restored_service._catalog.load_from_data(SpiritCatalogData.new())
+	restored_service._riddle_evaluator = SpiritRiddleEvaluator.new()
+	restored_service._sky_whale_evaluator = SkyWhaleEvaluator.new()
+	restored_service._spawner = SpiritSpawner.new()
+	restored_service._spirit_patterns = PatternLoader.new().load_patterns("res://src/biomes/patterns/spirits")
+	add_child(restored_service)
+	restored_service.restore_from_persistence()
+	assert_true(restored_service.is_spirit_housed("spirit_red_fox", island_id))
+
+	remove_child(restored_service)
+	restored_service.free()
+	remove_child(service)
+	service.free()
+	_cleanup_context(ctx)
 
 
 func test_first_expansion_loop_reaches_second_island_without_spirit_assistants() -> void:
@@ -206,6 +295,17 @@ func test_first_expansion_loop_reaches_second_island_without_spirit_assistants()
 	assert_eq(_count_active_spirits(spirit_service, "spirit_red_fox"), 2)
 
 	_cleanup_context(ctx)
+
+
+func _cleanup_test_save_files() -> void:
+	_remove_file(TEST_SAVE_PATH)
+	_remove_file(TEST_TEMP_PATH)
+	_remove_file(TEST_BACKUP_PATH)
+
+
+func _remove_file(path: String) -> void:
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 
 func test_rain_kami_path_opens_after_reed_nest_on_second_island() -> void:
