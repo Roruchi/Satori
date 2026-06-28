@@ -563,20 +563,7 @@ const InternalConfig = function (initConfig) { // eslint-disable-line no-unused-
 			'noExitRuntime': false,
 			'dynamicLibraries': [`${loadPath}.side.wasm`].concat(this.gdextensionLibs),
 			'emscriptenPoolSize': this.emscriptenPoolSize,
-			'instantiateWasm': function (imports, onSuccess) {
-				function done(result) {
-					onSuccess(result['instance'], result['module']);
-				}
-				if (typeof (WebAssembly.instantiateStreaming) !== 'undefined') {
-					WebAssembly.instantiateStreaming(Promise.resolve(r), imports).then(done);
-				} else {
-					r.arrayBuffer().then(function (buffer) {
-						WebAssembly.instantiate(buffer, imports).then(done);
-					});
-				}
-				r = null;
-				return {};
-			},
+
 			'locateFile': function (path) {
 				if (!path.startsWith('godot.')) {
 					return path;

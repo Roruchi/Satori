@@ -124,9 +124,72 @@ function Invoke-WebExport {
     param([string]$Exe, [string]$Root)
 
     $outDir = Join-Path $Root "build/web"
+    $outFile = Join-Path $outDir "index.html"
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-    Invoke-Godot $Exe @("--headless", "--path", $Root, "--export-release", "Web", (Join-Path $outDir "index.html"))
+    $arguments = @("--headless", "--path", $Root, "--export-release", "Web", $outFile)
+    Write-Host "godot $($arguments -join ' ')" -ForegroundColor DarkCyan
+    $output = & $Exe @arguments 2>&1
+    $output | ForEach-Object { Write-Host $_ }
+    $exitCode = $LASTEXITCODE
+    if ($null -eq $exitCode) {
+        $exitCode = 0
+    }
+    $runtimeCsvNullFollowUpsToIgnore = 0
+    $errorLines = @()
+    foreach ($line in $output) {
+        $text = [string]$line
+        $plainText = $text -replace "`e\[[0-9;]*m", ""
+        $isRuntimeCsvIncludeNoise = $plainText -match "^\s*ERROR: No loader found for resource: res://data/discovery_editor/runtime/.+\.csv\.txt\b"
+        if ($isRuntimeCsvIncludeNoise) {
+            $runtimeCsvNullFollowUpsToIgnore += 1
+        }
+        $isRuntimeCsvNullFollowUp = $runtimeCsvNullFollowUpsToIgnore -gt 0 -and $plainText -match '^\s*ERROR: Condition "res\.is_null\(\)" is true\. Returning: p_path'
+        if ($isRuntimeCsvNullFollowUp) {
+            $runtimeCsvNullFollowUpsToIgnore -= 1
+        }
+        if ($plainText -match "(^|\s)(ERROR|SCRIPT ERROR|Parse Error):" -and -not ($isRuntimeCsvIncludeNoise -or $isRuntimeCsvNullFollowUp)) {
+            $errorLines += $line
+        }
+    }
+    if ($errorLines.Count -gt 0) {
+        throw "Godot reported $($errorLines.Count) error line(s)."
+    }
+    if ($exitCode -ne 0) {
+        throw "Godot command failed with exit code $exitCode."
+    }
+    Repair-WebExportShell (Join-Path $outDir "index.js")
     Write-Host "Web export written to $outDir" -ForegroundColor Green
+}
+
+function Repair-WebExportShell {
+    param([string]$IndexJsPath)
+
+    if (-not (Test-Path $IndexJsPath -PathType Leaf)) {
+        throw "Web export shell not found at $IndexJsPath"
+    }
+    $content = Get-Content -Raw -LiteralPath $IndexJsPath
+    $asyncInstantiateBlock = @'
+			'instantiateWasm': function (imports, onSuccess) {
+				function done(result) {
+					onSuccess(result['instance'], result['module']);
+				}
+				if (typeof (WebAssembly.instantiateStreaming) !== 'undefined') {
+					WebAssembly.instantiateStreaming(Promise.resolve(r), imports).then(done);
+				} else {
+					r.arrayBuffer().then(function (buffer) {
+						WebAssembly.instantiate(buffer, imports).then(done);
+					});
+				}
+				r = null;
+				return {};
+			},
+'@
+    if ($content.Contains($asyncInstantiateBlock)) {
+        $repairedContent = $content.Replace($asyncInstantiateBlock, "").Replace("`r`n", "`n")
+        $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+        [System.IO.File]::WriteAllText($IndexJsPath, $repairedContent, $utf8NoBom)
+        Write-Host "Removed async WebAssembly loader override from web shell" -ForegroundColor DarkCyan
+    }
 }
 
 function Install-WebTemplates {

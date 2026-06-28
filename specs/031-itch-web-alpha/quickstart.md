@@ -3,7 +3,7 @@
 ## Export
 
 ```powershell
-.\tools\godot.ps1 -Command web-export
+.\tools\godot.ps1 -Command export-web
 ```
 
 If the wrapper command is unavailable, use the repo's Godot executable with the `Web` export preset.
