@@ -8,6 +8,7 @@ const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacement
 const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const _HOUSE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/house/frames/idle/down/frame_0000.png")
 const _ORIGIN_SHRINE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/origin_shrine/frames/idle/down/frame_0000.png")
+const _MATERIAL_GROWTH_ATLAS: Texture2D = preload("res://assets/materials/material_growth_atlas.png")
 const _TERRAIN_TILESET_PATH: String = "res://assets/tiles/satori_terrain_tilesheet.png"
 const _EDGE_DECAL_PATH: String = "res://assets/tiles/satori_edge_decal.png"
 
@@ -23,6 +24,9 @@ const WATER_TILE_ANIMATION_FPS: float = 4.0
 
 const _HOUSE_STRUCTURE_DRAW_SIZE: float = 32.0
 const _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE: float = 34.0
+const _MATERIAL_GROWTH_ATLAS_COLUMNS: int = 4
+const _MATERIAL_GROWTH_ATLAS_ROWS: int = 4
+const _MATERIAL_NODE_DRAW_SIZE: float = 48.0
 
 ## Number of background stars.
 const _STAR_COUNT: int = 150
@@ -431,17 +435,18 @@ func _draw_material_node_visual(coord: Vector2i, material_node: Dictionary, inte
 		_draw_collect_ring(center, _material_color(material_id), coord)
 	else:
 		_draw_growth_ring(center, _material_color(material_id), material_node)
-	match material_id:
-		&"living_wood":
-			_draw_living_wood_node(coord, stage)
-		&"reed_fiber":
-			_draw_reed_fiber_node(coord, stage)
-		&"spirit_stone":
-			_draw_spirit_stone_node(coord, stage)
-		&"ember_clay":
-			_draw_ember_clay_node(coord, stage)
-		_:
-			draw_circle(center, 6.0, _material_color(material_id))
+	if not _draw_material_atlas_node(center, material_id, stage):
+		match material_id:
+			&"living_wood":
+				_draw_living_wood_node(coord, stage)
+			&"reed_fiber":
+				_draw_reed_fiber_node(coord, stage)
+			&"spirit_stone":
+				_draw_spirit_stone_node(coord, stage)
+			&"ember_clay":
+				_draw_ember_clay_node(coord, stage)
+			_:
+				draw_circle(center, 6.0, _material_color(material_id))
 	if ready:
 		var label: String = "Tap: %s" % _material_label(material_id) if interact_mode else _material_label(material_id)
 		_draw_seed_overlay_text(center + Vector2(-36.0, -29.0), label, 10, _material_color(material_id).lightened(0.35))
@@ -454,6 +459,43 @@ func _material_growth_stage(material_node: Dictionary) -> int:
 func _material_growth_scale(stage: int) -> float:
 	var scales: Array = [0.42, 0.62, 0.82, 1.0]
 	return float(scales[clampi(stage, 0, scales.size() - 1)])
+
+func _draw_material_atlas_node(center: Vector2, material_id: StringName, stage: int) -> bool:
+	var source_region: Rect2 = _material_atlas_region(material_id, stage)
+	if source_region.size == Vector2.ZERO:
+		return false
+	var draw_size: float = _material_atlas_draw_size(stage)
+	var destination: Rect2 = Rect2(center - Vector2(draw_size * 0.5, draw_size * 0.58), Vector2(draw_size, draw_size))
+	draw_texture_rect_region(_MATERIAL_GROWTH_ATLAS, destination, source_region)
+	return true
+
+func _material_atlas_region(material_id: StringName, stage: int) -> Rect2:
+	var row: int = _material_atlas_row(material_id)
+	if row < 0:
+		return Rect2()
+	var clamped_stage: int = clampi(stage, 0, _MATERIAL_GROWTH_ATLAS_COLUMNS - 1)
+	var cell_size: Vector2 = Vector2(
+		float(_MATERIAL_GROWTH_ATLAS.get_width()) / float(_MATERIAL_GROWTH_ATLAS_COLUMNS),
+		float(_MATERIAL_GROWTH_ATLAS.get_height()) / float(_MATERIAL_GROWTH_ATLAS_ROWS)
+	)
+	return Rect2(Vector2(cell_size.x * float(clamped_stage), cell_size.y * float(row)), cell_size)
+
+func _material_atlas_row(material_id: StringName) -> int:
+	match material_id:
+		&"living_wood":
+			return 0
+		&"reed_fiber":
+			return 1
+		&"spirit_stone":
+			return 2
+		&"ember_clay":
+			return 3
+		_:
+			return -1
+
+func _material_atlas_draw_size(stage: int) -> float:
+	var stage_scale: Array = [0.68, 0.82, 0.95, 1.08]
+	return _MATERIAL_NODE_DRAW_SIZE * float(stage_scale[clampi(stage, 0, stage_scale.size() - 1)])
 
 func _draw_growth_ring(center: Vector2, color: Color, material_node: Dictionary) -> void:
 	var duration: float = maxf(0.1, float(material_node.get("growth_duration", 60.0)))
