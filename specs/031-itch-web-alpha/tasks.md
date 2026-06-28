@@ -33,13 +33,15 @@
 
 ## Phase 6: Actual itch.io Page Gate
 
-- [ ] T014 [US3] Create or identify the restricted/draft itch.io project page for Satori and record its page URL, owner, slug, and access mode in `specs/031-itch-web-alpha/evidence.md`.
-- [ ] T015 [US3] Upload the validated `build/web/` package to that itch.io page as an HTML/browser-playable build or channel, recording the channel/upload identifier and build version in `specs/031-itch-web-alpha/evidence.md`.
-- [ ] T016 [US3] Smoke the uploaded itch.io URL for title screen, new game, first ritual, first placement, and same-browser reload persistence, recording results in `specs/031-itch-web-alpha/evidence.md`.
-- [ ] T017 [US3] Only after T014-T016 pass, update `docs/alpha-roadmap.md` Phase 5 from Blocked to Verified with current itch.io page evidence.
+- [x] T014 [US3] Draft the itch.io page content and publication checklist in `specs/031-itch-web-alpha/itch-page.md`.
+- [ ] T015 [US3] Create or identify the restricted/draft itch.io project page for Satori and record its page URL, owner, slug, and access mode in `specs/031-itch-web-alpha/evidence.md`.
+- [ ] T016 [US3] Populate the itch.io page with tester-facing content: game description, visuals, controls, alpha scope, known issues, browser save guidance, build version, and feedback route.
+- [ ] T017 [US3] Upload the validated `build/web/` package to that itch.io page as an HTML/browser-playable build or channel, recording the channel/upload identifier and build version in `specs/031-itch-web-alpha/evidence.md`.
+- [ ] T018 [US3] Smoke the actual itch.io page for content completeness plus title screen, new game, first ritual, first placement, and same-browser reload persistence, recording results in `specs/031-itch-web-alpha/evidence.md`.
+- [ ] T019 [US3] Only after T015-T018 pass, update `docs/alpha-roadmap.md` Phase 5 from Blocked to Verified with current itch.io page evidence.
 
 ## Dependencies & Execution Order
 
 Do not package for itch.io until export, smoke, and persistence checks pass.
 
-T014-T017 require a real itch.io account/project page and cannot be satisfied by local export evidence alone.
+T015-T019 require a real itch.io account/project page and cannot be satisfied by local export evidence alone.

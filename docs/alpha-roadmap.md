@@ -127,7 +127,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 | 3 | Phase 2 - First Island Fun Loop | [028-first-island-fun-loop](../specs/028-first-island-fun-loop/spec.md) | Drafted | Verified | First island supports Red Fox care, upgraded Fox Den, HUD/hover/Codex Satori feedback, Dew Bowl and Wind Chime, invalid-action clarity, and save/load. Evidence: `specs/028-first-island-fun-loop/evidence.md`. |
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Verified | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. Evidence: `specs/029-alpha-endgame-kami-spine/evidence.md`. |
 | 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Verified | First-session, first-island, and endgame/kami states round-trip with schema/version safety. Evidence: `specs/030-alpha-save-safety/evidence.md`. |
-| 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Blocked | Local Web build exports, runs, saves across reload, and packages correctly, but a restricted itch.io page URL, uploaded HTML build, and smoke on the actual itch.io page are still required. Evidence: `specs/031-itch-web-alpha/evidence.md`. |
+| 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Blocked | Local Web build exports, runs, saves across reload, and packages correctly, but a content-complete restricted itch.io page, uploaded HTML build, and smoke on the actual itch.io page are still required. Evidence: `specs/031-itch-web-alpha/evidence.md`. |
 | 7 | Phase 6 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state. |
 | 8 | Phases 7-8 - Alpha Content and External Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Included content is wired and tester brief, known issues, versioning, Web playthrough, and Android playthrough are ready. |
 
@@ -352,7 +352,8 @@ Exit gates:
 - First ritual and first placement work.
 - Save persists across page reload in the same browser.
 - Itch.io upload package is reproducible from documented commands.
-- A restricted itch.io page exists, the current Web package is uploaded as an HTML/browser-playable build, and the actual itch.io URL passes title, new-game, first ritual, first placement, and same-browser reload smoke.
+- A restricted itch.io page exists with tester-facing game description, visual assets, controls, alpha scope, known issues, and feedback route.
+- The current Web package is uploaded as an HTML/browser-playable build, and the actual itch.io URL passes title, new-game, first ritual, first placement, and same-browser reload smoke.
 
 ## Phase 6 - Android Alpha
 

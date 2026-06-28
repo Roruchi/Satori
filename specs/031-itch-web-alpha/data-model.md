@@ -23,6 +23,27 @@
 - `upload_notes`: tester-facing instructions
 - `visibility`: restricted alpha upload
 
+## ItchProjectPage
+
+- `page_url`: restricted or draft itch.io page URL
+- `owner`: itch.io account or organization owner
+- `slug`: itch.io game slug
+- `access_mode`: draft or restricted
+- `content_status`: pending, populated, reviewed, or needs-fix
+- `playable_upload`: channel or upload identifier for the HTML/Web build
+
+## ItchPageContent
+
+- `title`: game title shown on itch.io
+- `short_description`: one-line game description
+- `long_description`: tester-facing game explanation and alpha scope
+- `visuals`: screenshots or key art visible on the page
+- `controls`: browser/touch/mouse play notes
+- `known_issues`: current closed-alpha caveats
+- `save_guidance`: browser-local persistence notes
+- `feedback_route`: where testers should report feedback
+- `build_version`: visible build version
+
 ## PlaceholderAssetAudit
 
 - `asset_path`: reviewed asset

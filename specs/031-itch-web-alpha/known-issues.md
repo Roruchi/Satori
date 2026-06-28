@@ -9,7 +9,7 @@ Run date: 2026-06-28
 
 ## Package Scope
 
-- No actual restricted or draft itch.io page URL has been recorded yet. Phase 5 remains blocked until the current Web build is uploaded to that page and smoke-tested from the actual itch.io URL.
+- No actual restricted or draft itch.io page URL has been recorded yet. Phase 5 remains blocked until the page content is populated, the current Web build is uploaded to that page, and both the page and game are smoke-tested from the actual itch.io URL.
 - PWA behavior remains disabled for the first restricted alpha.
 - The package is intended for a restricted itch.io page, not a public release.
 - Broader alpha content breadth remains owned by later roadmap phases.

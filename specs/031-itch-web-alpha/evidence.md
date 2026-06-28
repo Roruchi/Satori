@@ -6,20 +6,38 @@ Run date: 2026-06-28
 
 Status: Blocked.
 
-Local Web export, package structure, and browser smoke are validated, but the Phase 5 exit gate now requires an actual restricted or draft itch.io project page. No itch.io page URL, uploaded HTML build/channel, or smoke test against the real itch.io URL has been recorded yet.
+Local Web export, package structure, and browser smoke are validated, and draft itch.io page copy now exists in `itch-page.md`. The Phase 5 exit gate still requires an actual restricted or draft itch.io project page populated with tester-facing content, plus the uploaded HTML build and smoke test against the real itch.io URL.
 
 Pending page gate:
 
 - Restricted or draft itch.io page URL: pending.
 - Itch.io owner/slug: pending.
+- Page content populated from `itch-page.md`: pending.
+- Page visuals/screenshots: pending.
+- Feedback route: pending.
 - Uploaded HTML/browser-playable build or channel: pending.
 - Build version on itch.io: pending.
-- Actual itch.io URL smoke and reload persistence: pending.
+- Actual itch.io page content review, game smoke, and reload persistence: pending.
 
 ## Corrective Validation
 
 Date: 2026-06-28
 
+- `.\tools\godot.ps1 -Command parse`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+
+## Page Content Correction
+
+Date: 2026-06-28
+
+- Draft itch.io page content and publication checklist added in `specs/031-itch-web-alpha/itch-page.md`.
+- `docs/alpha-roadmap.md`, `spec.md`, `plan.md`, `data-model.md`, `tasks.md`, `packaging.md`, `quickstart.md`, `research.md`, and `known-issues.md` now require both a tester-facing itch.io content page and the uploaded playable game before Phase 5 can be Verified.
 - `.\tools\godot.ps1 -Command parse`
   - Result: passed.
   - Note: existing ObjectDB shutdown leak warning remains.
@@ -72,8 +90,9 @@ Date: 2026-06-28
 - Save/reload persistence for alpha-critical state: passed by save service GUT and first expansion loop save/load assertions.
 - Restricted itch.io package path: documented in `packaging.md`.
 - Restricted/draft itch.io page exists and URL is recorded: pending.
+- Actual itch.io page content is populated and reviewed: pending.
 - Current Web package is uploaded to the itch.io page as an HTML/browser-playable build: pending.
-- Actual itch.io URL smoke passes title/new-game/first-ritual/first-placement/reload persistence: pending.
+- Actual itch.io URL smoke passes content review/title/new-game/first-ritual/first-placement/reload persistence: pending.
 - Known issues: documented in `known-issues.md`.
 
-Result: Phase 5 is locally validated but not Verified. It remains Blocked until the actual itch.io page is created or identified, the current build is uploaded, and smoke/reload evidence is recorded from the itch.io URL. Android validation remains owned by Phase 6.
+Result: Phase 5 is locally validated and has a draft page brief, but it is not Verified. It remains Blocked until the actual itch.io page is created or identified, the content page is populated and reviewed, the current build is uploaded, and smoke/reload evidence is recorded from the itch.io URL. Android validation remains owned by Phase 6.

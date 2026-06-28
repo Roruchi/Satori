@@ -10,7 +10,7 @@
 
 ## Decision: Require a real itch.io page, but not deploy automation
 
-**Rationale**: Closed alpha access depends on an actual itch.io project page, not just a local package. Automation is not required for the first alpha, but the spec cannot be Verified until a restricted or draft itch.io page exists, the current Web build is uploaded as browser-playable HTML, and the actual itch.io URL is smoke-tested.
+**Rationale**: Closed alpha access depends on an actual itch.io project page, not just a local package. Automation is not required for the first alpha, but the spec cannot be Verified until a restricted or draft itch.io page exists, its tester-facing content explains the game and alpha scope, the current Web build is uploaded as browser-playable HTML, and the actual itch.io URL is smoke-tested.
 
 ## Decision: Disable PWA for first alpha
 
