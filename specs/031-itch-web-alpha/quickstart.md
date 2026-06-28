@@ -26,3 +26,14 @@ npx playwright test tests/playwright/satori-web-smoke.spec.js
 ## itch.io Package
 
 Package the contents of `build/web/` after smoke passes. Record the build version and known issues before upload.
+
+## Actual itch.io Page Gate
+
+1. Create or identify the Satori itch.io project page.
+2. Set the page to Draft or Restricted access.
+3. Configure the project as an HTML/browser-playable game.
+4. Upload the current `build/web/` package.
+5. Open the actual itch.io URL and confirm title, new game, first ritual, first placement, and same-browser reload persistence.
+6. Record the page URL, owner/slug, access mode, upload/channel identifier, build version, and smoke result in `evidence.md`.
+
+Local smoke is not enough to mark this spec Verified.
