@@ -8,7 +8,7 @@ const FRAME_RELATIVE_PATH: String = "frames/idle/down/frame_0000.png"
 
 const _BUILDING_ASSET_FOLDERS: Dictionary = {
 	"building_house": "house",
-	"building_meadow_dwelling": "meadow_dwelling",
+	"building_meadow_dwelling": "house",
 	"building_scorched_hollow": "scorched_hollow",
 	"building_fox_den": "fox_den",
 }
