@@ -5,14 +5,14 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm Android export templates, SDK, and JDK availability.
+- [x] T001 Confirm Android export templates, SDK, and JDK availability.
 - [x] T002 Decide package id, orientation, versioning, and icon: `com.lunaverse.satori`, no orientation lock, `0.x.y-alpha+<build_id>` menu version, title-emblem icon.
-- [ ] T003 Decide signing approach for debug and release-like alpha builds.
+- [x] T003 Decide signing approach for debug and release-like alpha builds.
 
 ## Phase 2: Foundational
 
-- [ ] T004 Add Android export preset to `export_presets.cfg`.
-- [ ] T005 Confirm release/debug feature flags do not expose debug-only flows.
+- [x] T004 Add Android export preset to `export_presets.cfg`.
+- [x] T005 Confirm release/debug feature flags do not expose debug-only flows.
 - [ ] T006 Audit Android package so placeholder art, audio, icon, and UI assets do not appear on the primary alpha path or release shell.
 
 ## Phase 3: User Story 1 - Build and Install Android Alpha (Priority: P1)
@@ -31,7 +31,7 @@
 
 - [ ] T013 [US3] Validate background/resume save.
 - [ ] T014 [US3] Validate close/reopen save.
-- [ ] T015 [US3] Document Android alpha build steps.
+- [x] T015 [US3] Document Android alpha build steps.
 
 ## Dependencies & Execution Order
 

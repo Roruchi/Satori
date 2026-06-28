@@ -1,6 +1,6 @@
 # Unified Godot runner for local checks, tests, and web export.
 param(
-    [ValidateSet("parse", "boot", "test", "all", "install-web-templates", "check-web-compile-env", "export-web", "serve-web")]
+    [ValidateSet("parse", "boot", "test", "all", "install-web-templates", "check-web-compile-env", "export-web", "serve-web", "check-android-env", "export-android")]
     [string]$Command = "all",
 
     [string]$GodotExe = "",
@@ -161,6 +161,45 @@ function Invoke-WebExport {
     Write-Host "Web export written to $outDir" -ForegroundColor Green
 }
 
+function Test-AndroidEnvironment {
+    $version = "4.6.1.stable"
+    $templateDir = Join-Path $env:APPDATA "Godot/export_templates/$version"
+    $requiredTemplates = @("android_debug.apk", "android_release.apk")
+    $missing = @()
+
+    foreach ($template in $requiredTemplates) {
+        if (-not (Test-Path (Join-Path $templateDir $template) -PathType Leaf)) {
+            $missing += "export template: $template"
+        }
+    }
+    if (-not ($env:ANDROID_HOME -or $env:ANDROID_SDK_ROOT)) {
+        $missing += "ANDROID_HOME or ANDROID_SDK_ROOT"
+    }
+    if (-not $env:JAVA_HOME) {
+        $missing += "JAVA_HOME"
+    }
+    if (-not (Get-Command adb -ErrorAction SilentlyContinue)) {
+        $missing += "adb on PATH"
+    }
+
+    if ($missing.Count -gt 0) {
+        throw "Android environment incomplete: $($missing -join ', ')."
+    }
+
+    Write-Host "Android export environment looks available." -ForegroundColor Green
+}
+
+function Invoke-AndroidExport {
+    param([string]$Exe, [string]$Root)
+
+    Test-AndroidEnvironment
+    $outDir = Join-Path $Root "build/android"
+    $outFile = Join-Path $outDir "Satori-alpha-debug.apk"
+    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+    Invoke-Godot $Exe @("--headless", "--path", $Root, "--export-debug", "Android", $outFile)
+    Write-Host "Android debug APK written to $outFile" -ForegroundColor Green
+}
+
 function Repair-WebExportShell {
     param([string]$IndexJsPath)
 
@@ -260,4 +299,6 @@ switch ($Command) {
     "check-web-compile-env" { & (Join-Path $PSScriptRoot "build-godot-web-templates.ps1") -CheckOnly }
     "export-web" { Invoke-WebExport $resolvedGodot $projectRoot }
     "serve-web" { Invoke-WebServer $projectRoot $Port }
+    "check-android-env" { Test-AndroidEnvironment }
+    "export-android" { Invoke-AndroidExport $resolvedGodot $projectRoot }
 }

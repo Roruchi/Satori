@@ -5,6 +5,7 @@
 ```powershell
 .\tools\godot.ps1 -Command parse
 .\tools\godot.ps1 -Command boot
+.\tools\godot.ps1 -Command check-android-env
 ```
 
 Confirm Android export templates and SDK/JDK are configured in Godot.
@@ -12,7 +13,12 @@ Confirm the Android preset uses package id `com.lunaverse.satori`, no orientatio
 
 ## Export
 
-Use the Godot editor export dialog or documented CLI once the Android preset exists.
+```powershell
+.\tools\godot.ps1 -Command export-android
+adb install -r .\build\android\Satori-alpha-debug.apk
+```
+
+Use the Godot editor export dialog for release-like builds after configuring a local, uncommitted release keystore.
 
 ## Manual Device Script
 
@@ -26,3 +32,5 @@ Use the Godot editor export dialog or documented CLI once the Android preset exi
 8. Close app and reopen.
 9. Confirm save state persists.
 10. Confirm no placeholder art, audio, icon, or UI assets appear on the primary alpha path or release shell.
+
+Record the device/emulator, Android version, viewport, orientation, build path, and lifecycle result in `evidence.md`.

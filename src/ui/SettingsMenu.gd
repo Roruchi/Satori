@@ -15,13 +15,16 @@ const BTN_TEXT := Color(0.19, 0.13, 0.08, 1.0)
 @onready var _title_lbl: Label = $Root/Center/Panel/VBox/TitleLabel
 @onready var _volume_slider: HSlider = $Root/Center/Panel/VBox/VolumeRow/VolumeSlider
 @onready var _mute_check: CheckButton = $Root/Center/Panel/VBox/MuteRow/MuteCheck
+@onready var _growth_row: HBoxContainer = $Root/Center/Panel/VBox/GrowthRow
 @onready var _growth_check: CheckButton = $Root/Center/Panel/VBox/GrowthRow/GrowthCheck
+@onready var _debug_row: HBoxContainer = $Root/Center/Panel/VBox/DebugRow
 @onready var _debug_check: CheckButton = $Root/Center/Panel/VBox/DebugRow/DebugCheck
 @onready var _version_lbl: Label = $Root/Center/Panel/VBox/VersionLabel
 @onready var _close_btn: Button = $Root/Center/Panel/VBox/CloseButton
 
 func _ready() -> void:
 	_style_ui()
+	_sync_debug_only_controls()
 	_sync_from_settings()
 	_sync_version_label()
 	_volume_slider.value_changed.connect(_on_volume_changed)
@@ -49,10 +52,12 @@ func _sync_from_settings() -> void:
 			_debug_check.button_pressed = bool(debug_enabled)
 
 func show_menu() -> void:
+	_sync_debug_only_controls()
 	_sync_from_settings()
 	_sync_version_label()
-	_growth_check.text = "Fast Progression (x16)"
-	_debug_check.text = ""
+	if _debug_controls_available():
+		_growth_check.text = "Fast Progression (x16)"
+		_debug_check.text = ""
 	visible = true
 
 func _on_volume_changed(value: float) -> void:
@@ -146,3 +151,19 @@ func _sync_version_label() -> void:
 	if ProjectSettings.has_setting("application/config/version"):
 		version = str(ProjectSettings.get_setting("application/config/version"))
 	_version_lbl.text = "Version %s" % version
+
+func _debug_controls_available() -> bool:
+	return OS.is_debug_build()
+
+func _sync_debug_only_controls() -> void:
+	var available: bool = _debug_controls_available()
+	_growth_row.visible = available
+	_debug_row.visible = available
+	if available:
+		return
+	var gs: Node = get_node_or_null("/root/GardenSettings")
+	if gs != null:
+		if gs.has_method("set_growth_speed_multiplier"):
+			gs.set_growth_speed_multiplier(1.0)
+		if gs.has_method("set_debug_info_enabled"):
+			gs.set_debug_info_enabled(false)

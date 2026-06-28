@@ -4,6 +4,13 @@ extends Button
 const SPEED_STEPS: Array[float] = [1.0, 4.0, 8.0, 16.0]
 
 func _ready() -> void:
+	if not OS.is_debug_build():
+		visible = false
+		disabled = true
+		var release_settings: Node = get_node_or_null("/root/GardenSettings")
+		if release_settings != null and release_settings.has_method("set_growth_speed_multiplier"):
+			release_settings.set_growth_speed_multiplier(1.0)
+		return
 	pressed.connect(_on_pressed)
 	var settings: Node = get_node_or_null("/root/GardenSettings")
 	if settings != null and settings.has_signal("growth_speed_multiplier_changed"):
