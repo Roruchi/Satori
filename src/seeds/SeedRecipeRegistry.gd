@@ -18,8 +18,9 @@ func _load_recipes() -> void:
 	dir.list_dir_begin()
 	var filename: String = dir.get_next()
 	while filename != "":
-		if not dir.current_is_dir() and filename.ends_with(".tres"):
-			var path: String = "res://src/seeds/recipes/%s" % filename
+		var resource_filename: String = _resource_filename_from_dir_entry(filename)
+		if not dir.current_is_dir() and not resource_filename.is_empty():
+			var path: String = "res://src/seeds/recipes/%s" % resource_filename
 			var recipe_resource: Resource = load(path)
 			if recipe_resource is SeedRecipe:
 				var recipe: SeedRecipe = recipe_resource as SeedRecipe
@@ -28,6 +29,13 @@ func _load_recipes() -> void:
 				_recipes_by_id[recipe.recipe_id] = recipe
 		filename = dir.get_next()
 	dir.list_dir_end()
+
+func _resource_filename_from_dir_entry(filename: String) -> String:
+	if filename.ends_with(".tres"):
+		return filename
+	if filename.ends_with(".tres.remap"):
+		return filename.trim_suffix(".remap")
+	return ""
 
 func _key_for_elements(elements: Array[int]) -> String:
 	var sorted_elements: Array[int] = elements.duplicate()

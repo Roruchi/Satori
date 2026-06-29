@@ -1,6 +1,7 @@
 extends GutTest
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const SeedRecipeRegistryScript = preload("res://src/seeds/SeedRecipeRegistry.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
 
@@ -125,6 +126,12 @@ func test_wind_essence_shapes_meadow_seed_through_ritual_path() -> void:
 	assert_not_null(pouch)
 	assert_true(pouch.find_index_by_biome(BiomeTypeScript.Value.MEADOW) >= 0)
 	_cleanup_context(ctx)
+
+func test_seed_recipe_registry_accepts_export_remap_recipe_entries() -> void:
+	var registry: SeedRecipeRegistry = SeedRecipeRegistryScript.new()
+	assert_eq(registry._resource_filename_from_dir_entry("recipe_fu.tres"), "recipe_fu.tres")
+	assert_eq(registry._resource_filename_from_dir_entry("recipe_fu.tres.remap"), "recipe_fu.tres")
+	assert_eq(registry._resource_filename_from_dir_entry("recipe_fu.import"), "")
 
 func test_single_essence_seed_ritual_blocks_without_charge() -> void:
 	var ctx: Dictionary = _setup_context()
