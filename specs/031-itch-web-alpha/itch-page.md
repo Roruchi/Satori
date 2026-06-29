@@ -27,8 +27,11 @@ The page is not verified until both are true:
     - `satori-itch-cover.png` as the cover/key image.
     - `satori-itch-gallery-alpha-loop.png` as the first gallery image.
     - `satori-itch-banner.png` as a separate scenic wide page/banner image if itch.io accepts it cleanly. This banner intentionally has no logo text and should not repeat the cover/key art wordmark.
+    - `satori-itch-background-tile.png` as the repeating page background/backdrop image.
+    - `satori-itch-background-repeat-preview.png` is a QA preview showing the tile repeated 3x2; do not upload this preview as the page background.
   - Recommended itch.io theme direction, inspired by polished reference pages:
     - Page background: deep garden teal `#0f2626`.
+    - Repeating background image: `satori-itch-background-tile.png`, tiled/repeated, not stretched.
     - Content panel: warm paper `#efe3c5` or a close itch theme equivalent.
     - Primary text: dark moss `#173332`.
     - Accent/buttons/links: shrine gold `#d6b96d`.

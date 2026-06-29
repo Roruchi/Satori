@@ -96,6 +96,19 @@ Date: 2026-06-29
 - Attempted the itch.io Banner image upload through the visible theme editor Upload control, but the in-app browser automation exposed only a hidden file input and did not open a Windows file picker; the banner image id stayed empty.
 - T016 remains open until the prepared cover/gallery/banner assets are uploaded to itch.io and visually reviewed.
 
+## Itch.io Repeating Backdrop Follow-up
+
+Date: 2026-06-29
+
+- Generated a separate repeating page backdrop asset:
+  - `specs/031-itch-web-alpha/page-assets/satori-itch-background-tile.png`
+- Generated a local repeat QA preview:
+  - `specs/031-itch-web-alpha/page-assets/satori-itch-background-repeat-preview.png`
+- Visual QA:
+  - The tile uses dark teal mossy stone, subtle shrine-gold flecks, faint teal spirit glows, and low-contrast garden texture.
+  - The 3x2 repeat preview is suitable as a tiled page background behind the warm paper content panel.
+- T016 remains open until the backdrop image is uploaded to the itch.io Background image slot with repeat/tile behavior and visually reviewed on the actual page.
+
 ## Current Focused Validation
 
 Date: 2026-06-29
