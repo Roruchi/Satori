@@ -6,18 +6,75 @@ Run date: 2026-06-28
 
 Status: Blocked.
 
-Local Web export, package structure, and browser smoke are validated, and draft itch.io page copy now exists in `itch-page.md`. The Phase 5 exit gate still requires an actual restricted or draft itch.io project page populated with tester-facing content, plus the uploaded HTML build and smoke test against the real itch.io URL.
+Local Web export, package structure, browser smoke, the draft itch.io page identity, and the uploaded HTML build are validated. The Phase 5 exit gate still requires the visible tester-facing page content to be complete on itch.io, plus full smoke from the actual itch.io URL through first ritual, first placement, and same-browser reload persistence.
 
 Pending page gate:
 
-- Restricted or draft itch.io page URL: pending.
-- Itch.io owner/slug: pending.
-- Page content populated from `itch-page.md`: pending.
+- Restricted or draft itch.io page URL: `https://roruchi.itch.io/satori`.
+- Itch.io owner/slug: `roruchi/satori`.
+- Access mode: Draft.
+- Page content populated from `itch-page.md`: partial; short description metadata and editor form copy were applied, but the long description was not visible on the rendered page during current smoke.
 - Page visuals/screenshots: pending.
-- Feedback route: pending.
-- Uploaded HTML/browser-playable build or channel: pending.
-- Build version on itch.io: pending.
-- Actual itch.io page content review, game smoke, and reload persistence: pending.
+- Feedback route: itch.io comments or direct developer feedback.
+- Uploaded HTML/browser-playable build or channel: `web-alpha`.
+- Upload identifier: `#18139525`.
+- Build identifier: `#1759450`.
+- Build version on itch.io: `0.1.0-alpha+20260627.1`.
+- Actual itch.io page content review, first ritual, first placement, and reload persistence: pending.
+
+## Actual itch.io Page Progress
+
+Date: 2026-06-29
+
+- Page edit URL provided by owner: `https://itch.io/game/edit/4723679`.
+- Canonical page URL: `https://roruchi.itch.io/satori`.
+- Owner/slug: `roruchi/satori`.
+- Access mode: Draft.
+- Project kind: HTML/browser-playable.
+- Mobile-friendly embed: enabled.
+- Local butler version installed for this run: `v15.27.0`.
+- `.\build\tools\butler\butler.exe validate build\web`
+  - Result: passed.
+  - Result detail: `build\web\index.html` detected as an HTML5 app.
+- `.\build\tools\butler\butler.exe push build\web roruchi/satori:web-alpha --userversion 0.1.0-alpha+20260627.1 --if-changed`
+  - Result: passed.
+  - Channel: `web-alpha`.
+  - Upload: `#18139525`.
+  - Build: `#1759450`.
+  - Version: `0.1.0-alpha+20260627.1`.
+- `.\build\tools\butler\butler.exe status roruchi/satori:web-alpha`
+  - Result: passed.
+  - Status: channel `web-alpha`, upload `#18139525`, build `#1759450`, version `0.1.0-alpha+20260627.1`.
+- Actual itch.io page smoke:
+  - Page loads as Draft.
+  - Page reports HTML5 platform.
+  - Clicking `Run game` creates iframe `https://html-classic.itch.zone/html/18139525-1759450/index.html?...`.
+  - Godot canvas appears and renders the Satori title screen.
+  - Known audio sampling warnings appear in browser logs; no title-screen blocker observed.
+- Remaining blockers before Phase 5 can be Verified:
+  - Long tester-facing page description was not visible on the rendered page after save attempts, although the short description metadata is present.
+  - Page visuals/screenshots or cover image still need to be added/reviewed.
+  - Actual itch.io URL smoke still needs to cover new game, first ritual, first placement, and same-browser reload persistence.
+
+## Current Focused Validation
+
+Date: 2026-06-29
+
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed.
+  - Output: `build/web/index.html` and related Web artifacts regenerated.
+  - Note: wrapper repaired the generated Godot 4.6 Web shell async WASM loader override.
+- `npx playwright test tests/playwright/satori-web-smoke.spec.js`
+  - Result: 4/4 passed.
+  - Coverage: local Web shell/assets, Godot runtime boot, packaged seed/runtime/icon data, and development-only path exclusions.
+- `.\tools\godot.ps1 -Command parse`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
 
 ## Corrective Validation
 
