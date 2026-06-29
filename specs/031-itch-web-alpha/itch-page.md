@@ -26,7 +26,7 @@ The page is not verified until both are true:
   - Use the prepared page assets in `specs/031-itch-web-alpha/page-assets/`:
     - `satori-itch-cover.png` as the cover/key image.
     - `satori-itch-gallery-alpha-loop.png` as the first gallery image.
-    - `satori-itch-banner.png` as an optional wide page/banner image if itch.io accepts it cleanly.
+    - `satori-itch-banner.png` as a separate scenic wide page/banner image if itch.io accepts it cleanly. This banner intentionally has no logo text and should not repeat the cover/key art wordmark.
   - Recommended itch.io theme direction, inspired by polished reference pages:
     - Page background: deep garden teal `#0f2626`.
     - Content panel: warm paper `#efe3c5` or a close itch theme equivalent.

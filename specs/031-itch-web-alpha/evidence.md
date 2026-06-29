@@ -82,6 +82,20 @@ Date: 2026-06-29
 - The in-app browser control session timed out while probing the live itch page after visiting the references, so these visual assets were prepared locally but not uploaded to itch.io in this run.
 - T016 remains open until the assets/theme are applied and visually reviewed on the actual itch.io page.
 
+## Itch.io Theme Application Follow-up
+
+Date: 2026-06-29
+
+- Regenerated `specs/031-itch-web-alpha/page-assets/satori-itch-banner.png` as a separate scenic banner with no logo text and no repeated wordmark.
+- Applied the available itch.io theme colors on the live draft page:
+  - Outer/page background: deep garden teal.
+  - Content panel: warm paper.
+  - Main text: dark moss.
+  - Buttons/links: shrine gold.
+- Rendered page verification showed the improved theme live with dark teal page sides, warm paper content panel, dark moss text, and gold action buttons.
+- Attempted the itch.io Banner image upload through the visible theme editor Upload control, but the in-app browser automation exposed only a hidden file input and did not open a Windows file picker; the banner image id stayed empty.
+- T016 remains open until the prepared cover/gallery/banner assets are uploaded to itch.io and visually reviewed.
+
 ## Current Focused Validation
 
 Date: 2026-06-29
