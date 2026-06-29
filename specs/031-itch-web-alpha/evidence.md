@@ -52,9 +52,20 @@ Date: 2026-06-29
   - Godot canvas appears and renders the Satori title screen.
   - Known audio sampling warnings appear in browser logs; no title-screen blocker observed.
 - Remaining blockers before Phase 5 can be Verified:
-  - Long tester-facing page description was not visible on the rendered page after save attempts, although the short description metadata is present.
+  - Long tester-facing page description is now visible on the rendered draft page, including the player guide and feedback focus.
   - Page visuals/screenshots or cover image still need to be added/reviewed.
   - Actual itch.io URL smoke still needs to cover new game, first ritual, first placement, and same-browser reload persistence.
+
+## Itch.io Page Content Follow-up
+
+Date: 2026-06-29
+
+- Updated the draft itch.io page long description through the visible Redactor editor after confirming source-mode edits did not sync into the saved `game[description]` field.
+- Rendered page verification at `https://roruchi.itch.io/satori`:
+  - `Enter the garden`: present.
+  - `Player guide`: present.
+  - `Feedback focus`: present.
+- T016 remains open because page visuals/screenshots or cover imagery still need to be added/reviewed.
 
 ## Current Focused Validation
 
