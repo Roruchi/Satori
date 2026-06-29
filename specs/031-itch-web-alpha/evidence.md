@@ -125,7 +125,25 @@ Date: 2026-06-29
 - Visual QA:
   - The tile uses dark teal mossy stone, subtle shrine-gold flecks, faint teal spirit glows, and low-contrast garden texture.
   - The 3x2 repeat preview is suitable as a tiled page background behind the warm paper content panel.
-- T016 remains open until the backdrop image is uploaded to the itch.io Background image slot with repeat/tile behavior and visually reviewed on the actual page.
+- This backdrop was subsequently uploaded to the itch.io Background image slot and visually reviewed on the actual page.
+
+## Itch.io Content Population Gate
+
+Date: 2026-06-29
+
+- Owner uploaded the repeating backdrop/background asset to itch.io.
+- Rendered page verification before the final copy cleanup showed:
+  - The scenic banner is visible above the playable embed.
+  - The repeating dark garden backdrop is active on `.game_page_wrapper`.
+  - Backdrop CSS reports a background image, `background-repeat: repeat`, and `background-size: auto`.
+  - The warm paper content panel, dark moss text, and shrine-gold action buttons are visible.
+- Cleaned the rendered page copy by replacing the long description through the visible Redactor editor, then saved successfully in the itch editor.
+- Final saved `game[description]` field evidence:
+  - Build version `0.1.0-alpha+20260627.1`: present.
+  - Stray `Satori page guide sync test` artifact: removed.
+  - Controls, alpha scope, early-build notes, browser-local save guidance, and feedback prompts: present.
+- T016 is complete.
+- T018 remains pending: actual itch.io URL smoke still needs to cover new game, first ritual, first placement, and same-browser reload persistence.
 
 ## Current Focused Validation
 
