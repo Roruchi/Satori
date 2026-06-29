@@ -923,14 +923,25 @@ func _structure_texture_for_id(structure_id: String) -> Texture2D:
 		return _structure_texture_cache[structure_id] as Texture2D
 	var texture: Texture2D = null
 	var asset_path: String = _structure_catalog.get_asset_path(structure_id)
-	if not asset_path.is_empty() and FileAccess.file_exists(asset_path):
-		var image: Image = Image.load_from_file(ProjectSettings.globalize_path(asset_path))
-		if image != null:
-			texture = ImageTexture.create_from_image(image)
+	if not asset_path.is_empty():
+		texture = _load_texture_resource(asset_path)
 	if texture == null and _should_draw_house_structure_sprite(structure_id):
 		texture = _HOUSE_STRUCTURE_TEXTURE
 	_structure_texture_cache[structure_id] = texture
 	return texture
+
+func _load_texture_resource(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path, "Texture2D"):
+		var loaded_texture: Texture2D = ResourceLoader.load(path, "Texture2D") as Texture2D
+		if loaded_texture != null:
+			return loaded_texture
+	if FileAccess.file_exists(path):
+		var image: Image = Image.load_from_file(path)
+		if image != null:
+			return ImageTexture.create_from_image(image)
+	return null
 
 func _structure_draw_size_for_id(structure_id: String) -> float:
 	if structure_id == "disc_origin_shrine":
@@ -1036,16 +1047,14 @@ func _draw_tilesheet_top(
 
 
 func _load_terrain_tilesheet() -> void:
-	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(_TERRAIN_TILESET_PATH))
-	if image == null:
+	_terrain_tileset_texture = _load_texture_resource(_TERRAIN_TILESET_PATH)
+	if _terrain_tileset_texture == null:
 		push_warning("GardenView: terrain tilesheet could not be loaded from %s" % _TERRAIN_TILESET_PATH)
 		return
-	_terrain_tileset_texture = ImageTexture.create_from_image(image)
-	var edge_image: Image = Image.load_from_file(ProjectSettings.globalize_path(_EDGE_DECAL_PATH))
-	if edge_image == null:
+	_edge_decal_texture = _load_texture_resource(_EDGE_DECAL_PATH)
+	if _edge_decal_texture == null:
 		push_warning("GardenView: edge decal could not be loaded from %s" % _EDGE_DECAL_PATH)
 		return
-	_edge_decal_texture = ImageTexture.create_from_image(edge_image)
 
 
 func _draw_shoreline_edges(coord: Vector2i, biome: int) -> void:

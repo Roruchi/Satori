@@ -75,6 +75,8 @@ test("web export packages seed recipe data and generated icon pngs", async ({ re
   expectBufferToContain(pckBuffer, "Stone Seed");
   expectBufferToContain(pckBuffer, "Meadow Seed");
   expectBufferToContain(pckBuffer, "material_icon_spritesheet.png");
+  expectBufferToContain(pckBuffer, "assets/structures/house/frames/idle/down/frame_0000.png.import");
+  expectBufferToContain(pckBuffer, "assets/structures/fox_den/frames/idle/down/frame_0000.png.import");
   expectBufferToContain(pckBuffer, "materials.csv.txt");
   expectBufferToContain(pckBuffer, "rituals.csv.txt");
   expectBufferToContain(pckBuffer, "0.1.0-alpha+20260627.1");

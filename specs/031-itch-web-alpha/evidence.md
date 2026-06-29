@@ -18,13 +18,31 @@ Pending page gate:
 - Feedback route: itch.io comments or direct developer feedback.
 - Uploaded HTML/browser-playable build or channel: `web-alpha`.
 - Upload identifier: `#18139525`.
-- Build identifier: `#1759450`.
+- Build identifier: `#1759730` (from `#1759450`).
 - Build version on itch.io: `0.1.0-alpha+20260627.1`.
 - Actual itch.io page content review, first ritual, first placement, and reload persistence: pending.
 
 ## Actual itch.io Page Progress
 
 Date: 2026-06-29
+
+- Corrective asset-loader refresh:
+  - Refreshed local `master` to `origin/master` before upload.
+  - Installed local butler at `.\build\tools\butler\butler.exe`.
+  - Local butler version: `v15.27.0`.
+  - `.\build\tools\butler\butler.exe validate build\web`
+    - Result: passed.
+    - Result detail: `build\web\index.html` detected as an HTML5 app.
+  - `.\build\tools\butler\butler.exe push build\web roruchi/satori:web-alpha --userversion 0.1.0-alpha+20260627.1 --if-changed`
+    - Result: passed.
+    - Channel: `web-alpha`.
+    - Upload: `#18139525`.
+    - Build: `#1759730` (from `#1759450`).
+    - Version: `0.1.0-alpha+20260627.1`.
+    - Upload detail: re-used `98.50%` of old build, added `603.83 KiB` fresh data, `286.65 KiB` patch.
+  - `.\build\tools\butler\butler.exe status roruchi/satori:web-alpha`
+    - Result: passed.
+    - Status: channel `web-alpha`, upload `#18139525`, build `#1759730` (from `#1759450`), version `0.1.0-alpha+20260627.1`.
 
 - Page edit URL provided by owner: `https://itch.io/game/edit/4723679`.
 - Canonical page URL: `https://roruchi.itch.io/satori`.

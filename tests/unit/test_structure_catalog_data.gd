@@ -36,9 +36,10 @@ func test_structure_catalog_entries_have_loadable_assets() -> void:
 		var sprite_frames_path: String = str(entry.get("sprite_frames_path", ""))
 		assert_false(asset_path.is_empty(), "%s should have a frame asset path" % structure_id)
 		assert_true(FileAccess.file_exists(asset_path), "%s frame PNG should exist" % structure_id)
+		assert_true(ResourceLoader.exists(asset_path, "Texture2D"), "%s frame PNG should be importable as Texture2D" % structure_id)
 		assert_true(FileAccess.file_exists(sprite_frames_path), "%s should have sprite_frames.tres metadata" % structure_id)
-		var image: Image = Image.load_from_file(ProjectSettings.globalize_path(asset_path))
-		assert_not_null(image, "%s frame PNG should load as an Image" % structure_id)
+		var texture: Texture2D = ResourceLoader.load(asset_path, "Texture2D") as Texture2D
+		assert_not_null(texture, "%s frame PNG should load as a Texture2D resource" % structure_id)
 
 
 func test_satori_service_structure_definitions_include_effects_and_assets() -> void:
