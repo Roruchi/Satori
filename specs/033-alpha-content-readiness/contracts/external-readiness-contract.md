@@ -16,10 +16,11 @@ External alpha readiness requires:
 - tester brief exists,
 - known issues list exists,
 - Web fresh-save playthrough reaches Suijin,
-- Android fresh-save playthrough reaches Suijin.
+- Android is recorded as the next platform gate in `032-android-alpha`.
 
 ## Validation
 
 - Content audit completed.
 - Tester handoff artifacts reviewed.
-- Web and Android playthrough evidence recorded.
+- Web playthrough evidence recorded.
+- Android follow-up dependency recorded.

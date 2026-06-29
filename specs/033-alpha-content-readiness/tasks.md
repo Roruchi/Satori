@@ -29,13 +29,13 @@
 - [ ] T013 [US2] Audit normal UI for broken-looking alpha gaps.
 - [ ] T014 [US2] Confirm no placeholder art, audio, icon, or UI assets remain on the primary alpha path or release shell.
 
-## Phase 5: User Story 3 - Prepare External Testers (Priority: P1)
+## Phase 5: User Story 3 - Prepare Web Alpha Testers (Priority: P1)
 
 - [ ] T015 [US3] Add visible menu build version in `0.x.y-alpha+<build_id>` format.
-- [ ] T016 [US3] Write tester brief and known issues.
+- [ ] T016 [US3] Write Web tester brief and known issues, with Android called out as a later platform gate.
 - [ ] T017 [US3] Complete Web fresh-save playthrough to Suijin.
-- [ ] T018 [US3] Complete Android fresh-save playthrough to Suijin.
+- [ ] T018 [US3] Record Android follow-up dependency in tester notes and hand off `032-android-alpha` as the final roadmap phase.
 
 ## Dependencies & Execution Order
 
-This spec should start after the core alpha spine, save safety, and platform builds are usable.
+This spec should start after the core alpha spine and save safety are usable. It may proceed while `031-itch-web-alpha` is blocked on external itch.io page/upload work, and it intentionally precedes `032-android-alpha` so Android validates a polished route.

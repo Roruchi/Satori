@@ -15,7 +15,7 @@ Prepare:
 
 1. Menu-visible build version in `0.x.y-alpha+<build_id>` format.
 2. Web alpha instructions.
-3. Android install instructions.
+3. Android follow-up note pointing to `032-android-alpha`.
 4. Known issues.
 5. What to test.
 6. What is out of scope.
@@ -23,4 +23,4 @@ Prepare:
 
 ## Final Manual Playtest
 
-Run one fresh-save playthrough on Web and one on Android through Suijin invitation before inviting testers.
+Run one fresh-save playthrough on Web through Suijin invitation before inviting Web alpha testers. Android fresh-save playthrough evidence belongs to the final `032-android-alpha` gate.

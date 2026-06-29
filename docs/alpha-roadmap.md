@@ -1,6 +1,6 @@
 # Satori Alpha Roadmap
 
-This roadmap defines the path from the current game state toward a fun, playable alpha that can be tested through itch.io and Android. It is written as a player journey first and an implementation tracker second.
+This roadmap defines the path from the current game state toward a fun, playable alpha that can be tested through itch.io first, with Android as the final platform gate after the game is polished enough to deserve device testing. It is written as a player journey first and an implementation tracker second.
 
 The alpha target is not "all spirits and all structures." The alpha target is one clear, satisfying route through the full Satori promise:
 
@@ -17,7 +17,7 @@ The alpha target is not "all spirits and all structures." The alpha target is on
 11. Use Ku Seed to place Void, separating islands cleanly.
 12. Prepare a calm water island, place the Chi+Ku biome there, and invite Suijin.
 13. Save, close, reopen, and continue safely.
-14. Run acceptably as a Web build on itch.io and as an Android build.
+14. Run acceptably as a Web build on itch.io, then finish Android after the alpha path is polished.
 
 More spirits, more structures, more island rules, advanced components, additional kamis, memories, and restoration paths are alpha-plus content unless they are needed to make this spine understandable and satisfying.
 
@@ -84,7 +84,7 @@ The repo already contains the main pieces needed for an alpha spine:
 
 Known roadmap implications:
 
-- The current `export_presets.cfg` has a Web preset only. Android export is a required phase, not already done.
+- The current `export_presets.cfg` has Web and Android presets. Android export/install validation is still a required final phase because SDK/JDK/device validation is not yet proven.
 - The bug checklist shows many gameplay regressions already fixed, but some visual/UI clarity items still need manual or scene-level validation.
 - The worktree may contain active gameplay and UI changes. Roadmap work should remain scoped and avoid rewriting unrelated systems while those changes are in progress.
 
@@ -103,7 +103,8 @@ Required for alpha:
 - One Suijin invitation proof.
 - One tested save/load path across restart.
 - One itch.io Web build.
-- One Android build that can be installed and played.
+- One alpha polish/content pass that makes the Web tester route feel intentional instead of mechanical.
+- One Android build that can be installed and played after the game is polished enough for device testing.
 
 Deferrable until after alpha:
 
@@ -128,8 +129,9 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Verified | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. Evidence: `specs/029-alpha-endgame-kami-spine/evidence.md`. |
 | 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Verified | First-session, first-island, and endgame/kami states round-trip with schema/version safety. Evidence: `specs/030-alpha-save-safety/evidence.md`. |
 | 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Blocked | Local Web build exports, runs, saves across reload, and packages correctly, but a content-complete restricted itch.io page, uploaded HTML build, and smoke on the actual itch.io page are still required. Evidence: `specs/031-itch-web-alpha/evidence.md`. |
-| 7 | Phase 6 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state. |
-| 8 | Phases 7-8 - Alpha Content and External Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Included content is wired and tester brief, known issues, versioning, Web playthrough, and Android playthrough are ready. |
+| 7 | Phase 6 - Alpha Content Pass | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Primary alpha path content is wired, polished, save/load covered, and not exposing broken-looking gaps. |
+| 8 | Phase 7 - External Alpha Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Tester brief, known issues, versioning, and Web fresh-save playthrough to Suijin are ready. |
+| 9 | Phase 8 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state after the game is alpha-polished. |
 
 Status rules:
 
@@ -320,7 +322,7 @@ Implementation focus:
 Exit gates:
 
 - Fresh save, mid-session save, and restart round trips pass.
-- Background/close save behavior is manually checked on Android.
+- Background/close save behavior has save-hook coverage now and is manually checked on Android in the final platform gate.
 - Web build persistence is manually checked in a browser profile used like itch.io.
 - Save migration guard exists before alpha testers receive builds.
 
@@ -355,43 +357,7 @@ Exit gates:
 - A restricted itch.io page exists with tester-facing game description, visual assets, controls, alpha scope, known issues, and feedback route.
 - The current Web package is uploaded as an HTML/browser-playable build, and the actual itch.io URL passes title, new-game, first ritual, first placement, and same-browser reload smoke.
 
-## Phase 6 - Android Alpha
-
-Spec: [032-android-alpha](../specs/032-android-alpha/spec.md)  
-Alpha status: Not Started
-
-Goal: create an installable Android build that proves the mobile-first design.
-
-Player outcome:
-
-- I can install the Android build, play with touch, background the app, reopen it, and continue.
-
-Implementation focus:
-
-- Add an Android export preset.
-- Configure package id `com.lunaverse.satori`, version code, version name, title-emblem icon, no orientation lock, and signing approach.
-- Confirm export templates are installed and documented.
-- Validate touch:
-  - pan,
-  - zoom,
-  - tap,
-  - long press or placement confirmation,
-  - ritual menu slots,
-  - build/project confirmation,
-  - Codex and settings.
-- Validate safe-area and phone aspect ratios.
-- Check performance with debug overlay disabled in release.
-- Check Android app lifecycle save on background and resume.
-
-Exit gates:
-
-- Debug APK installs and launches on a physical device or emulator.
-- Release-like Android build can be produced with documented steps.
-- First-session and full alpha endgame spine are touch-playable.
-- No critical UI element is unreachable or clipped on common phone ratios.
-- Background and resume preserve the garden.
-
-## Phase 7 - Alpha Content Pass
+## Phase 6 - Alpha Content Pass
 
 Spec: [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md)  
 Alpha status: Not Started
@@ -427,12 +393,12 @@ Exit gates:
 - Included spirits and structures are wired into Codex, save/load, and tests.
 - Content gaps are visible as "not yet available" or absent, not broken buttons.
 
-## Phase 8 - External Alpha Readiness
+## Phase 7 - External Alpha Readiness
 
 Spec: [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md)  
 Alpha status: Not Started
 
-Goal: prepare a small closed alpha on itch.io and Android.
+Goal: prepare a small closed alpha on itch.io with enough polish and guidance for useful tester feedback before Android is attempted.
 
 Deliverables:
 
@@ -444,6 +410,7 @@ Deliverables:
   - where save files live if relevant.
 - Known issues list.
 - Build version visible in the menu.
+- Web build/playtest notes.
 - Crash/blocker triage checklist.
 - Feedback questions focused on fun:
   - Did you know what to do next?
@@ -456,10 +423,43 @@ Deliverables:
 Exit gates:
 
 - itch.io restricted page or draft page is ready.
-- Android install path is documented.
 - At least one full fresh-save playthrough invites Suijin on an Endgame island on Web.
-- At least one full fresh-save playthrough invites Suijin on an Endgame island on Android.
 - Known blockers are fixed or explicitly called out before inviting testers.
+
+## Phase 8 - Android Alpha
+
+Spec: [032-android-alpha](../specs/032-android-alpha/spec.md)  
+Alpha status: Not Started
+
+Goal: create an installable Android build after the alpha content/readiness pass proves the game is polished enough to test on device.
+
+Player outcome:
+
+- I can install the Android build, play with touch, background the app, reopen it, and continue.
+
+Implementation focus:
+
+- Preserve the Android export preset and package id `com.lunaverse.satori`.
+- Confirm export templates, SDK, JDK, `adb`, and device or emulator availability.
+- Validate touch:
+  - pan,
+  - zoom,
+  - tap,
+  - long press or placement confirmation,
+  - ritual menu slots,
+  - build/project confirmation,
+  - Codex and settings.
+- Validate safe-area and phone aspect ratios against the polished alpha route.
+- Check performance with debug overlay disabled in release.
+- Check Android app lifecycle save on background and resume.
+
+Exit gates:
+
+- Debug APK installs and launches on a physical device or emulator.
+- Release-like Android build can be produced with documented steps.
+- First-session and full alpha endgame spine are touch-playable.
+- No critical UI element is unreachable or clipped on common phone ratios.
+- Background and resume preserve the garden.
 
 ## Suggested Phase Order
 
@@ -469,11 +469,11 @@ Exit gates:
 4. Phase 3 - Full Alpha Endgame Spine
 5. Phase 4 - Save Safety and Testable Builds
 6. Phase 5 - itch.io Web Alpha
-7. Phase 6 - Android Alpha
-8. Phase 7 - Alpha Content Pass
-9. Phase 8 - External Alpha Readiness
+7. Phase 6 - Alpha Content Pass
+8. Phase 7 - External Alpha Readiness
+9. Phase 8 - Android Alpha
 
-Phase 7 can overlap with Phases 5 and 6 only after the alpha spine is stable. Content breadth should not hide broken progression, saving, or mobile controls.
+Phase 6 can proceed while Phase 5 remains blocked on external itch.io upload/page work. Android remains last so device work validates a polished alpha route instead of spending scarce device setup time on known content and UX gaps.
 
 ## Alpha Cut Line
 
@@ -482,10 +482,10 @@ Ship the first closed alpha when these are true:
 - A fresh player can unlock Ku, place Void to separate islands, and invite Suijin with the Chi+Ku calm-water-island condition without debug tools.
 - The game can be closed and reopened without losing alpha-critical state.
 - Web build works well enough for itch.io testers.
-- Android build works well enough for touch-first testing.
 - The first island has enough spirit and structure variety to be fun for at least one session.
 - Missing broader content does not look like broken functionality.
 - The primary alpha path and release shell contain no placeholder assets.
+- Android build works well enough for touch-first testing after Web/polish readiness is proven.
 
 Do not delay alpha for:
 
@@ -505,6 +505,7 @@ Do delay alpha for:
 - unclear first-session actions,
 - accidental irreversible actions,
 - broken touch controls,
-- Web or Android build failure,
+- Web build failure before first closed-alpha Web testing,
+- Android build failure at the final Android gate,
 - UI that blocks play on phone screens,
 - placeholder assets on the primary alpha path or release shell.
