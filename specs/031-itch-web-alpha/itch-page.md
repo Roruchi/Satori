@@ -23,6 +23,16 @@ The page is not verified until both are true:
   - At least one current title/menu image.
   - At least one current in-game garden image showing the alpha path.
   - No placeholder visuals from the primary alpha path or release shell.
+  - Use the prepared page assets in `specs/031-itch-web-alpha/page-assets/`:
+    - `satori-itch-cover.png` as the cover/key image.
+    - `satori-itch-gallery-alpha-loop.png` as the first gallery image.
+    - `satori-itch-banner.png` as an optional wide page/banner image if itch.io accepts it cleanly.
+  - Recommended itch.io theme direction, inspired by polished reference pages:
+    - Page background: deep garden teal `#0f2626`.
+    - Content panel: warm paper `#efe3c5` or a close itch theme equivalent.
+    - Primary text: dark moss `#173332`.
+    - Accent/buttons/links: shrine gold `#d6b96d`.
+    - Avoid default white/gray itch styling when possible; the page should read as a ritual garden before the tester presses play.
 - Controls/how to play:
   - Mouse/touch select and place.
   - Use the ritual UI to combine elements into seeds/forms.

@@ -67,6 +67,21 @@ Date: 2026-06-29
   - `Feedback focus`: present.
 - T016 remains open because page visuals/screenshots or cover imagery still need to be added/reviewed.
 
+## Itch.io Visual Direction Follow-up
+
+Date: 2026-06-29
+
+- Compared the current Satori page against the user-provided polished itch.io references:
+  - `https://digitarium.itch.io/peggys-post`
+  - `https://naoimh-murchan.itch.io/once-upon-a-witchs-curse`
+- Prepared local page assets from existing Satori art:
+  - `specs/031-itch-web-alpha/page-assets/satori-itch-cover.png`
+  - `specs/031-itch-web-alpha/page-assets/satori-itch-banner.png`
+  - `specs/031-itch-web-alpha/page-assets/satori-itch-gallery-alpha-loop.png`
+- Recommended itch.io theme palette recorded in `itch-page.md`: deep garden teal, warm paper panel, dark moss text, shrine-gold accents.
+- The in-app browser control session timed out while probing the live itch page after visiting the references, so these visual assets were prepared locally but not uploaded to itch.io in this run.
+- T016 remains open until the assets/theme are applied and visually reviewed on the actual itch.io page.
+
 ## Current Focused Validation
 
 Date: 2026-06-29
