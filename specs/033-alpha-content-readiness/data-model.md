@@ -22,7 +22,7 @@
 
 - `issue_id`: stable id
 - `severity`: blocker, major, minor, note
-- `platform`: Web, Android, all
+- `platform`: Web, all, or Android-follow-up
 - `description`: tester-facing issue
 - `workaround`: optional workaround
 

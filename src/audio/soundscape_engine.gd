@@ -365,7 +365,7 @@ func _play_stinger_now(audio_key: String) -> void:
 		_stinger_active = false
 		return
 	if not ResourceLoader.exists(path):
-		RuntimeLogger.warn("SoundscapeEngine", "Stinger asset absent (placeholder): %s" % path)
+		RuntimeLogger.warn("SoundscapeEngine", "Stinger asset absent: %s" % path)
 		_stinger_active = false
 		return
 	var stream: AudioStream = load(path) as AudioStream

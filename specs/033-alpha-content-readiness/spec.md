@@ -3,11 +3,12 @@
 **Feature Branch**: `033-alpha-content-readiness`  
 **Created**: 2026-06-26  
 **Status**: Draft  
-**Input**: Alpha roadmap Phases 7 and 8.
+**Input**: Alpha roadmap Phases 6 and 7.
 
 ## Clarifications
 
-- This spec owns the final content pass and closed-alpha handoff materials.
+- This spec owns the alpha content polish pass and Web-first closed-alpha handoff materials.
+- Android is intentionally moved after this spec so device validation happens against a polished alpha route instead of blocking content readiness on local SDK/JDK/device availability.
 - It must not expand scope beyond the alpha spine unless content is needed for fun or clarity.
 - The primary alpha path and release shell must not ship placeholder art, audio, icon, or UI assets. Placeholder assets are allowed for non-primary content if that content is hidden, gated, or clearly outside the intended tester route.
 - The obvious alpha path receives polish before optional catalog breadth: first ritual, Red Fox, Meadow dwelling, upgraded Fox Den migration with Red-Fox-only double Satori generation, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void island separation, Chi+Ku calm-water island, and Suijin invitation.
@@ -35,22 +36,22 @@ As a tester, I do not see buttons, recipes, or Codex entries that look available
 
 1. **Given** content not included in alpha, **When** I browse normal UI, **Then** it is hidden, gated, or clearly not available.
 
-### User Story 3 - Prepare External Testers (Priority: P1)
+### User Story 3 - Prepare Web Alpha Testers (Priority: P1)
 
-As the developer, I can invite testers with clear instructions and known issues.
+As the developer, I can invite Web alpha testers with clear instructions and known issues before Android validation starts.
 
 **Independent Test**: Review tester brief, known issues, version display, and build notes.
 
 **Acceptance Scenarios**:
 
-1. **Given** Web and Android builds, **When** tester notes are reviewed, **Then** they explain what to try, what is out of scope, and how to report bugs.
+1. **Given** a Web alpha build, **When** tester notes are reviewed, **Then** they explain what to try, what is out of scope, how to report bugs, and that Android testing follows after this polish gate.
 
 ## Requirements
 
 - **FR-001**: Alpha content pass MUST include only content that supports current systems cleanly.
 - **FR-002**: Included spirits and structures MUST be wired to Codex, save/load, and validation.
 - **FR-003**: Missing broader content MUST not appear as broken functionality.
-- **FR-004**: Tester instructions MUST explain scope, controls, known issues, and bug reporting.
+- **FR-004**: Tester instructions MUST explain scope, Web controls, known issues, bug reporting, and the later Android gate.
 - **FR-005**: Build version MUST be visible in the menu using `0.x.y-alpha+<build_id>` format.
 - **FR-006**: The primary alpha path and release shell MUST contain no placeholder art, audio, icon, or UI assets; non-primary placeholder assets are allowed when hidden, gated, or outside the intended tester route.
 - **FR-007**: The obvious path MUST receive polish before optional spirits, structures, or biomes are added.
@@ -59,7 +60,7 @@ As the developer, I can invite testers with clear instructions and known issues.
 ### Experience & Runtime Constraints
 
 - **EX-001**: Content MUST respect permanent-emergence rules.
-- **EX-002**: Tester-facing UI and instructions MUST work for Web and Android testers.
+- **EX-002**: Tester-facing UI and instructions MUST work for Web testers first while preserving mobile-readable UI expectations for the later Android gate.
 - **EX-003**: Added content MUST not regress alpha performance or save/load.
 
 ### Key Entities
@@ -73,4 +74,4 @@ As the developer, I can invite testers with clear instructions and known issues.
 
 - **SC-001**: Testers can play beyond first island without immediately exhausting meaningful actions.
 - **SC-002**: No known out-of-scope content appears as a broken alpha feature.
-- **SC-003**: Web and Android tester handoff docs are ready.
+- **SC-003**: Web tester handoff docs are ready, with Android called out as the next platform gate.

@@ -5,15 +5,15 @@
 
 ## Summary
 
-Add a restrained alpha content pass and prepare tester-facing release materials for closed itch.io and Android alpha testing.
+Add a restrained alpha content pass and prepare tester-facing release materials for Web-first closed alpha testing, with Android handed off as the final platform gate.
 
 ## Technical Context
 
 **Language/Version**: Godot 4.6, Markdown docs  
-**Primary Dependencies**: Runtime CSV catalogs, Codex, save/load, Web and Android builds  
+**Primary Dependencies**: Runtime CSV catalogs, Codex, save/load, Web build  
 **Storage**: Content data, save state, tester docs  
 **Testing**: Data checks, GUT where content affects rules, manual playtest  
-**Target Platform**: Web and Android alpha  
+**Target Platform**: Web alpha first, Android final gate later  
 **Project Type**: Godot game  
 **Performance Goals**: No regression to alpha performance or load targets  
 **Constraints**: Do not broaden to full content roster  
@@ -21,11 +21,11 @@ Add a restrained alpha content pass and prepare tester-facing release materials 
 
 ## Constitution Check
 
-- **Spec Traceability**: PASS. Roadmap Phases 7 and 8.
+- **Spec Traceability**: PASS. Roadmap Phases 6 and 7.
 - **Godot-Native Fit**: PASS. Uses existing content/data systems.
 - **Validation Strategy**: PASS. Data tests plus manual external-readiness review.
 - **World Rule Safety**: PASS. Content must respect permanent world state.
-- **Mobile Budgets**: PASS. Tester docs cover Web and Android.
+- **Mobile Budgets**: PASS. Polish keeps UI mobile-readable, while Android device proof stays in `032-android-alpha`.
 - **Guardrails**: PASS. Use existing content pipelines.
 
 ## Project Structure

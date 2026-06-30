@@ -1,6 +1,7 @@
 ## SpiritRhythmCatalog — maps each spirit to its rhythmic audio contribution.
-## Audio asset paths point to placeholder locations; assets are loaded
-## only when the file exists (graceful no-op when .ogg files are absent).
+## Spirit rhythm identity is synthesized procedurally by SoundscapeEngine.
+## The path field is reserved for future authored loops and is not loaded
+## on the alpha path.
 ##
 ## Each entry:
 ##   audio_key  : unique audio identifier

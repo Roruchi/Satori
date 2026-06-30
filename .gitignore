@@ -4,10 +4,12 @@ node_modules/
 playwright-report/
 test-results/
 .codex-remote-attachments/
+.codex-godot-home/
 /android/
 *.import
 *.translation
 !assets/materials/material_icon_spritesheet.png.import
+!assets/ui/title/*.png.import
 
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt
