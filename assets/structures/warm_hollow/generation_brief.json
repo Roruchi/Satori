@@ -1,0 +1,8 @@
+{
+  "entity_id": "warm_hollow",
+  "display_name": "Warm Hollow",
+  "asset_role": "completed structure sprite",
+  "generator": "imagegen spritesheet slice",
+  "source_prompt_summary": "2x2 transparent-ready dwelling spritesheet with meadow, warm wind, and stone hollow cells",
+  "style": "top-down painterly Satori structure sprite at existing asset scale"
+}

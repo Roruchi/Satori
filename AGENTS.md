@@ -39,6 +39,15 @@ Branch names follow **sequential numbering** (configured in `.specify/init-optio
 - Encoding: **UTF-8**
 - `.godot/` directory is gitignored (editor cache)
 
+## Satori Agent Operating Rules
+
+- Use `tools/godot.ps1` as the normal validation entrypoint. For gameplay/code changes, run `-Command parse`, then focused GUT with `-Command test -Test "res://..."`, and run `-Command boot` when autoloads, startup, scenes, persistence, or UI initialization changed.
+- In fresh worktrees, repair Godot state before blaming gameplay code: run a headless editor import if `.godot` cache/global classes are missing. If Godot cannot write to normal user directories, redirect `APPDATA` and `LOCALAPPDATA` to a workspace-local `.codex-godot-home` and rerun validation sequentially.
+- Keep recipes, CSVs, specs, and runtime data in sync. When rituals, materials, recipes, tile unlocks, structure effects, or discovery data change, update the matching runtime CSVs, catalog scripts, viewer/export tooling, `specs/master/recipes.md`, and owning spec docs in the same change. No doc/spec/data drift is allowed; treat drift as a blocking issue before validation or handoff.
+- Concrete gameplay requests should become playable behavior, not metadata-only edits. Wire mechanics through existing services/data/UI paths, add focused coverage, and verify the player-visible loop.
+- Treat UX requirements as acceptance criteria. Slot-first ritual flow, clear inventory-vs-overworld material presentation, readable unlock requirements, compact debug overlays, and immediate layout after mode switches are part of done, not optional polish.
+- Preserve established design invariants unless the user explicitly changes them: no duplicate ritual inputs, 2-token recipes stay reserved for mixed seeds, building placement consumes real inventory/resources, ritual spirit inputs require active housed spirits, and progression gates such as Mist Stag/Ku/second-island unlocks should not be loosened silently.
+
 ## Godot GDScript Guardrails (All Agents)
 
 - Do **not** give an autoload singleton key the same name as a script `class_name` (e.g. autoload `PatternScanService` for script `class_name PatternScanScheduler`). Godot treats this as a parse error.

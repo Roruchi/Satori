@@ -48,11 +48,14 @@ func scan_grid(grid: RefCounted) -> Array[DiscoverySignal]:
 	if grid.tiles.is_empty():
 		return discoveries
 	var in_scan_discoveries: Dictionary = {}
+	var cluster_region_cache: Dictionary = {}
 
 	for pattern in _patterns:
 		if pattern.pattern_type == PatternDefinition.PatternType.COMPOUND:
 			continue
-		var payload := _evaluate_pattern(pattern, grid, in_scan_discoveries)
+		if _discovery_registry.has_discovery(pattern.discovery_id):
+			continue
+		var payload: DiscoverySignal = _evaluate_pattern(pattern, grid, in_scan_discoveries, cluster_region_cache)
 		if payload != null:
 			discoveries.append(payload)
 			in_scan_discoveries[payload.discovery_id] = true
@@ -66,8 +69,11 @@ func scan_grid(grid: RefCounted) -> Array[DiscoverySignal]:
 				continue
 			if processed_compound_ids.has(pattern.discovery_id):
 				continue
+			if _discovery_registry.has_discovery(pattern.discovery_id):
+				processed_compound_ids[pattern.discovery_id] = true
+				continue
 
-			var payload := _evaluate_pattern(pattern, grid, in_scan_discoveries)
+			var payload: DiscoverySignal = _evaluate_pattern(pattern, grid, in_scan_discoveries, cluster_region_cache)
 			if payload == null:
 				continue
 
@@ -84,7 +90,9 @@ func scan_grid(grid: RefCounted) -> Array[DiscoverySignal]:
 		if pattern.pattern_type == PatternDefinition.PatternType.COMPOUND and processed_compound_ids.has(pattern.discovery_id):
 			continue
 		if pattern.pattern_type == PatternDefinition.PatternType.COMPOUND:
-			var payload := _evaluate_pattern(pattern, grid, in_scan_discoveries)
+			if _discovery_registry.has_discovery(pattern.discovery_id):
+				continue
+			var payload: DiscoverySignal = _evaluate_pattern(pattern, grid, in_scan_discoveries, cluster_region_cache)
 			if payload != null:
 				discoveries.append(payload)
 				in_scan_discoveries[payload.discovery_id] = true
@@ -94,10 +102,10 @@ func scan_grid(grid: RefCounted) -> Array[DiscoverySignal]:
 	)
 	return discoveries
 
-func _evaluate_pattern(pattern: PatternDefinition, grid: RefCounted, in_scan_discoveries: Dictionary) -> DiscoverySignal:
+func _evaluate_pattern(pattern: PatternDefinition, grid: RefCounted, in_scan_discoveries: Dictionary, cluster_region_cache: Dictionary) -> DiscoverySignal:
 	match pattern.pattern_type:
 		PatternDefinition.PatternType.CLUSTER:
-			return _cluster_matcher.evaluate(pattern, grid, _spatial_query)
+			return _evaluate_cluster_pattern(pattern, grid, cluster_region_cache)
 		PatternDefinition.PatternType.SHAPE:
 			return _shape_matcher.evaluate(pattern, grid, _spatial_query)
 		PatternDefinition.PatternType.RATIO_PROXIMITY:
@@ -109,8 +117,25 @@ func _evaluate_pattern(pattern: PatternDefinition, grid: RefCounted, in_scan_dis
 				return _shape_matcher.evaluate(pattern, grid, _spatial_query)
 			if pattern.neighbour_requirements.has("radius"):
 				return _ratio_proximity_matcher.evaluate(pattern, grid, _spatial_query)
-			return _cluster_matcher.evaluate(pattern, grid, _spatial_query)
+			return _evaluate_cluster_pattern(pattern, grid, cluster_region_cache)
 	return null
+
+func _evaluate_cluster_pattern(pattern: PatternDefinition, grid: RefCounted, cluster_region_cache: Dictionary) -> DiscoverySignal:
+	if pattern.required_biomes.is_empty():
+		return null
+	var required_biome: int = pattern.required_biomes[0]
+	var cache_key: String = str(required_biome)
+	var best_region: Array[Vector2i] = []
+	if cluster_region_cache.has(cache_key):
+		var cached_variant: Variant = cluster_region_cache.get(cache_key, [])
+		if cached_variant is Array:
+			for coord_variant: Variant in cached_variant as Array:
+				if coord_variant is Vector2i:
+					best_region.append(coord_variant as Vector2i)
+	else:
+		best_region = _cluster_matcher.find_best_region_for_biome(required_biome, grid, _spatial_query)
+		cluster_region_cache[cache_key] = best_region
+	return _cluster_matcher.discovery_for_region(pattern, best_region)
 
 func scan_and_emit(grid: RefCounted) -> Array[DiscoverySignal]:
 	var discoveries := scan_grid(grid)
@@ -132,7 +157,8 @@ func scan_and_emit(grid: RefCounted) -> Array[DiscoverySignal]:
 				continue
 		discovery_triggered.emit(payload.discovery_id, payload.triggering_coords)
 		emitted_discoveries.append(payload)
-		newly_discovered_ids.append(payload.discovery_id)
+		if not payload.discovery_id.begins_with("spirit_"):
+			newly_discovered_ids.append(payload.discovery_id)
 		emitted_this_scan[payload.discovery_id] = true
 
 	if not newly_discovered_ids.is_empty():

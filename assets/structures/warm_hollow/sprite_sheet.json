@@ -1,0 +1,18 @@
+{
+  "entity_id": "warm_hollow",
+  "frame_width": 128,
+  "frame_height": 128,
+  "directions": [
+    "down"
+  ],
+  "layout": "single_frame_from_imagegen_spritesheet",
+  "source": "imagegen dwelling sheet 019f14b1-dc92-7822-be21-6822d0b8c4af",
+  "animations": [
+    {
+      "name": "idle_down",
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    }
+  ]
+}

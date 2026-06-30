@@ -3,6 +3,7 @@ extends PanelContainer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
+const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
 const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
@@ -18,6 +19,8 @@ const SLOT_BUTTON_COMPACT_SIZE: Vector2 = Vector2(92.0, 64.0)
 const SLOT_BUTTON_NARROW_SIZE: Vector2 = Vector2(80.0, 62.0)
 const COMPACT_WIDTH: float = 460.0
 const NARROW_WIDTH: float = 340.0
+const PLACE_SLOT_ICON_SIZE: float = 24.0
+const PLACE_SLOT_MIN_SIZE: Vector2 = Vector2(68.0, 30.0)
 
 const _INPUT_COLORS: Dictionary = {
 	"essence:earth": Color(0.62, 0.62, 0.62),
@@ -135,10 +138,14 @@ var _input_buttons_by_key: Dictionary = {}
 var _section_grids_by_kind: Dictionary = {}
 var _section_nodes_by_kind: Dictionary = {}
 var _input_icon_cache: Dictionary = {}
+var _place_icon_cache: Dictionary = {}
+var _structure_catalog: RefCounted = StructureCatalogDataScript.new()
+var _place_inventory_row: HBoxContainer = null
 var _compact_layout: bool = true
 var _narrow_layout: bool = false
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	for _i: int in range(SLOT_COUNT):
 		_slot_keys.append(EMPTY_KEY)
 	for i: int in range(_slot_buttons.size()):
@@ -161,12 +168,23 @@ func _ready() -> void:
 	if growth != null and growth.has_signal("pouch_updated"):
 		growth.pouch_updated.connect(_on_pouch_updated)
 	_apply_panel_style()
+	_init_place_inventory_row()
 	_apply_responsive_layout()
 	_update_ui()
+
+func _gui_input(event: InputEvent) -> void:
+	if _should_consume_pointer_event(event):
+		accept_event()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		_apply_responsive_layout()
+
+func _should_consume_pointer_event(event: InputEvent) -> bool:
+	return event is InputEventMouseButton \
+		or event is InputEventMouseMotion \
+		or event is InputEventScreenTouch \
+		or event is InputEventScreenDrag
 
 func _apply_panel_style() -> void:
 	var bg := StyleBoxFlat.new()
@@ -274,8 +292,10 @@ func _update_ui() -> void:
 			pouch = pouch_variant as SeedPouch
 	if pouch == null:
 		_pouch_status_label.text = "0/0 | Empty"
+		_refresh_place_inventory_row(null)
 	else:
 		_pouch_status_label.text = _format_place_inventory_status(pouch)
+	_refresh_place_inventory_row(pouch)
 	if not _last_feedback.is_empty():
 		_feedback_label.text = _last_feedback
 	elif alchemy == null:
@@ -384,6 +404,111 @@ func _ensure_button_contents(btn: Button) -> Dictionary:
 	labels.add_child(detail)
 	btn.add_child(row)
 	return {"row": row, "icon": icon, "title": title, "detail": detail}
+
+func _init_place_inventory_row() -> void:
+	if _place_inventory_row != null:
+		return
+	_place_inventory_row = HBoxContainer.new()
+	_place_inventory_row.name = "PlaceInventoryRow"
+	_place_inventory_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_place_inventory_row.add_theme_constant_override("separation", 4)
+	var status_index: int = _pouch_status_label.get_index()
+	_vbox.add_child(_place_inventory_row)
+	_vbox.move_child(_place_inventory_row, status_index + 1)
+	_place_inventory_row.visible = false
+
+
+func _refresh_place_inventory_row(pouch: SeedPouch) -> void:
+	if _place_inventory_row == null:
+		return
+	for child: Node in _place_inventory_row.get_children():
+		child.queue_free()
+	if pouch == null:
+		_place_inventory_row.visible = false
+		return
+	var added_any: bool = false
+	for i: int in range(pouch.size()):
+		if pouch.get_entry_kind_at(i) != &"building_item":
+			continue
+		var entry: BuildingInventoryEntry = pouch.get_building_at(i)
+		if entry == null or entry.count <= 0:
+			continue
+		_place_inventory_row.add_child(_create_place_inventory_slot(entry))
+		added_any = true
+	_place_inventory_row.visible = added_any
+
+
+func _create_place_inventory_slot(entry: BuildingInventoryEntry) -> PanelContainer:
+	var slot: PanelContainer = PanelContainer.new()
+	slot.name = "PlaceSlot_%s" % str(entry.type_key)
+	slot.custom_minimum_size = PLACE_SLOT_MIN_SIZE
+	slot.tooltip_text = "%s x%d" % [_building_display_name(entry.type_key), entry.count]
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.08, 0.12, 0.76)
+	style.border_color = Color(0.54, 0.49, 0.36, 0.84)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+	style.content_margin_left = 4.0
+	style.content_margin_top = 2.0
+	style.content_margin_right = 5.0
+	style.content_margin_bottom = 2.0
+	slot.add_theme_stylebox_override("panel", style)
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Contents"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 4)
+	slot.add_child(row)
+	var icon: TextureRect = TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(PLACE_SLOT_ICON_SIZE, PLACE_SLOT_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = _place_inventory_texture(entry.type_key)
+	row.add_child(icon)
+	var count_label: Label = Label.new()
+	count_label.name = "CountLabel"
+	count_label.text = str(entry.count)
+	count_label.custom_minimum_size = Vector2(18.0, 20.0)
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count_label.add_theme_color_override("font_color", Color(0.96, 0.91, 0.78, 0.98))
+	count_label.add_theme_font_size_override("font_size", 13)
+	row.add_child(count_label)
+	return slot
+
+
+func _place_inventory_texture(type_key: StringName) -> Texture2D:
+	var cache_key: String = str(type_key)
+	var cached_variant: Variant = _place_icon_cache.get(cache_key)
+	if cached_variant is Texture2D:
+		return cached_variant as Texture2D
+	var asset_path: String = _structure_catalog.get_asset_path(cache_key)
+	if asset_path.is_empty():
+		_place_icon_cache[cache_key] = null
+		return null
+	var texture: Texture2D = _load_texture_resource(asset_path)
+	_place_icon_cache[cache_key] = texture
+	return texture
+
+
+func _load_texture_resource(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path, "Texture2D"):
+		var loaded_texture: Texture2D = ResourceLoader.load(path, "Texture2D") as Texture2D
+		if loaded_texture != null:
+			return loaded_texture
+	if FileAccess.file_exists(path):
+		var image: Image = Image.load_from_file(path)
+		if image != null:
+			return ImageTexture.create_from_image(image)
+	return null
 
 func _set_input_button_content(btn: Button, key: String, definition: Dictionary, available: int, unlocked: bool) -> void:
 	var parts: Dictionary = _ensure_button_contents(btn)

@@ -142,6 +142,30 @@ func test_ritual_panel_previews_single_wind_as_meadow_seed() -> void:
 	panel.free()
 	_cleanup_context(ctx)
 
+func test_ritual_panel_consumes_pointer_events() -> void:
+	var ctx: Dictionary = _setup_context()
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	await get_tree().process_frame
+
+	var mouse_press: InputEventMouseButton = InputEventMouseButton.new()
+	mouse_press.button_index = MOUSE_BUTTON_LEFT
+	mouse_press.pressed = true
+	var mouse_motion: InputEventMouseMotion = InputEventMouseMotion.new()
+	var touch_press: InputEventScreenTouch = InputEventScreenTouch.new()
+	touch_press.pressed = true
+
+	assert_eq(panel.mouse_filter, Control.MOUSE_FILTER_STOP)
+	assert_true(panel.call("_should_consume_pointer_event", mouse_press))
+	assert_true(panel.call("_should_consume_pointer_event", mouse_motion))
+	assert_true(panel.call("_should_consume_pointer_event", touch_press))
+
+	remove_child(panel)
+	panel.free()
+	_cleanup_context(ctx)
+
 func test_ritual_panel_updates_reed_fiber_material_button() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
@@ -229,6 +253,7 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 
 	var pouch_label: Label = hud.get_node("Root/TopBar/InventoryStack/SeedPouchDisplay") as Label
 	var material_label: Label = hud.get_node("Root/TopBar/InventoryStack/MaterialMeterLabel") as Label
+	var place_slot_row: HBoxContainer = hud.get_node("Root/TopBar/InventoryStack/PlaceSlotRow") as HBoxContainer
 	var material_slot_row: HBoxContainer = hud.get_node("Root/TopBar/InventoryStack/MaterialSlotRow") as HBoxContainer
 	var essence_title: Label = hud.get_node("Root/TopBar/ElementMeterRow/EssenceTitle") as Label
 	var debug_label: Label = hud.get_node("Root/DebugInfoLabel") as Label
@@ -236,6 +261,7 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 	var bottom_tray: Panel = hud.get_node("Root/BottomTray") as Panel
 	assert_eq(pouch_label.text, "0/8 | Empty")
 	assert_eq(material_label.text, "Mat")
+	assert_false(place_slot_row.visible)
 	assert_not_null(material_slot_row.get_node_or_null("MaterialSlot_reed_fiber"))
 	var reed_count_label: Label = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/CountLabel") as Label
 	var reed_icon: TextureRect = material_slot_row.get_node("MaterialSlot_reed_fiber/Contents/Icon") as TextureRect
@@ -256,13 +282,46 @@ func test_hud_separates_placeables_essence_and_materials() -> void:
 
 	alchemy.add_material_for_testing(&"reed_fiber", 2)
 	alchemy.add_material_for_testing(&"spirit_stone", 1)
+	var growth: SeedGrowthServiceNode = ctx["growth"] as SeedGrowthServiceNode
+	assert_true(growth.get_pouch().add_building(&"form_warm_hollow", 1))
+	hud.call("_refresh_place_inventory_slots")
 	await get_tree().process_frame
 	assert_eq(material_label.text, "Mat")
 	assert_eq(reed_count_label.text, "2")
 	assert_eq(ember_count_label.text, "0")
+	assert_true(place_slot_row.visible)
+	var warm_slot: PanelContainer = place_slot_row.get_node("PlaceSlot_form_warm_hollow") as PanelContainer
+	var warm_icon: TextureRect = warm_slot.get_node("Contents/Icon") as TextureRect
+	var warm_count: Label = warm_slot.get_node("Contents/CountLabel") as Label
+	assert_not_null(warm_icon.texture)
+	assert_true(FileAccess.file_exists("res://assets/structures/warm_hollow/frames/idle/down/frame_0000.png"))
+	assert_eq(warm_count.text, "1")
 
 	remove_child(hud)
 	hud.free()
+	_cleanup_context(ctx)
+
+func test_ritual_panel_place_inventory_uses_structure_sprites() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"] as SeedAlchemyServiceNode
+	assert_true(alchemy.get_pouch().add_building(&"form_stone_hollow", 1))
+	var scene: PackedScene = load("res://scenes/UI/SeedAlchemyPanel.tscn") as PackedScene
+	assert_not_null(scene)
+	var panel: Control = scene.instantiate() as Control
+	add_child(panel)
+	await get_tree().process_frame
+
+	var row: HBoxContainer = panel.get_node("VBox/PlaceInventoryRow") as HBoxContainer
+	assert_true(row.visible)
+	var stone_slot: PanelContainer = row.get_node("PlaceSlot_form_stone_hollow") as PanelContainer
+	var stone_icon: TextureRect = stone_slot.get_node("Contents/Icon") as TextureRect
+	var stone_count: Label = stone_slot.get_node("Contents/CountLabel") as Label
+	assert_not_null(stone_icon.texture)
+	assert_true(FileAccess.file_exists("res://assets/structures/stone_hollow/frames/idle/down/frame_0000.png"))
+	assert_eq(stone_count.text, "1")
+
+	remove_child(panel)
+	panel.free()
 	_cleanup_context(ctx)
 
 func test_ritual_tab_lays_out_panel_without_screen_resize() -> void:

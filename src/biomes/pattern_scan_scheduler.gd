@@ -69,6 +69,11 @@ func _ready() -> void:
 	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 	if growth_service != null and growth_service.has_signal("bloom_confirmed"):
 		growth_service.bloom_confirmed.connect(_on_bloom_confirmed)
+	var save_game_service: Node = get_node_or_null("/root/SaveGameService")
+	if save_game_service != null and save_game_service.has_signal("load_completed"):
+		save_game_service.load_completed.connect(_on_save_loaded)
+	call_deferred("_connect_satori_service")
+	call_deferred("_enqueue_startup_scan")
 
 	# Hydrate registry from persisted discoveries on startup
 	var persistence: Node = get_node_or_null("/root/DiscoveryPersistence")
@@ -106,6 +111,21 @@ func _on_tile_mixed(coord: Vector2i, _tile: GardenTile) -> void:
 
 func _on_bloom_confirmed(coord: Vector2i, _biome: int) -> void:
 	enqueue_scan(coord)
+
+func _on_era_changed(_new_era: StringName) -> void:
+	enqueue_scan(Vector2i.ZERO)
+
+func _on_save_loaded(_path: String) -> void:
+	enqueue_scan(Vector2i.ZERO)
+
+func _connect_satori_service() -> void:
+	var satori_service: Node = get_node_or_null("/root/SatoriService")
+	if satori_service != null and satori_service.has_signal("era_changed") \
+			and not satori_service.era_changed.is_connected(_on_era_changed):
+		satori_service.era_changed.connect(_on_era_changed)
+
+func _enqueue_startup_scan() -> void:
+	enqueue_scan(Vector2i.ZERO)
 
 func enqueue_scan(placement_coord: Vector2i) -> void:
 	_queue.clear()

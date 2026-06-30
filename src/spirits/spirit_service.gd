@@ -28,6 +28,27 @@ const SUJIN_REQUIRED_SATORI: int = 1000
 const _UPGRADED_HOUSES_BY_SPIRIT: Dictionary = {
 	"spirit_red_fox": ["building_fox_den"],
 }
+const _HOUSE_FAMILY_BY_SPIRIT: Dictionary = {
+	"spirit_blue_kingfisher": "water",
+	"spirit_fujin": "wind",
+	"spirit_granite_ram": "stone",
+	"spirit_kagutsuchi": "fire",
+	"spirit_koi_fish": "water",
+	"spirit_marsh_frog": "water",
+	"spirit_meadow_lark": "meadow",
+	"spirit_mist_stag": "meadow",
+	"spirit_mud_crab": "water",
+	"spirit_murk_crocodile": "water",
+	"spirit_oyamatsumi": "stone",
+	"spirit_peat_salamander": "water",
+	"spirit_red_fox": "meadow",
+	"spirit_river_otter": "water",
+	"spirit_rock_badger": "stone",
+	"spirit_stone_golem": "stone",
+	"spirit_suijin": "water",
+	"spirit_sun_lizard": "fire",
+	"spirit_white_heron": "water",
+}
 
 var _catalog: SpiritCatalog
 var _spawner: SpiritSpawner
@@ -433,6 +454,11 @@ func _compute_housing_assignment() -> Dictionary:
 		if bound_house_key.is_empty():
 			continue
 		if _has_better_upgraded_house_available(houses_by_island, instance.island_id, instance.spirit_id, bound_house_key, house_info_by_key):
+			continue
+		var bound_house_info: Dictionary = _house_info_for_key(house_info_by_key, bound_house_key)
+		var bound_preferred_biomes: Array[int] = _preferred_biomes(_catalog.lookup(instance.spirit_id))
+		if not _is_house_compatible_with_spirit(bound_house_info, bound_preferred_biomes, instance.spirit_id):
+			_house_binding_by_spirit.erase(key)
 			continue
 		var assigned_island: String = _consume_bound_house(houses_by_island, instance.island_id, bound_house_key)
 		if assigned_island.is_empty():
@@ -859,9 +885,7 @@ func _assign_house_for_spirit(houses_by_island: Dictionary, preferred_island: St
 		return {}
 	var consumed_house_key: String = _consume_upgraded_house(houses_by_island, preferred_island, spirit_id)
 	if consumed_house_key.is_empty():
-		consumed_house_key = _consume_matching_house(houses_by_island, preferred_island, preferred_biomes)
-	if consumed_house_key.is_empty():
-		consumed_house_key = _consume_any_house(houses_by_island, preferred_island)
+		consumed_house_key = _consume_matching_house(houses_by_island, preferred_island, preferred_biomes, spirit_id)
 	if consumed_house_key.is_empty():
 		return {}
 	_house_binding_by_spirit[spirit_key] = consumed_house_key
@@ -919,7 +943,7 @@ func _is_upgraded_house_for_spirit(spirit_id: String, structure_id: String) -> b
 			return true
 	return false
 
-func _consume_matching_house(houses_by_island: Dictionary, island_id: String, preferred_biomes: Array[int]) -> String:
+func _consume_matching_house(houses_by_island: Dictionary, island_id: String, preferred_biomes: Array[int], spirit_id: String) -> String:
 	var arr_variant: Variant = houses_by_island.get(island_id, null)
 	if not (arr_variant is Array):
 		return ""
@@ -931,26 +955,12 @@ func _consume_matching_house(houses_by_island: Dictionary, island_id: String, pr
 		if not (house_variant is Dictionary):
 			continue
 		var house: Dictionary = house_variant as Dictionary
-		var biome: int = int(house.get("biome", -1))
-		if not preferred_biomes.is_empty() and not preferred_biomes.has(biome):
+		if not _is_house_compatible_with_spirit(house, preferred_biomes, spirit_id):
 			continue
 		var house_key: String = str(house.get("key", ""))
 		houses.remove_at(i)
 		houses_by_island[island_id] = houses
 		return house_key
-	return ""
-
-func _consume_any_house(houses_by_island: Dictionary, island_id: String) -> String:
-	var arr_variant: Variant = houses_by_island.get(island_id, null)
-	if not (arr_variant is Array):
-		return ""
-	var houses: Array = arr_variant as Array
-	if houses.is_empty():
-		return ""
-	var house_variant: Variant = houses.pop_front()
-	houses_by_island[island_id] = houses
-	if house_variant is Dictionary:
-		return str((house_variant as Dictionary).get("key", ""))
 	return ""
 
 func _consume_bound_house(houses_by_island: Dictionary, island_id: String, house_key: String) -> String:
@@ -969,6 +979,76 @@ func _consume_bound_house(houses_by_island: Dictionary, island_id: String, house
 		houses_by_island[island_id] = houses
 		return island_id
 	return ""
+
+func _house_info_for_key(house_info_by_key: Dictionary, house_key: String) -> Dictionary:
+	var info_variant: Variant = house_info_by_key.get(house_key, {})
+	if info_variant is Dictionary:
+		return (info_variant as Dictionary).duplicate(true)
+	return {}
+
+func _is_house_compatible_with_spirit(house: Dictionary, preferred_biomes: Array[int], spirit_id: String) -> bool:
+	if house.is_empty():
+		return false
+	var structure_id: String = str(house.get("structure_id", ""))
+	if _is_upgraded_house_for_spirit(spirit_id, structure_id):
+		return true
+	if structure_id == "building_fox_den":
+		return false
+	var house_family: String = _house_family_for_structure(house)
+	if house_family.is_empty():
+		var spirit_family: String = str(_HOUSE_FAMILY_BY_SPIRIT.get(spirit_id, ""))
+		if not spirit_family.is_empty():
+			return _biome_matches_house_family(int(house.get("biome", -1)), spirit_family)
+		var biome: int = int(house.get("biome", -1))
+		return preferred_biomes.is_empty() or preferred_biomes.has(biome)
+	var required_family: String = str(_HOUSE_FAMILY_BY_SPIRIT.get(spirit_id, ""))
+	if not required_family.is_empty():
+		return house_family == required_family
+	for preferred_biome: int in preferred_biomes:
+		if _biome_matches_house_family(preferred_biome, house_family):
+			return true
+	return false
+
+func _house_family_for_structure(house: Dictionary) -> String:
+	var structure_id: String = str(house.get("structure_id", ""))
+	match structure_id:
+		"building_meadow_dwelling":
+			return "meadow"
+		"building_reed_nest":
+			return "water"
+		"building_scorched_hollow":
+			return "fire"
+		"building_stone_hollow":
+			return "stone"
+		"building_wind_hollow":
+			return "wind"
+		"building_house":
+			return ""
+		_:
+			return ""
+
+func _biome_matches_house_family(biome: int, family: String) -> bool:
+	match family:
+		"meadow":
+			return biome == BiomeTypeScript.Value.MEADOW
+		"water":
+			return _is_water_biome(biome) or biome == BiomeTypeScript.Value.PRISMATIC_TERRACES or biome == BiomeTypeScript.Value.FROSTLANDS
+		"fire":
+			return _is_fire_based_biome(biome)
+		"stone":
+			return biome == BiomeTypeScript.Value.STONE \
+				or biome == BiomeTypeScript.Value.SACRED_STONE \
+				or biome == BiomeTypeScript.Value.WHISTLING_CANYONS \
+				or biome == BiomeTypeScript.Value.BADLANDS \
+				or biome == BiomeTypeScript.Value.PRISMATIC_TERRACES
+		"wind":
+			return biome == BiomeTypeScript.Value.MEADOW \
+				or biome == BiomeTypeScript.Value.CLOUD_RIDGE \
+				or biome == BiomeTypeScript.Value.WHISTLING_CANYONS \
+				or biome == BiomeTypeScript.Value.FROSTLANDS \
+				or biome == BiomeTypeScript.Value.THE_ASHFALL
+		_:
+			return false
 
 func _cleanup_house_bindings(houses_by_island: Dictionary) -> void:
 	var valid_house_keys: Dictionary = {}

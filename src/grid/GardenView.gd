@@ -26,7 +26,11 @@ const _HOUSE_STRUCTURE_DRAW_SIZE: float = 32.0
 const _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE: float = 34.0
 const _MATERIAL_GROWTH_ATLAS_COLUMNS: int = 4
 const _MATERIAL_GROWTH_ATLAS_ROWS: int = 4
-const _MATERIAL_NODE_DRAW_SIZE: float = 48.0
+const _MATERIAL_NODE_DRAW_SIZE: float = 32.0
+const IDLE_REDRAW_INTERVAL_SECONDS: float = 1.0
+const ACTIVE_REDRAW_INTERVAL_SECONDS: float = 1.0 / 12.0
+const CAMERA_REDRAW_MOVE_THRESHOLD: float = 10.0
+const CAMERA_REDRAW_ZOOM_THRESHOLD: float = 0.01
 
 ## Number of background stars.
 const _STAR_COUNT: int = 150
@@ -63,6 +67,9 @@ var _satori_era: StringName = &"stillness"
 
 ## Continuous time accumulator for background animations.
 var _anim_time: float = 0.0
+var _redraw_elapsed: float = 0.0
+var _last_camera_center: Vector2 = Vector2.INF
+var _last_camera_zoom: Vector2 = Vector2.INF
 ## Pre-computed star data: [norm_x, norm_y, px_size, phase, speed, hue_tint]
 var _bg_stars: Array = []
 ## Pre-computed mist wisp data: [nx, ny, w_frac, h_frac, alpha, pulse_spd, drift_spd, phase, amp_x, amp_y]
@@ -125,9 +132,9 @@ func _ready() -> void:
 	GameState.tile_mixed.connect(_on_tile_mixed)
 	GameState.mix_rejected.connect(_on_mix_rejected)
 	if GameState.has_signal("material_node_spawned"):
-		GameState.material_node_spawned.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: queue_redraw())
+		GameState.material_node_spawned.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: _request_draw_now())
 	if GameState.has_signal("material_node_harvested"):
-		GameState.material_node_harvested.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: queue_redraw())
+		GameState.material_node_harvested.connect(func(_coord: Vector2i, _material_id: StringName, _amount: int) -> void: _request_draw_now())
 
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("discovery_triggered"):
@@ -148,18 +155,55 @@ func _ready() -> void:
 			_satori_era = satori_service.get_current_era()
 
 	_init_background_data()
-	queue_redraw()
+	_request_draw_now()
 
 
 func _process(delta: float) -> void:
 	_anim_time += delta
+	_redraw_elapsed += delta
+	var had_transient_animation: bool = _has_transient_animation()
 	if _mix_timer > 0.0:
 		_mix_timer -= delta
 	if _reject_timer > 0.0:
 		_reject_timer -= delta
 	if _unique_block_timer > 0.0:
 		_unique_block_timer -= delta
-	queue_redraw()  # always redraw for background animation
+	var has_transient_animation: bool = _has_transient_animation()
+	if had_transient_animation and not has_transient_animation:
+		_request_draw_now()
+		return
+	var redraw_interval: float = ACTIVE_REDRAW_INTERVAL_SECONDS if has_transient_animation or _camera_redraw_needed() else IDLE_REDRAW_INTERVAL_SECONDS
+	if _redraw_elapsed >= redraw_interval:
+		_request_draw_now()
+
+func _request_draw_now() -> void:
+	_redraw_elapsed = 0.0
+	_capture_camera_state()
+	queue_redraw()
+
+func _has_transient_animation() -> bool:
+	return _mix_timer > 0.0 or _reject_timer > 0.0 or _unique_block_timer > 0.0
+
+func _camera_redraw_needed() -> bool:
+	var cam: Camera2D = get_viewport().get_camera_2d()
+	if cam == null:
+		return false
+	var center: Vector2 = cam.get_screen_center_position()
+	var zoom: Vector2 = cam.zoom
+	if _last_camera_center == Vector2.INF or _last_camera_zoom == Vector2.INF:
+		return true
+	if center.distance_to(_last_camera_center) < CAMERA_REDRAW_MOVE_THRESHOLD \
+			and absf(zoom.x - _last_camera_zoom.x) < CAMERA_REDRAW_ZOOM_THRESHOLD \
+			and absf(zoom.y - _last_camera_zoom.y) < CAMERA_REDRAW_ZOOM_THRESHOLD:
+		return false
+	return true
+
+func _capture_camera_state() -> void:
+	var cam: Camera2D = get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	_last_camera_center = cam.get_screen_center_position()
+	_last_camera_zoom = cam.zoom
 
 
 # ---------------------------------------------------------------------------
@@ -168,40 +212,40 @@ func _process(delta: float) -> void:
 
 func _on_tile_placed(_coord: Vector2i, _tile: GardenTile) -> void:
 	_clusters_dirty = true
-	queue_redraw()
+	_request_draw_now()
 
 
 func _on_tile_mixed(coord: Vector2i, _tile: GardenTile) -> void:
 	_mix_coord = coord
 	_mix_timer = 0.4
 	_clusters_dirty = true
-	queue_redraw()
+	_request_draw_now()
 
 
 func _on_mix_rejected(coord: Vector2i, reason: String) -> void:
 	_reject_coord = coord
 	_reject_reason = reason
 	_reject_timer = 0.3
-	queue_redraw()
+	_request_draw_now()
 
 
 func _on_discovery_triggered(discovery_id: String, coords: Array[Vector2i]) -> void:
 	_discovery_overlays[discovery_id] = coords
-	queue_redraw()
+	_request_draw_now()
 
 func _on_discovery_blocked(_discovery_id: String, coords: Array[Vector2i], _reason: String) -> void:
 	_unique_block_coords = coords.duplicate()
 	_unique_block_timer = 0.9
-	queue_redraw()
+	_request_draw_now()
 
 func _on_satori_changed(current: int, cap: int) -> void:
 	_satori_amount = current
 	_satori_cap = cap
-	queue_redraw()
+	_request_draw_now()
 
 func _on_era_changed(new_era: StringName) -> void:
 	_satori_era = new_era
-	queue_redraw()
+	_request_draw_now()
 
 
 ## Called by PlacementController each frame.
@@ -211,7 +255,7 @@ func set_hover(coord: Vector2i, valid: bool, mix: bool) -> void:
 	_hover_coord = coord
 	_hover_valid = valid
 	_hover_mix = mix
-	queue_redraw()
+	_request_draw_now()
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +322,10 @@ func _draw() -> void:
 			continue
 		_draw_discovery_overlay(discovery_id, disc_coords)
 
-	# 3.5 Completed/active structures should remain visually above biome overlays.
+	# 3.5 Material nodes sit below completed structures so buildings stay readable.
+	_draw_material_nodes()
+
+	# 3.6 Completed/active structures should remain visually above biome overlays.
 	for icon_data_variant: Variant in build_icons_to_draw:
 		var icon_data: Dictionary = icon_data_variant as Dictionary
 		_draw_build_block_icon(
@@ -293,7 +340,6 @@ func _draw() -> void:
 		)
 
 	# 4. Shrine build/interact status overlays.
-	_draw_material_nodes()
 	_draw_shrine_status_overlays()
 
 	# 5. Animations
@@ -336,7 +382,7 @@ func _draw() -> void:
 	_draw_edge_mist()
 	_draw_build_progress_overlays()
 	_draw_building_placement_preview()
-	_draw_interact_hover_popover()
+	_draw_world_hover_popover()
 
 
 func _draw_pending_seed_previews() -> void:
@@ -379,7 +425,6 @@ func _draw_seed_overlay_text(center: Vector2, text: String, font_size: int, colo
 func _draw_shrine_status_overlays() -> void:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	var hud: Node = get_node_or_null("../HUD")
-	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
 	var build_mode: bool = hud != null and hud.has_method("is_build_mode") and hud.is_build_mode()
 	for coord: Vector2i in GameState.grid.tiles:
 		var tile: GardenTile = GameState.grid.tiles[coord]
@@ -400,7 +445,7 @@ func _draw_shrine_status_overlays() -> void:
 		var indicator_col: Color = Color(0.72, 0.90, 1.0, 0.88) if is_water_dropoff and not is_origin_shrine else Color(0.95, 0.92, 0.74, 0.85)
 		draw_arc(ring_center, TILE_RADIUS * 0.55, 0.0, TAU, 24, indicator_col, 2.0)
 		draw_circle(ring_center + Vector2(0.0, -TILE_RADIUS * 0.85), 5.0, indicator_col)
-		if interact_mode:
+		if coord == _hover_coord:
 			var collect_label: String = "Collect Water Essence" if is_water_dropoff and not is_origin_shrine else "Collect Essence"
 			_draw_seed_overlay_text(ring_center + Vector2(-36.0, -16.0), collect_label, 11, indicator_col)
 		else:
@@ -408,8 +453,6 @@ func _draw_shrine_status_overlays() -> void:
 			_draw_seed_overlay_text(ring_center + Vector2(-34.0, -16.0), ready_label, 10, indicator_col)
 
 func _draw_material_nodes() -> void:
-	var hud: Node = get_node_or_null("../HUD")
-	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
 	for coord: Vector2i in GameState.grid.tiles:
 		var tile: GardenTile = GameState.grid.tiles[coord]
 		if tile == null:
@@ -423,9 +466,9 @@ func _draw_material_nodes() -> void:
 		var state: StringName = StringName(str(material_node.get("state", &"")))
 		if state == &"collected":
 			continue
-		_draw_material_node_visual(coord, material_node, interact_mode)
+		_draw_material_node_visual(coord, material_node)
 
-func _draw_material_node_visual(coord: Vector2i, material_node: Dictionary, interact_mode: bool) -> void:
+func _draw_material_node_visual(coord: Vector2i, material_node: Dictionary) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	var material_id: StringName = StringName(str(material_node.get("material_id", &"")))
 	var state: StringName = StringName(str(material_node.get("state", &"")))
@@ -447,9 +490,6 @@ func _draw_material_node_visual(coord: Vector2i, material_node: Dictionary, inte
 				_draw_ember_clay_node(coord, stage)
 			_:
 				draw_circle(center, 6.0, _material_color(material_id))
-	if ready:
-		var label: String = "Tap: %s" % _material_label(material_id) if interact_mode else _material_label(material_id)
-		_draw_seed_overlay_text(center + Vector2(-36.0, -29.0), label, 10, _material_color(material_id).lightened(0.35))
 
 func _material_growth_stage(material_node: Dictionary) -> int:
 	if StringName(str(material_node.get("state", &""))) == &"ready":
@@ -494,7 +534,7 @@ func _material_atlas_row(material_id: StringName) -> int:
 			return -1
 
 func _material_atlas_draw_size(stage: int) -> float:
-	var stage_scale: Array = [0.68, 0.82, 0.95, 1.08]
+	var stage_scale: Array = [0.62, 0.74, 0.86, 0.96]
 	return _MATERIAL_NODE_DRAW_SIZE * float(stage_scale[clampi(stage, 0, stage_scale.size() - 1)])
 
 func _draw_growth_ring(center: Vector2, color: Color, material_node: Dictionary) -> void:
@@ -619,13 +659,10 @@ func _draw_ember_clay_node(coord: Vector2i, stage: int) -> void:
 		if stage >= 2:
 			draw_circle(shard_center + Vector2(1.0, -1.0), radius * 0.24, ember_col)
 
-func _draw_interact_hover_popover() -> void:
+func _draw_world_hover_popover() -> void:
 	var hud: Node = get_node_or_null("../HUD")
 	if hud != null and hud.has_method("hide_world_popover"):
 		hud.hide_world_popover()
-	var interact_mode: bool = hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode()
-	if not interact_mode:
-		return
 	var tile: GardenTile = GameState.grid.get_tile(_hover_coord)
 	if tile == null:
 		return
@@ -640,29 +677,37 @@ func _draw_interact_hover_popover() -> void:
 	if not is_house and not is_structure and not has_material:
 		return
 	var lines: Array[String] = []
-	if has_material:
-		lines.append("Material: %s" % _material_label(StringName(str(material_node.get("material_id", &"")))))
-		if has_ready_material:
-			lines.append("Tap to harvest")
-		else:
-			var duration: float = maxf(0.1, float(material_node.get("growth_duration", 60.0)))
-			var elapsed: float = clampf(float(material_node.get("growth_elapsed", 0.0)), 0.0, duration)
-			lines.append("Growing: %ds" % int(ceil(duration - elapsed)))
 	if is_house:
-		lines.append("Type: %s" % _structure_label_for_tile(tile))
-		var owner_label: String = "Owner: Unbound"
+		lines.append(_structure_label_for_tile(tile))
+		var detail_lines: Array[String] = _structure_detail_lines_for_tile(tile)
+		if not detail_lines.is_empty():
+			lines.append(detail_lines[0])
+		var owner_label: String = "Home: empty"
 		var spirit_service: Node = _resolve_spirit_service()
 		if spirit_service != null and spirit_service.has_method("get_house_owner_at_coord"):
 			var owner_info: Dictionary = spirit_service.get_house_owner_at_coord(_hover_coord)
 			if not owner_info.is_empty():
-				owner_label = "Owner: %s" % str(owner_info.get("display_name", owner_info.get("spirit_id", "Unknown")))
+				owner_label = "Home: %s" % str(owner_info.get("display_name", owner_info.get("spirit_id", "Unknown")))
 		lines.append(owner_label)
 	if is_structure:
-		lines.append("Type: %s" % _structure_label_for_tile(tile))
+		lines.append(_structure_label_for_tile(tile))
+		lines.append_array(_structure_detail_lines_for_tile(tile))
 		var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 		if alchemy != null and alchemy.has_method("get_shrine_charge_counts"):
 			var counts: Dictionary = alchemy.get_shrine_charge_counts(_hover_coord)
 			lines.append("Essence: %s" % _format_shrine_counts(counts))
+	if has_material and lines.size() < 4:
+		var material_label: String = _material_label(StringName(str(material_node.get("material_id", &""))))
+		if has_ready_material:
+			lines.append("Ready: %s" % material_label)
+		elif not is_house and not is_structure:
+			var duration: float = maxf(0.1, float(material_node.get("growth_duration", 60.0)))
+			var elapsed: float = clampf(float(material_node.get("growth_elapsed", 0.0)), 0.0, duration)
+			lines.append(material_label)
+			if lines.size() < 4:
+				lines.append("Growing: %ds" % int(ceil(duration - elapsed)))
+	if lines.size() > 4:
+		lines = lines.slice(0, 4)
 	if lines.is_empty():
 		return
 	if hud != null and hud.has_method("show_world_popover"):
@@ -683,6 +728,10 @@ func _structure_label_for_tile(tile: GardenTile) -> String:
 			return "Scorched Hollow"
 		"building_reed_nest":
 			return "Reed Nest"
+		"building_stone_hollow":
+			return "Stone Hollow"
+		"building_wind_hollow":
+			return "Wind Hollow"
 		"building_stone_basin":
 			return "Stone Basin"
 		"building_house":
@@ -695,6 +744,16 @@ func _structure_label_for_tile(tile: GardenTile) -> String:
 	if bool(tile.metadata.get("is_water_dropoff", false)):
 		return "Water Dropoff Shrine"
 	return "Shrine"
+
+func _structure_detail_lines_for_tile(tile: GardenTile) -> Array[String]:
+	if tile == null:
+		return []
+	var structure_id: String = str(tile.metadata.get("structure_discovery_id", ""))
+	if structure_id.is_empty():
+		structure_id = str(tile.metadata.get("build_discovery_id", ""))
+	if structure_id.is_empty():
+		return []
+	return _structure_catalog.get_hover_lines(structure_id)
 
 func _format_shrine_counts(counts: Dictionary) -> String:
 	if counts.is_empty():
@@ -848,73 +907,33 @@ func _draw_build_progress_overlays() -> void:
 		var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 		_draw_seed_overlay_text(center + Vector2(-18.0, -18.0), "Build %ds" % remaining, 10, Color(0.96, 0.90, 0.74, 0.92))
 
-func _draw_build_block_icon(coord: Vector2i, biome: int, structure_id: String, under_construction: bool, completed: bool, is_origin_shrine: bool = false, is_water_dropoff: bool = false, is_wayfarer_torii: bool = false) -> void:
+func _draw_build_block_icon(coord: Vector2i, _biome: int, structure_id: String, under_construction: bool, completed: bool, is_origin_shrine: bool = false, _is_water_dropoff: bool = false, _is_wayfarer_torii: bool = false) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	if completed:
 		if is_origin_shrine:
 			_draw_structure_texture(center, _ORIGIN_SHRINE_STRUCTURE_TEXTURE, _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE)
 			return
 		var structure_texture: Texture2D = _structure_texture_for_id(structure_id)
+		if structure_texture == null and _should_draw_house_structure_sprite(structure_id):
+			structure_texture = _HOUSE_STRUCTURE_TEXTURE
 		if structure_texture != null:
 			_draw_structure_texture(center, structure_texture, _structure_draw_size_for_id(structure_id))
 			return
-	var palette: Dictionary = _building_palette_for_biome(biome)
-	var roof_col: Color = Color(palette.get("roof", Color(0.60, 0.34, 0.20, 0.92)))
-	var wall_col: Color = Color(palette.get("wall", Color(0.82, 0.75, 0.62, 0.88)))
-	var accent_col: Color = Color(palette.get("accent", Color(0.95, 0.90, 0.70, 0.92)))
 	if under_construction:
-		roof_col = roof_col.darkened(0.22)
-		wall_col = wall_col.darkened(0.18)
-	elif completed:
-		roof_col = roof_col.lightened(0.08)
-		wall_col = wall_col.lightened(0.06)
-	var w: float = TILE_RADIUS * 0.85
-	var h: float = TILE_RADIUS * 0.55
-	var body_rect: Rect2 = Rect2(center + Vector2(-w * 0.5, -h * 0.15), Vector2(w, h))
-	var roof: PackedVector2Array = PackedVector2Array([
-		center + Vector2(-w * 0.6, -h * 0.15),
-		center + Vector2(0.0, -h * 0.75),
-		center + Vector2(w * 0.6, -h * 0.15),
-	])
-	draw_colored_polygon(roof, roof_col)
-	draw_rect(body_rect, wall_col)
-	draw_rect(body_rect, Color(0.32, 0.24, 0.14, 0.95), false, 1.3)
-	var door_rect: Rect2 = Rect2(center + Vector2(-w * 0.10, h * 0.10), Vector2(w * 0.20, h * 0.30))
-	draw_rect(door_rect, Color(0.36, 0.24, 0.14, 0.95))
-	if completed:
-		draw_circle(center + Vector2(w * 0.36, -h * 0.30), 2.8, accent_col)
-	elif under_construction:
-		draw_line(center + Vector2(-w * 0.45, -h * 0.10), center + Vector2(w * 0.45, h * 0.45), Color(0.44, 0.33, 0.18, 0.95), 1.4)
-		draw_line(center + Vector2(-w * 0.45, h * 0.45), center + Vector2(w * 0.45, -h * 0.10), Color(0.44, 0.33, 0.18, 0.95), 1.4)
-
-	if is_origin_shrine:
-		# Distinct shrine marker: ring + core + simple cross-sigil.
-		var shrine_center: Vector2 = center + Vector2(0.0, -h * 0.48)
-		draw_circle(shrine_center, 6.8, Color(0.08, 0.10, 0.16, 0.85))
-		draw_arc(shrine_center, 7.4, 0.0, TAU, 24, Color(0.98, 0.90, 0.58, 0.98), 1.8)
-		draw_circle(shrine_center, 2.1, Color(1.0, 0.96, 0.80, 0.95))
-		draw_line(shrine_center + Vector2(-3.0, 0.0), shrine_center + Vector2(3.0, 0.0), Color(0.98, 0.90, 0.58, 0.98), 1.5)
-		draw_line(shrine_center + Vector2(0.0, -3.0), shrine_center + Vector2(0.0, 3.0), Color(0.98, 0.90, 0.58, 0.98), 1.5)
-	elif is_wayfarer_torii:
-		# Torii marker: two pillars with top beam, tinted by biome palette.
-		var gate_center: Vector2 = center + Vector2(0.0, -h * 0.42)
-		var beam_col: Color = roof_col.lightened(0.20)
-		var post_col: Color = wall_col.darkened(0.10)
-		draw_rect(Rect2(gate_center + Vector2(-8.5, -6.0), Vector2(17.0, 2.6)), beam_col)
-		draw_rect(Rect2(gate_center + Vector2(-6.2, -3.4), Vector2(2.4, 8.8)), post_col)
-		draw_rect(Rect2(gate_center + Vector2(3.8, -3.4), Vector2(2.4, 8.8)), post_col)
-		draw_circle(gate_center + Vector2(0.0, -1.8), 1.1, accent_col)
-	elif is_water_dropoff:
-		# Subtle water-drop marker for water essence dropoff structures.
-		var drop_center: Vector2 = center + Vector2(0.0, -h * 0.50)
-		draw_circle(drop_center, 5.6, Color(0.10, 0.20, 0.32, 0.80))
-		draw_circle(drop_center + Vector2(0.0, -1.2), 2.8, Color(0.70, 0.90, 1.0, 0.95))
-		draw_arc(drop_center, 4.9, 0.0, TAU, 20, Color(0.80, 0.95, 1.0, 0.92), 1.4)
+		var foundation_texture: Texture2D = _structure_texture_for_id("form_foundation_marker")
+		if foundation_texture != null:
+			_draw_structure_texture(center, foundation_texture, _HOUSE_STRUCTURE_DRAW_SIZE)
+			return
+		if _HOUSE_STRUCTURE_TEXTURE != null:
+			_draw_structure_texture(center, _HOUSE_STRUCTURE_TEXTURE, _HOUSE_STRUCTURE_DRAW_SIZE)
+			return
+	if completed or under_construction:
+		return
 
 func _should_draw_house_structure_sprite(structure_id: String) -> bool:
 	if structure_id.is_empty():
 		return true
-	return ["building_house", "building_meadow_dwelling", "building_reed_nest"].has(structure_id)
+	return structure_id == "building_house"
 
 func _structure_texture_for_id(structure_id: String) -> Texture2D:
 	if structure_id.is_empty():
@@ -1494,50 +1513,18 @@ func _draw_river_overlay(members: Array) -> void:
 			draw_circle(Vector2(sx, sy), 1.5, Color(1.0, 1.0, 1.0, 0.85))
 
 
-## Mountain peak: grey peaks with snow caps.
+## Mountain Peak: draw the authored structure sprite over the unlocked cluster.
 func _draw_mountain_overlay(members: Array) -> void:
-	var snow_white := Color(0.94, 0.97, 1.0, 0.92)
-	var peak_grey  := Color(0.50, 0.52, 0.58, 0.82)
-	var shadow_col := Color(0.28, 0.30, 0.35, 0.50)
-	var mid_grey   := Color(0.62, 0.64, 0.68, 0.70)
-	var rng := RandomNumberGenerator.new()
+	if members.is_empty():
+		return
+	var mountain_texture: Texture2D = _structure_texture_for_id("disc_mountain_peak")
+	if mountain_texture == null:
+		return
+	var centroid: Vector2 = Vector2.ZERO
 	for m: Variant in members:
-		var coord: Vector2i = m as Vector2i
-		rng.seed = hash(coord) ^ 0xBEEF
-		if rng.randf() >= 0.60:
-			continue
-		var tc: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
-		var cx: float = tc.x + rng.randf_range(-3.0, 3.0)
-		var cy: float = tc.y + rng.randf_range(-2.0, 2.0)
-		var peak_h: float = rng.randf_range(12.0, 18.0)
-		var base_w: float = rng.randf_range(9.0, 14.0)
-		# Shadow
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(cx + 2.5, cy - peak_h + 3.0),
-			Vector2(cx + base_w + 3.0, cy + peak_h * 0.38 + 2.0),
-			Vector2(cx - base_w * 0.5 + 3.0, cy + peak_h * 0.38 + 2.0)
-		]), shadow_col)
-		# Main peak body
-		draw_colored_polygon(PackedVector2Array([Vector2(cx, cy - peak_h), Vector2(cx + base_w, cy + peak_h * 0.38), Vector2(cx - base_w, cy + peak_h * 0.38)]), peak_grey)
-		# Mid face highlight (right side)
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(cx, cy - peak_h),
-			Vector2(cx + base_w, cy + peak_h * 0.38),
-			Vector2(cx + base_w * 0.10, cy + peak_h * 0.38)
-		]), mid_grey)
-		# Snow cap (upper third)
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(cx, cy - peak_h),
-			Vector2(cx + base_w * 0.46, cy - peak_h * 0.34),
-			Vector2(cx - base_w * 0.46, cy - peak_h * 0.34)
-		]), snow_white)
-		# Snow highlight line
-		draw_line(Vector2(cx, cy - peak_h), Vector2(cx + base_w * 0.25, cy - peak_h * 0.55), Color(1.0, 1.0, 1.0, 0.60), 1.2)
-		# Rocky crags on mid section
-		for _c: int in range(2):
-			var cax: float = cx + rng.randf_range(-base_w * 0.5, base_w * 0.5)
-			var cay: float = cy + rng.randf_range(-peak_h * 0.1, peak_h * 0.30)
-			draw_line(Vector2(cax, cay), Vector2(cax + rng.randf_range(-4.0, 4.0), cay - rng.randf_range(3.0, 7.0)), Color(0.35, 0.35, 0.40, 0.70), 1.0)
+		centroid += _HexUtils.axial_to_pixel(m as Vector2i, TILE_RADIUS)
+	centroid /= float(members.size())
+	_draw_structure_texture(centroid, mountain_texture, 44.0)
 
 
 ## Barren expanse: dry cracked earth — radiating fissure lines.

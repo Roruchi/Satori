@@ -6,12 +6,21 @@ func test_form_rituals_load_from_csv() -> void:
 	var catalog = RitualRecipeCatalogScript.new()
 	var entry = catalog.lookup_form(["material:living_wood", "essence:fire"])
 	assert_not_null(entry)
-	assert_eq(entry.ritual_id, &"ritual_warm_hollow")
+	assert_eq(entry.ritual_id, &"ritual_meadow_hollow")
 	assert_eq(entry.result_kind, &"form")
-	assert_eq(entry.result_id, &"form_warm_hollow")
-	assert_eq(entry.discovery_id, &"disc_warm_hollow")
+	assert_eq(entry.result_id, &"form_meadow_hollow")
+	assert_eq(entry.discovery_id, &"disc_meadow_hollow")
 	assert_eq(entry.required_material_counts.get(&"living_wood", 0), 1)
 	assert_true(entry.required_elements.has(GodaiElement.Value.KA))
+
+	var warm_entry = catalog.lookup_form(["material:living_wood", "essence:fire", "essence:wind"])
+	assert_not_null(warm_entry)
+	assert_eq(warm_entry.ritual_id, &"ritual_warm_hollow")
+	assert_eq(warm_entry.result_kind, &"form")
+	assert_eq(warm_entry.result_id, &"form_warm_hollow")
+	assert_eq(warm_entry.discovery_id, &"disc_warm_hollow")
+	assert_true(warm_entry.required_elements.has(GodaiElement.Value.KA))
+	assert_true(warm_entry.required_elements.has(GodaiElement.Value.FU))
 
 	var fox_den_entry = catalog.lookup_form(["material:living_wood", "spirit:spirit_red_fox"])
 	assert_not_null(fox_den_entry)
@@ -41,7 +50,8 @@ func test_form_rituals_load_from_csv() -> void:
 func test_tier1_material_family_form_rituals_are_complete() -> void:
 	var catalog = RitualRecipeCatalogScript.new()
 	var expected: Array[Dictionary] = [
-		{"inputs": ["material:living_wood", "essence:fire"], "result": &"form_warm_hollow", "discovery": &"disc_warm_hollow"},
+		{"inputs": ["material:living_wood", "essence:fire"], "result": &"form_meadow_hollow", "discovery": &"disc_meadow_hollow"},
+		{"inputs": ["material:living_wood", "essence:fire", "essence:wind"], "result": &"form_warm_hollow", "discovery": &"disc_warm_hollow"},
 		{"inputs": ["material:living_wood", "spirit:spirit_red_fox"], "result": &"form_fox_den", "discovery": &"disc_fox_den"},
 		{"inputs": ["material:living_wood", "essence:water"], "result": &"form_dew_bowl", "discovery": &"disc_dew_bowl"},
 		{"inputs": ["material:living_wood", "essence:earth"], "result": &"form_root_network", "discovery": &"disc_root_network"},
@@ -55,9 +65,11 @@ func test_tier1_material_family_form_rituals_are_complete() -> void:
 		{"inputs": ["material:spirit_stone", "essence:fire"], "result": &"form_hearth_stone", "discovery": &"disc_hearth_stone"},
 		{"inputs": ["material:spirit_stone", "essence:water"], "result": &"form_stone_basin", "discovery": &"disc_stone_basin"},
 		{"inputs": ["material:spirit_stone", "essence:earth"], "result": &"form_foundation_marker", "discovery": &"disc_foundation_marker"},
+		{"inputs": ["material:spirit_stone", "essence:earth", "material:living_wood"], "result": &"form_stone_hollow", "discovery": &"disc_stone_hollow"},
 		{"inputs": ["material:spirit_stone", "essence:wind"], "result": &"form_resonance_cairn", "discovery": &"disc_resonance_cairn"},
 		{"inputs": ["material:spirit_stone", "essence:ku"], "result": &"form_rune_marker", "discovery": &"disc_rune_marker"},
 		{"inputs": ["material:ember_clay", "essence:fire"], "result": &"form_kiln_heart", "discovery": &"disc_kiln_heart"},
+		{"inputs": ["material:ember_clay", "essence:fire", "material:living_wood"], "result": &"form_scorched_hollow", "discovery": &"disc_scorched_hollow"},
 		{"inputs": ["material:ember_clay", "essence:water"], "result": &"form_steam_bowl", "discovery": &"disc_steam_bowl"},
 		{"inputs": ["material:ember_clay", "essence:earth"], "result": &"form_clay_anchor", "discovery": &"disc_clay_anchor"},
 		{"inputs": ["material:ember_clay", "essence:wind"], "result": &"form_ember_bellows", "discovery": &"disc_ember_bellows"},
@@ -92,9 +104,19 @@ func test_seed_rituals_load_from_csv_with_bare_godai_components() -> void:
 
 func test_form_placement_rules_are_data_driven() -> void:
 	var catalog = RitualRecipeCatalogScript.new()
+	assert_true(catalog.is_placeable_form(&"form_meadow_hollow"))
+	assert_eq(catalog.resolve_form_placement(&"form_meadow_hollow", BiomeType.Value.MEADOW), &"building_meadow_dwelling")
+	assert_eq(catalog.resolve_form_placement(&"form_meadow_hollow", BiomeType.Value.CLOUD_RIDGE), &"")
 	assert_true(catalog.is_placeable_form(&"form_warm_hollow"))
-	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.MEADOW), &"building_meadow_dwelling")
-	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.EMBER_FIELD), &"building_scorched_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.CLOUD_RIDGE), &"building_wind_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.MEADOW), &"")
+	assert_true(catalog.is_placeable_form(&"form_stone_hollow"))
+	assert_eq(catalog.resolve_form_placement(&"form_stone_hollow", BiomeType.Value.STONE), &"building_stone_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_stone_hollow", BiomeType.Value.SACRED_STONE), &"building_stone_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_stone_hollow", BiomeType.Value.MEADOW), &"")
+	assert_true(catalog.is_placeable_form(&"form_scorched_hollow"))
+	assert_eq(catalog.resolve_form_placement(&"form_scorched_hollow", BiomeType.Value.EMBER_FIELD), &"building_scorched_hollow")
+	assert_eq(catalog.resolve_form_placement(&"form_scorched_hollow", BiomeType.Value.EMBER_SHRINE), &"building_scorched_hollow")
 	assert_eq(catalog.resolve_form_placement(&"form_warm_hollow", BiomeType.Value.RIVER), &"")
 	assert_true(catalog.is_placeable_form(&"form_fox_den"))
 	assert_eq(catalog.resolve_form_placement(&"form_fox_den", BiomeType.Value.MEADOW), &"building_fox_den")

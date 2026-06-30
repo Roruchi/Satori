@@ -2,6 +2,7 @@ class_name HUDController
 extends CanvasLayer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 440.0
@@ -15,6 +16,8 @@ const CODEX_PANEL_BOTTOM_GAP: float = 18.0
 const RITUAL_ICON_CELL_SIZE: float = 32.0
 const MATERIAL_SLOT_ICON_SIZE: float = 16.0
 const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(56.0, 24.0)
+const PLACE_SLOT_ICON_SIZE: float = 22.0
+const PLACE_SLOT_MIN_SIZE: Vector2 = Vector2(62.0, 28.0)
 const _MATERIAL_ICON_INDEX: Dictionary = {
 	&"living_wood": 5,
 	&"reed_fiber": 6,
@@ -27,12 +30,11 @@ const _MATERIAL_SHORT_LABELS: Dictionary = {
 	&"spirit_stone": "SS",
 	&"ember_clay": "EC",
 }
-const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Interact", "Codex"]
-const MODE_TAB_ICON_INDICES: Array[int] = [5, 4, 7, 0]
+const MODE_TAB_TITLES: Array[String] = ["Place", "Ritual", "Codex"]
+const MODE_TAB_ICON_INDICES: Array[int] = [5, 4, 0]
 const MODE_TAB_TINTS: Array[Color] = [
 	Color(0.63, 0.74, 0.45),
 	Color(0.83, 0.62, 0.33),
-	Color(0.71, 0.80, 0.90),
 	Color(0.58, 0.50, 0.32),
 ]
 const MODE_TAB_ACTIVE_BG := Color(0.90, 0.84, 0.66, 0.96)
@@ -62,13 +64,11 @@ const _ELEMENT_METER_LABELS: Dictionary = {
 enum Mode {
 	PLANT,
 	MIX,
-	INTERACT,
 	CODEX,
 }
 
 @onready var _plant_button: Button = $Root/BottomBar/PlantButton
 @onready var _mix_button: Button = $Root/BottomBar/MixButton
-@onready var _interact_button: Button = $Root/BottomBar/InteractButton
 @onready var _codex_button: Button = $Root/BottomBar/CodexButton
 @onready var _root: Control = $Root
 @onready var _top_bar: HBoxContainer = $Root/TopBar
@@ -98,11 +98,16 @@ var _tile_selector_hex: Node2D = null
 var _mode_tabs_initialized: bool = false
 var _building_confirm_panel: PanelContainer = null
 var _debug_update_elapsed: float = 0.0
+var _node_count_update_elapsed: float = 999.0
+var _last_node_count: int = 0
 var _last_scan_ms: float = 0.0
 var _max_scan_ms: float = 0.0
 var _scan_count: int = 0
 var _material_slot_row: HBoxContainer = null
 var _material_slot_count_labels: Dictionary = {}
+var _place_slot_row: HBoxContainer = null
+var _structure_catalog: RefCounted = StructureCatalogDataScript.new()
+var _place_icon_cache: Dictionary = {}
 
 signal building_placement_started(type_key: StringName)
 signal building_placement_confirm_requested()
@@ -129,14 +134,16 @@ func _ready() -> void:
 	call_deferred("_layout_mode_tab_indicator")
 	_plant_button.pressed.connect(func() -> void: _set_mode(Mode.PLANT))
 	_mix_button.pressed.connect(func() -> void: _set_mode(Mode.MIX))
-	_interact_button.pressed.connect(func() -> void: _set_mode(Mode.INTERACT))
 	_codex_button.pressed.connect(func() -> void: _set_mode(Mode.CODEX))
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_tile_selector_hex = get_node_or_null("../TileSelector/TileSelectorHex")
 	if _tile_selector_hex != null and _tile_selector_hex.has_signal("building_selected"):
 		_tile_selector_hex.connect("building_selected", _on_building_item_selected)
+	if _tile_selector_hex != null and _tile_selector_hex.has_signal("selection_cleared"):
+		_tile_selector_hex.connect("selection_cleared", _on_place_selection_cleared)
 	if _pouch_display != null and _pouch_display.has_signal("building_item_selected"):
 		_pouch_display.building_item_selected.connect(_on_building_item_selected)
+	_init_place_inventory_slots()
 	_init_material_slots()
 	_style_top_hud()
 	var settings: Node = get_node_or_null("/root/GardenSettings")
@@ -173,8 +180,14 @@ func _ready() -> void:
 			alchemy_service.ritual_attempt_resolved.connect(func(_outcome: StringName, _feedback_key: StringName, _guidance: String, _ritual_id: StringName, _result_kind: StringName, _result_id: StringName) -> void: _refresh_material_meter())
 		if alchemy_service.has_signal("material_count_changed"):
 			alchemy_service.material_count_changed.connect(func(_material_id: StringName, _count: int) -> void: _refresh_material_meter())
+		if alchemy_service.has_signal("seed_added_to_pouch"):
+			alchemy_service.seed_added_to_pouch.connect(func(_recipe: SeedRecipe) -> void: _refresh_place_inventory_slots())
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service != null and growth_service.has_signal("pouch_updated"):
+		growth_service.pouch_updated.connect(_refresh_place_inventory_slots)
 	_refresh_element_meters()
 	_refresh_material_meter()
+	_refresh_place_inventory_slots()
 	var scan_service: Node = get_node_or_null("/root/PatternScanService")
 	if scan_service != null and scan_service.has_signal("scan_metrics_updated"):
 		scan_service.scan_metrics_updated.connect(_on_scan_metrics_updated)
@@ -253,6 +266,10 @@ func _refresh_debug_info(delta: float) -> void:
 	if _debug_info_label == null:
 		return
 	var frame_ms: float = 0.0 if is_zero_approx(delta) else delta * 1000.0
+	_node_count_update_elapsed += 0.25
+	if _last_node_count <= 0 or _node_count_update_elapsed >= 1.0:
+		_last_node_count = _count_nodes(get_tree().root)
+		_node_count_update_elapsed = 0.0
 	var spirit_service: Node = _resolve_spirit_service()
 	var spirit_count: int = 0
 	var housing_count: int = 0
@@ -267,7 +284,7 @@ func _refresh_debug_info(delta: float) -> void:
 	_debug_info_label.text = "FPS %d | %.1f ms | Nodes %d\nScan %.1f/%.1f ms #%d | Spirits %d | Housing %d | Builds %d" % [
 		Engine.get_frames_per_second(),
 		frame_ms,
-		_count_nodes(get_tree().root),
+		_last_node_count,
 		_last_scan_ms,
 		_max_scan_ms,
 		_scan_count,
@@ -376,6 +393,144 @@ func _init_material_slots() -> void:
 	_material_slot_row.visible = true
 	_ensure_material_slots([&"living_wood", &"reed_fiber", &"spirit_stone", &"ember_clay"])
 
+func _init_place_inventory_slots() -> void:
+	var row_variant: Variant = get_node_or_null("Root/TopBar/InventoryStack/PlaceSlotRow")
+	if row_variant is HBoxContainer:
+		_place_slot_row = row_variant as HBoxContainer
+	else:
+		_place_slot_row = HBoxContainer.new()
+		_place_slot_row.name = "PlaceSlotRow"
+		_place_slot_row.add_theme_constant_override("separation", 4)
+		_inventory_stack.add_child(_place_slot_row)
+	_place_slot_row.visible = true
+
+
+func _refresh_place_inventory_slots() -> void:
+	if _place_slot_row == null:
+		return
+	for child: Node in _place_slot_row.get_children():
+		child.queue_free()
+	var pouch: SeedPouch = _resolve_place_inventory_pouch()
+	if pouch == null:
+		_place_slot_row.visible = false
+		return
+	var added_any: bool = false
+	for i: int in range(pouch.size()):
+		if pouch.get_entry_kind_at(i) != &"building_item":
+			continue
+		var entry: BuildingInventoryEntry = pouch.get_building_at(i)
+		if entry == null or entry.count <= 0:
+			continue
+		_place_slot_row.add_child(_create_place_slot(entry))
+		added_any = true
+	_place_slot_row.visible = added_any
+
+
+func _resolve_place_inventory_pouch() -> SeedPouch:
+	var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
+	if growth_service != null and growth_service.has_method("get_pouch"):
+		var growth_pouch_variant: Variant = growth_service.get_pouch()
+		if growth_pouch_variant is SeedPouch:
+			return growth_pouch_variant as SeedPouch
+	var alchemy_service: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy_service != null and alchemy_service.has_method("get_pouch"):
+		var alchemy_pouch_variant: Variant = alchemy_service.get_pouch()
+		if alchemy_pouch_variant is SeedPouch:
+			return alchemy_pouch_variant as SeedPouch
+	return null
+
+
+func _create_place_slot(entry: BuildingInventoryEntry) -> PanelContainer:
+	var slot: PanelContainer = PanelContainer.new()
+	slot.name = "PlaceSlot_%s" % str(entry.type_key)
+	slot.custom_minimum_size = PLACE_SLOT_MIN_SIZE
+	slot.tooltip_text = _place_slot_tooltip(entry)
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.08, 0.10, 0.74)
+	style.border_color = Color(0.48, 0.52, 0.40, 0.86)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+	style.content_margin_left = 4.0
+	style.content_margin_top = 2.0
+	style.content_margin_right = 5.0
+	style.content_margin_bottom = 2.0
+	slot.add_theme_stylebox_override("panel", style)
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Contents"
+	row.add_theme_constant_override("separation", 4)
+	slot.add_child(row)
+	var icon: TextureRect = TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(PLACE_SLOT_ICON_SIZE, PLACE_SLOT_ICON_SIZE)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = _place_icon_texture(entry.type_key)
+	row.add_child(icon)
+	var count_label: Label = Label.new()
+	count_label.name = "CountLabel"
+	count_label.text = str(entry.count)
+	count_label.custom_minimum_size = Vector2(18.0, 20.0)
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count_label.add_theme_color_override("font_color", Color(0.96, 0.91, 0.78, 0.98))
+	count_label.add_theme_font_size_override("font_size", 13)
+	row.add_child(count_label)
+	return slot
+
+
+func _place_icon_texture(type_key: StringName) -> Texture2D:
+	var cache_key: String = str(type_key)
+	var cached_variant: Variant = _place_icon_cache.get(cache_key)
+	if cached_variant is Texture2D:
+		return cached_variant as Texture2D
+	var asset_path: String = _structure_catalog.get_asset_path(cache_key)
+	if asset_path.is_empty():
+		_place_icon_cache[cache_key] = null
+		return null
+	var texture: Texture2D = _load_texture_resource(asset_path)
+	_place_icon_cache[cache_key] = texture
+	return texture
+
+
+func _load_texture_resource(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path, "Texture2D"):
+		var loaded_texture: Texture2D = ResourceLoader.load(path, "Texture2D") as Texture2D
+		if loaded_texture != null:
+			return loaded_texture
+	if FileAccess.file_exists(path):
+		var image: Image = Image.load_from_file(path)
+		if image != null:
+			return ImageTexture.create_from_image(image)
+	return null
+
+
+func _place_slot_tooltip(entry: BuildingInventoryEntry) -> String:
+	return "%s x%d" % [_building_display_name(entry.type_key), entry.count]
+
+
+func _building_display_name(type_key: StringName) -> String:
+	var form_name: String = ""
+	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
+	if alchemy != null and alchemy.has_method("get_form_display_name"):
+		form_name = str(alchemy.get_form_display_name(type_key))
+	if not form_name.is_empty():
+		return form_name
+	var raw: String = str(type_key)
+	if raw.begins_with("building_"):
+		raw = raw.substr("building_".length())
+	if raw.begins_with("form_"):
+		raw = raw.substr("form_".length())
+	return raw.capitalize()
+
+
 func _ensure_material_slots(material_ids: Array[StringName]) -> void:
 	if _material_slot_row == null:
 		return
@@ -483,8 +638,7 @@ func _set_mode(next_mode: int) -> void:
 		call_deferred("_layout_mix_panel")
 	_apply_mode_tab_state(_plant_button, _mode == Mode.PLANT, 0)
 	_apply_mode_tab_state(_mix_button, _mode == Mode.MIX, 1)
-	_apply_mode_tab_state(_interact_button, _mode == Mode.INTERACT, 2)
-	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 3)
+	_apply_mode_tab_state(_codex_button, _mode == Mode.CODEX, 2)
 	call_deferred("_refresh_mode_tab_motion", _mode_tabs_initialized)
 	_mode_tabs_initialized = true
 
@@ -503,7 +657,17 @@ func is_build_mode() -> bool:
 	return false
 
 func is_interact_mode() -> bool:
-	return _mode == Mode.INTERACT
+	return _mode == Mode.PLANT and not is_place_selection_active()
+
+func is_place_selection_active() -> bool:
+	if _tile_selector_hex != null and _tile_selector_hex.has_method("has_active_selection"):
+		return bool(_tile_selector_hex.call("has_active_selection"))
+	return int(GameState.selected_biome) != BiomeType.Value.NONE
+
+func _on_place_selection_cleared() -> void:
+	var placement_controller: Node = get_node_or_null("../PlacementController")
+	if placement_controller != null and placement_controller.has_method("cancel_building_placement"):
+		placement_controller.cancel_building_placement()
 
 func show_world_popover(screen_anchor: Vector2, lines: Array[String]) -> void:
 	if _world_popover_panel == null or _world_popover_label == null:
@@ -513,6 +677,7 @@ func show_world_popover(screen_anchor: Vector2, lines: Array[String]) -> void:
 		return
 	var joined: String = "\n".join(lines)
 	_world_popover_label.text = joined
+	_world_popover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var font: Font = ThemeDB.fallback_font
 	var font_size: int = 13
 	var max_width: float = 0.0
@@ -521,7 +686,15 @@ func show_world_popover(screen_anchor: Vector2, lines: Array[String]) -> void:
 		max_width = maxf(max_width, line_width)
 	var line_height: float = 17.0
 	var padding: Vector2 = Vector2(10.0, 8.0)
-	var box_size: Vector2 = Vector2(max_width + padding.x * 2.0, line_height * float(lines.size()) + padding.y * 2.0)
+	var available_width: float = 320.0
+	if _root != null:
+		available_width = minf(320.0, maxf(160.0, _root.size.x - 24.0))
+	var content_width: float = clampf(max_width, 120.0, available_width - padding.x * 2.0)
+	var visual_lines: int = 0
+	for line: String in lines:
+		var line_width: float = font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		visual_lines += maxi(1, int(ceil(line_width / maxf(1.0, content_width))))
+	var box_size: Vector2 = Vector2(content_width + padding.x * 2.0, line_height * float(visual_lines) + padding.y * 2.0)
 	var target_pos: Vector2 = screen_anchor + Vector2(18.0, -box_size.y - 16.0)
 	if _root != null:
 		target_pos.x = clampf(target_pos.x, 8.0, _root.size.x - box_size.x - 8.0)
@@ -563,7 +736,7 @@ func _init_world_popover() -> void:
 	_root.add_child(_world_popover_panel)
 
 	_world_popover_label = Label.new()
-	_world_popover_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_world_popover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_world_popover_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_world_popover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_world_popover_label.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0, 0.98))
@@ -682,8 +855,8 @@ func _style_mode_tabs() -> void:
 	indicator_style.corner_radius_bottom_right = 8
 	_active_tab_indicator.add_theme_stylebox_override("panel", indicator_style)
 	_bottom_bar.add_theme_constant_override("separation", 8)
-	for button_index: int in 4:
-		var button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][button_index]
+	for button_index: int in MODE_TAB_TITLES.size():
+		var button: Button = [_plant_button, _mix_button, _codex_button][button_index]
 		button.custom_minimum_size = Vector2(0, MODE_TAB_HEIGHT)
 		button.clip_text = false
 		button.add_theme_font_size_override("font_size", 13)
@@ -742,14 +915,14 @@ func _ritual_icon_texture_by_index(icon_index: int) -> Texture2D:
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)
-	for button_index: int in 4:
-		var button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][button_index]
+	for button_index: int in MODE_TAB_TITLES.size():
+		var button: Button = [_plant_button, _mix_button, _codex_button][button_index]
 		var is_active: bool = button_index == _mode
 		button.z_index = 2 if is_active else 1
 		button.scale = Vector2.ONE
 
 func _layout_mode_tab_indicator(animated: bool = false) -> void:
-	var active_button: Button = [_plant_button, _mix_button, _interact_button, _codex_button][_mode]
+	var active_button: Button = [_plant_button, _mix_button, _codex_button][_mode]
 	var local_origin: Vector2 = active_button.global_position - _bottom_tray.global_position
 	var indicator_position: Vector2 = Vector2(
 		local_origin.x + MODE_TAB_INDICATOR_INSET_X,

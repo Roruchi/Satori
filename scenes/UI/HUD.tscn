@@ -183,12 +183,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "RI\nRitual"
 
-[node name="InteractButton" type="Button" parent="Root/BottomBar"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "IN\nInteract"
-
 [node name="CodexButton" type="Button" parent="Root/BottomBar"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2

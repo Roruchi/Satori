@@ -4,6 +4,7 @@
 extends Node2D
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
+const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const _TerrainTilesheet = preload("res://src/rendering/terrain_tilesheet.gd")
 const _TERRAIN_TILESET_TEXTURE: Texture2D = preload("res://assets/tiles/satori_terrain_tilesheet.png")
 
@@ -11,6 +12,8 @@ const _TERRAIN_TILESET_TEXTURE: Texture2D = preload("res://assets/tiles/satori_t
 signal biome_selected(biome: int)
 ## Emitted when the player clicks a building inventory stack.
 signal building_selected(type_key: StringName)
+## Emitted when the selected inventory entry is clicked again.
+signal selection_cleared()
 
 ## Hex circumradius in screen pixels.
 const _RADIUS: float = 30.0
@@ -36,6 +39,8 @@ var _seed_biomes: Array[int] = []
 var _seed_labels: Array[String] = []
 var _seed_colors: Array[Color] = []
 var _building_type_keys: Array[StringName] = []
+var _structure_catalog: RefCounted = StructureCatalogDataScript.new()
+var _building_icon_cache: Dictionary = {}
 var _bottom_bar: Control = null
 
 
@@ -109,6 +114,9 @@ func _refresh_from_pouch(emit_selection: bool) -> void:
 		_selected = BiomeType.Value.NONE
 		_selected_entry_kind = &"plant_recipe"
 		_selected_building_type_key = &""
+	elif _selected_entry_kind == &"":
+		_selected = BiomeType.Value.NONE
+		_selected_building_type_key = &""
 	else:
 		var selected_still_available: bool = _has_selected_entry()
 		if not selected_still_available:
@@ -133,10 +141,16 @@ func select(biome: int) -> void:
 func get_selected_biome() -> int:
 	if _selected_entry_kind == &"plant_recipe" and _selected != BiomeType.Value.NONE:
 		return _selected
+	if _selected_entry_kind == &"":
+		return BiomeType.Value.NONE
 	for biome: int in _seed_biomes:
 		if biome != BiomeType.Value.NONE:
 			return biome
 	return BiomeType.Value.STONE
+
+
+func has_active_selection() -> bool:
+	return _selected_entry_kind != &"" and _has_selected_entry()
 
 
 func _input(event: InputEvent) -> void:
@@ -150,6 +164,13 @@ func _input(event: InputEvent) -> void:
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 			var idx: int = _hit_test(mb.position)
 			if idx >= 0 and idx < _entry_kinds.size():
+				if _is_entry_selected(idx):
+					_clear_selection()
+					biome_selected.emit(BiomeType.Value.NONE)
+					selection_cleared.emit()
+					queue_redraw()
+					get_viewport().set_input_as_handled()
+					return
 				_select_entry_at(idx)
 				if _entry_kinds[idx] == &"building_item":
 					building_selected.emit(_building_type_keys[idx])
@@ -330,18 +351,7 @@ func _draw_building_badge(idx: int) -> void:
 	draw_polyline(border, border_col, 2.5 if is_sel else 1.6)
 	draw_arc(c, _RADIUS + 3.5, 0.0, TAU, 24, Color(0.96, 0.95, 0.86, 0.24) if is_sel else Color(0.0, 0.0, 0.0, 0.0), 1.5)
 
-	var roof: PackedVector2Array = PackedVector2Array([
-		c + Vector2(-15.0, -4.0),
-		c + Vector2(0.0, -16.0),
-		c + Vector2(15.0, -4.0),
-	])
-	draw_colored_polygon(roof, Color(0.32, 0.24, 0.16, 0.96))
-	draw_line(roof[0], roof[1], Color(0.95, 0.88, 0.62, 0.95), 2.0)
-	draw_line(roof[1], roof[2], Color(0.95, 0.88, 0.62, 0.95), 2.0)
-	var body_rect: Rect2 = Rect2(c + Vector2(-12.0, -3.0), Vector2(24.0, 17.0))
-	draw_rect(body_rect, Color(0.86, 0.78, 0.60, 0.96))
-	draw_rect(body_rect, Color(0.30, 0.22, 0.15, 0.95), false, 1.5)
-	draw_rect(Rect2(c + Vector2(-3.0, 4.0), Vector2(6.0, 10.0)), Color(0.34, 0.24, 0.15, 0.96))
+	_draw_building_sprite(idx, c)
 
 	var font: Font = ThemeDB.fallback_font
 	var label: String = _seed_labels[idx]
@@ -351,6 +361,45 @@ func _draw_building_badge(idx: int) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, Color(0.0, 0.0, 0.0, 0.55))
 	var text_col: Color = Color(1.0, 0.96, 0.76, 1.0) if is_sel else Color(0.82, 0.79, 0.68, 0.92)
 	draw_string(font, lpos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, _LABEL_SIZE, text_col)
+
+func _draw_building_sprite(idx: int, center: Vector2) -> bool:
+	if idx < 0 or idx >= _building_type_keys.size():
+		return false
+	var texture: Texture2D = _building_texture_for_key(_building_type_keys[idx])
+	if texture == null:
+		return false
+	var draw_size: Vector2 = Vector2(46.0, 46.0)
+	var rect: Rect2 = Rect2(center - draw_size * 0.5 + Vector2(0.0, -2.0), draw_size)
+	draw_texture_rect(texture, rect, false)
+	return true
+
+
+func _building_texture_for_key(type_key: StringName) -> Texture2D:
+	var cache_key: String = str(type_key)
+	var cached_variant: Variant = _building_icon_cache.get(cache_key)
+	if cached_variant is Texture2D:
+		return cached_variant as Texture2D
+	var asset_path: String = _structure_catalog.get_asset_path(cache_key)
+	if asset_path.is_empty():
+		_building_icon_cache[cache_key] = null
+		return null
+	var texture: Texture2D = _load_texture_resource(asset_path)
+	_building_icon_cache[cache_key] = texture
+	return texture
+
+
+func _load_texture_resource(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path, "Texture2D"):
+		var loaded_texture: Texture2D = ResourceLoader.load(path, "Texture2D") as Texture2D
+		if loaded_texture != null:
+			return loaded_texture
+	if FileAccess.file_exists(path):
+		var image: Image = Image.load_from_file(path)
+		if image != null:
+			return ImageTexture.create_from_image(image)
+	return null
 
 
 static func _hex_polygon(center: Vector2, radius: float) -> PackedVector2Array:
@@ -476,6 +525,12 @@ func _select_entry_at(idx: int) -> void:
 	else:
 		_selected_building_type_key = &""
 		_selected = _seed_biomes[idx]
+
+
+func _clear_selection() -> void:
+	_selected = BiomeType.Value.NONE
+	_selected_entry_kind = &""
+	_selected_building_type_key = &""
 
 
 func _has_selected_entry() -> bool:

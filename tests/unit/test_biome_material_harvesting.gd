@@ -4,6 +4,8 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
+const PlacementControllerScript = preload("res://src/grid/PlacementController.gd")
+const HexUtilsScript = preload("res://src/grid/hex_utils.gd")
 
 class DiscoveryStub:
 	extends Node
@@ -198,6 +200,25 @@ func test_harvesting_non_wood_materials_updates_material_inventory() -> void:
 	assert_eq(alchemy.get_material_count(&"living_wood"), 0)
 	_cleanup_context(ctx)
 
+func test_material_interaction_target_accepts_visible_reed_fronds() -> void:
+	var ctx: Dictionary = _setup_context()
+	var game_state: Node = ctx["game_state"]
+	var coord: Vector2i = Vector2i(1, 0)
+	game_state.place_tile_from_seed(coord, BiomeTypeScript.Value.RIVER)
+	assert_eq(_spawn_materials(game_state, 100.0).size(), 1)
+	_mature_materials(game_state)
+
+	var controller: Node2D = PlacementControllerScript.new()
+	add_child(controller)
+	var reed_center: Vector2 = HexUtilsScript.axial_to_pixel(coord, 20.0)
+	var visible_frond_point: Vector2 = reed_center + Vector2(0.0, -24.0)
+	assert_ne(HexUtilsScript.pixel_to_axial(visible_frond_point, 20.0), coord)
+	assert_eq(controller.call("_material_interaction_coord", visible_frond_point, true), coord)
+
+	remove_child(controller)
+	controller.free()
+	_cleanup_context(ctx)
+
 func test_inventory_full_harvest_preserves_ready_node() -> void:
 	var ctx: Dictionary = _setup_context()
 	var game_state: Node = ctx["game_state"]
@@ -323,8 +344,8 @@ func test_first_session_loop_reaches_warm_hollow_after_harvest() -> void:
 	assert_eq(StringName(str(harvest_result.get("outcome", &""))), &"success")
 	var shaped: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
 	assert_true(shaped.is_success())
-	assert_eq(shaped.result_id, &"form_warm_hollow")
+	assert_eq(shaped.result_id, &"form_meadow_hollow")
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
-	assert_true(pouch.find_building_index(&"form_warm_hollow") >= 0)
+	assert_true(pouch.find_building_index(&"form_meadow_hollow") >= 0)
 	_cleanup_context(ctx)

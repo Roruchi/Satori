@@ -8,13 +8,18 @@ const FRAME_RELATIVE_PATH: String = "frames/idle/down/frame_0000.png"
 
 const _BUILDING_ASSET_FOLDERS: Dictionary = {
 	"building_house": "house",
-	"building_meadow_dwelling": "house",
+	"building_meadow_dwelling": "meadow_hollow",
 	"building_scorched_hollow": "scorched_hollow",
+	"building_stone_hollow": "stone_hollow",
+	"building_wind_hollow": "warm_hollow",
 	"building_fox_den": "fox_den",
 }
 
 const _FORM_EFFECTS: Dictionary = {
-	"form_warm_hollow": [{"type": "shelter_form", "params": {"contextual_role": true}}],
+	"form_meadow_hollow": [{"type": "shelter_form", "params": {"family": "meadow"}}],
+	"form_warm_hollow": [{"type": "shelter_form", "params": {"family": "wind"}}],
+	"form_stone_hollow": [{"type": "shelter_form", "params": {"family": "stone"}}],
+	"form_scorched_hollow": [{"type": "shelter_form", "params": {"family": "fire"}}],
 	"form_fox_den": [{"type": "spirit_dwelling_upgrade", "params": {"spirit_id": "spirit_red_fox", "counts_as": "fire"}}],
 	"form_dew_bowl": [{"type": "storage_cap", "params": {"target": "wind_essence"}}],
 	"form_root_network": [{"type": "material_spawn_speed", "params": {"material_id": "living_wood", "radius": 1}}],
@@ -45,12 +50,79 @@ const _FORM_EFFECTS: Dictionary = {
 
 const _BUILDING_EFFECTS: Dictionary = {
 	"building_house": [{"type": "dwelling", "params": {"capacity": 1}}],
-	"building_meadow_dwelling": [{"type": "dwelling", "params": {"capacity": 1, "preferred_biome": "meadow"}}],
-	"building_scorched_hollow": [{"type": "dwelling", "params": {"capacity": 1, "pressure": "fire"}}],
+	"building_meadow_dwelling": [{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "meadow"}}],
+	"building_scorched_hollow": [{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "fire"}}],
+	"building_stone_hollow": [{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "stone"}}],
+	"building_wind_hollow": [{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "wind"}}],
+	"building_reed_nest": [
+		{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "water"}},
+		{"type": "storage_cap", "params": {"target": "water_essence"}},
+	],
 	"building_fox_den": [
-		{"type": "dwelling", "params": {"capacity": 1, "preferred_biome": "meadow", "spirit_id": "spirit_red_fox", "upgraded": true}},
+		{"type": "dwelling", "params": {"capacity": 1, "preferred_family": "meadow", "spirit_id": "spirit_red_fox", "upgraded": true}},
 		{"type": "satori_rate_bonus", "params": {"per_minute": 1}},
 	],
+}
+
+const _BUILDING_DESCRIPTIONS: Dictionary = {
+	"building_house": "A basic one-spirit dwelling matched to the biome it was built on.",
+	"building_meadow_dwelling": "Meadow house. Settles meadow spirits such as Red Fox, Meadow Lark, Hare, and Mist Stag.",
+	"building_scorched_hollow": "Fire house. Settles fire-aspect spirits from Ember Field, Badlands, Ashfall, or Ember Shrine.",
+	"building_stone_hollow": "Stone house. Settles stone spirits from Stone, Sacred Stone, Whistling Canyons, or other stone-aspect terrain.",
+	"building_wind_hollow": "Wind house. Warm Hollow settles wind spirits from Cloud Ridge and other wind-aspect terrain.",
+	"building_reed_nest": "Water house. Settles water spirits from River, Wetlands, Moonlit Pool, or other water-aspect terrain.",
+	"building_fox_den": "Red Fox house. An upgraded meadow dwelling reserved for Red Fox and worth extra Satori.",
+}
+
+const _BUILDING_BUILD_HINTS: Dictionary = {
+	"building_house": "Build by placing a normal house on a matching biome.",
+	"building_meadow_dwelling": "Build: shape Meadow Hollow with Living Wood + Fire Essence, then place it on Meadow.",
+	"building_scorched_hollow": "Build: shape Scorched Hollow with Ember Clay + Fire Essence + Living Wood, then place it on Ember Field, Ember Shrine, or Ashfall.",
+	"building_stone_hollow": "Build: shape Stone Hollow with Spirit Stone + Earth Essence + Living Wood, then place it on Stone or Sacred Stone.",
+	"building_wind_hollow": "Build: shape Warm Hollow with Living Wood + Fire Essence + Wind Essence, then place it on Cloud Ridge.",
+	"building_reed_nest": "Build: shape Reed Nest with Reed Fiber + Water Essence, then place it on River, Wetlands, or Moonlit Pool.",
+	"building_fox_den": "Build: shape Fox Den with Living Wood + housed Red Fox, then place it on Meadow or Badlands.",
+}
+
+const _BUILDING_HOVER_SUMMARIES: Dictionary = {
+	"building_house": "Biome-matched dwelling",
+	"building_meadow_dwelling": "Meadow dwelling",
+	"building_scorched_hollow": "Fire dwelling",
+	"building_stone_hollow": "Stone dwelling",
+	"building_wind_hollow": "Wind dwelling",
+	"building_reed_nest": "Water dwelling",
+	"building_fox_den": "Red Fox dwelling",
+}
+
+const _BUILDING_HOVER_HINTS: Dictionary = {
+	"building_meadow_dwelling": "Build: Meadow Hollow",
+	"building_scorched_hollow": "Build: Scorched Hollow",
+	"building_stone_hollow": "Build: Stone Hollow",
+	"building_wind_hollow": "Build: Warm Hollow",
+	"building_reed_nest": "Build: Reed Nest",
+	"building_fox_den": "Build: Fox Den",
+}
+
+const _EFFECT_DESCRIPTIONS: Dictionary = {
+	"auto_harvest": "Effect: auto-harvests nearby material nodes.",
+	"blessing": "Effect: supports blessing and fire-Ku ritual paths.",
+	"boundary": "Effect: marks a named ritual boundary.",
+	"calming": "Effect: calms rain-fire recovery patterns.",
+	"dream_path": "Effect: supports memory and dream paths.",
+	"dwelling": "Effect: houses one compatible spirit.",
+	"essence_generator": "Effect: generates Ku charges over time.",
+	"invite_speed": "Effect: improves water-wind invitation paths.",
+	"material_spawn_speed": "Effect: speeds nearby material growth.",
+	"production_cycle": "Effect: supports fire production cycles.",
+	"recovery": "Effect: supports steam recovery paths.",
+	"satori_rate_bonus": "Effect: adds bonus Satori while occupied.",
+	"shelter_form": "Effect: becomes a biome-specific dwelling when placed.",
+	"soft_connection": "Effect: extends soft adjacency for patterns.",
+	"spirit_dwelling_upgrade": "Effect: upgrades a specific spirit's home.",
+	"stability": "Effect: stabilizes nearby structure patterns.",
+	"storage_cap": "Effect: increases matching essence storage.",
+	"tension_hint": "Effect: reveals fire-water tension hints.",
+	"visitor_hint": "Effect: attracts rare visitor hints.",
 }
 
 func get_all_entries() -> Array[Dictionary]:
@@ -95,6 +167,21 @@ func get_sprite_frames_path(structure_id: String) -> String:
 	var entry: Dictionary = get_entry(structure_id)
 	return str(entry.get("sprite_frames_path", ""))
 
+func get_hover_lines(structure_id: String) -> Array[String]:
+	var entry: Dictionary = get_entry(structure_id)
+	if entry.is_empty():
+		return []
+	var lines: Array[String] = []
+	var summary: String = str(entry.get("hover_summary", ""))
+	if summary.is_empty():
+		summary = _first_effect_summary(entry.get("effects", []))
+	if not summary.is_empty():
+		lines.append(summary)
+	var hint: String = str(entry.get("hover_hint", ""))
+	if not hint.is_empty() and not lines.has(hint):
+		lines.append(hint)
+	return lines
+
 func _add_discovery_entries(entries_by_id: Dictionary) -> void:
 	var catalog_data: DiscoveryCatalogData = DiscoveryCatalogDataScript.new()
 	var all_entries: Array[Dictionary] = []
@@ -123,6 +210,9 @@ func _add_ritual_structure_entries(entries_by_id: Dictionary) -> void:
 		var folder_name: String = _folder_name_from_asset_folder(entry.assets_folder, form_id)
 		var form_effects: Array[Dictionary] = _effects_for_form(form_id)
 		_add_entry(entries_by_id, _make_entry(form_id, entry.friendly_name, folder_name, form_effects))
+		var discovery_id: String = str(entry.discovery_id)
+		if not discovery_id.is_empty():
+			_add_entry(entries_by_id, _make_entry(discovery_id, entry.friendly_name, folder_name, form_effects))
 		for biome_variant: Variant in entry.placement_rules.keys():
 			var building_id: String = str(entry.placement_rules[biome_variant])
 			if building_id.is_empty():
@@ -164,6 +254,10 @@ func _make_entry(structure_id: String, display_name: String, folder_name: String
 		"asset_path": "%s/%s" % [asset_folder, FRAME_RELATIVE_PATH],
 		"sprite_frames_path": "%s/sprite_frames.tres" % asset_folder,
 		"effects": effects.duplicate(true),
+		"description": str(_BUILDING_DESCRIPTIONS.get(structure_id, "")),
+		"build_hint": str(_BUILDING_BUILD_HINTS.get(structure_id, "")),
+		"hover_summary": str(_BUILDING_HOVER_SUMMARIES.get(structure_id, "")),
+		"hover_hint": str(_BUILDING_HOVER_HINTS.get(structure_id, "")),
 	}
 
 func _effects_for_form(form_id: String) -> Array[Dictionary]:
@@ -195,6 +289,32 @@ func _effects_array_from_variant(value: Variant) -> Array[Dictionary]:
 		if effect_variant is Dictionary:
 			effects.append((effect_variant as Dictionary).duplicate(true))
 	return effects
+
+func _effect_lines(value: Variant) -> Array[String]:
+	var lines: Array[String] = []
+	if not (value is Array):
+		return lines
+	for effect_variant: Variant in value as Array:
+		if not (effect_variant is Dictionary):
+			continue
+		var effect: Dictionary = effect_variant as Dictionary
+		var effect_type: String = str(effect.get("type", ""))
+		var line: String = str(_EFFECT_DESCRIPTIONS.get(effect_type, ""))
+		if line.is_empty():
+			continue
+		lines.append(line)
+	return lines
+
+func _first_effect_summary(value: Variant) -> String:
+	var effect_lines: Array[String] = _effect_lines(value)
+	if effect_lines.is_empty():
+		return ""
+	var line: String = effect_lines[0]
+	if line.begins_with("Effect: "):
+		line = line.substr("Effect: ".length())
+	if line.ends_with("."):
+		line = line.substr(0, line.length() - 1)
+	return line.capitalize()
 
 func _dictionary_from_variant(value: Variant) -> Dictionary:
 	if value is Dictionary:

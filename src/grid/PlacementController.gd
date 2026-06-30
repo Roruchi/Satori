@@ -31,11 +31,15 @@ func _world_to_tile(world_pos: Vector2) -> Vector2i:
 	return _HexUtils.pixel_to_axial(world_pos, TILE_RADIUS)
 
 func _process(_delta: float) -> void:
-	var coord: Vector2i = _world_to_tile(get_global_mouse_position())
-	var valid: bool = GameState.grid.is_placement_valid(coord)
-	var mix: bool = not valid and GameState.grid.has_tile(coord)
+	var mouse_world: Vector2 = get_global_mouse_position()
+	var coord: Vector2i = _world_to_tile(mouse_world)
+	var hover_coord: Vector2i = _material_interaction_coord(mouse_world, false)
+	if hover_coord == Vector2i(-9999, -9999):
+		hover_coord = coord
+	var valid: bool = GameState.grid.is_placement_valid(hover_coord)
+	var mix: bool = not valid and GameState.grid.has_tile(hover_coord)
 	if _garden_view != null and _garden_view.has_method("set_hover"):
-		_garden_view.set_hover(coord, valid, mix)
+		_garden_view.set_hover(hover_coord, valid, mix)
 
 	# Update active building session anchor for preview rendering.
 	if _building_session != null and _building_session.active:
@@ -98,7 +102,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				# Skip normal placement if building session is active.
 				if _building_session != null and _building_session.active:
 					return
-				var coord: Vector2i = _world_to_tile(get_global_mouse_position())
+				var mouse_world: Vector2 = get_global_mouse_position()
+				var coord: Vector2i = _world_to_tile(mouse_world)
+				var material_coord: Vector2i = _material_interaction_coord(mouse_world, true)
+				if material_coord != Vector2i(-9999, -9999) and _try_harvest_material(material_coord):
+					return
 				var growth_service: Node = get_node_or_null("/root/SeedGrowthService")
 				if growth_service != null and growth_service.has_method("get_pouch"):
 					if growth_service.has_method("try_bloom") and growth_service.has_method("get_tracker"):
@@ -115,9 +123,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					is_plant_or_build_mode = is_plant_mode or is_build_mode
 				if not is_build_mode and _try_harvest_material(coord):
 					return
+				if _collect_spirit_charge(coord):
+					return
 				if not is_plant_or_build_mode:
-					if hud != null and hud.has_method("is_interact_mode") and hud.is_interact_mode():
-						_collect_spirit_charge(coord)
 					return
 				if is_build_mode and _try_build_shrine(coord):
 					return
@@ -581,11 +589,11 @@ func _is_build_countdown_started(tile: GardenTile) -> bool:
 func _on_long_press(coord: Vector2i) -> void:
 	GameState.try_mix_tile(coord)
 
-func _collect_spirit_charge(coord: Vector2i) -> void:
+func _collect_spirit_charge(coord: Vector2i) -> bool:
 	var alchemy: Node = get_node_or_null("/root/SeedAlchemyService")
 	if alchemy == null or not alchemy.has_method("collect_shrine_charge"):
-		return
-	alchemy.collect_shrine_charge(coord)
+		return false
+	return bool(alchemy.collect_shrine_charge(coord))
 
 func _try_harvest_material(coord: Vector2i) -> bool:
 	if not GameState.has_method("has_ready_material_at") or not GameState.has_ready_material_at(coord):
@@ -600,6 +608,33 @@ func _try_harvest_material(coord: Vector2i) -> bool:
 				_garden_view.queue_redraw()
 			return true
 	return false
+
+func _material_interaction_coord(world_pos: Vector2, ready_only: bool) -> Vector2i:
+	var center_coord: Vector2i = _world_to_tile(world_pos)
+	var candidates: Array[Vector2i] = []
+	candidates.append(center_coord)
+	candidates.append_array(_HexUtils.get_neighbors(center_coord))
+	var best_coord: Vector2i = Vector2i(-9999, -9999)
+	var best_distance: float = INF
+	for candidate: Vector2i in candidates:
+		if not GameState.grid.has_tile(candidate):
+			continue
+		var node: Dictionary = GameState.get_material_node_at(candidate)
+		if node.is_empty():
+			continue
+		var state: StringName = StringName(str(node.get("state", &"")))
+		if state == GameState.MATERIAL_STATE_COLLECTED:
+			continue
+		if ready_only and state != GameState.MATERIAL_STATE_READY:
+			continue
+		var candidate_center: Vector2 = _HexUtils.axial_to_pixel(candidate, TILE_RADIUS)
+		var distance: float = world_pos.distance_to(candidate_center)
+		if distance > TILE_RADIUS * 1.45:
+			continue
+		if distance < best_distance:
+			best_distance = distance
+			best_coord = candidate
+	return best_coord
 
 func _harvest_material_for_placement(coord: Vector2i) -> void:
 	if GameState.has_method("harvest_material_for_placement"):

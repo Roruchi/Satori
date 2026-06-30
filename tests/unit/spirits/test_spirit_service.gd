@@ -459,8 +459,7 @@ func test_housing_does_not_use_houses_from_other_islands() -> void:
 
 	svc.queue_free()
 
-func test_housing_falls_back_to_any_house_on_same_island_when_preferred_missing() -> void:
-	var root: Node = get_tree().root
+func test_housing_requires_compatible_house_on_same_island() -> void:
 	var game_state: Node = _make_game_state()
 	var grid: RefCounted = game_state.get("grid")
 	# Only a stone house exists on this island.
@@ -476,8 +475,53 @@ func test_housing_falls_back_to_any_house_on_same_island_when_preferred_missing(
 	svc._active_instances[fox_key] = fox
 
 	var snapshot: Dictionary = svc.get_housing_snapshot()
-	assert_eq(int(snapshot.get("housed_count", -1)), 1)
-	assert_true(svc._house_binding_by_spirit.has(fox_key))
+	assert_eq(int(snapshot.get("housed_count", -1)), 0)
+	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
+	assert_false(svc._house_binding_by_spirit.has(fox_key))
+
+	svc.queue_free()
+
+func test_stone_spirit_does_not_claim_meadow_dwelling() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var house_tile: GardenTile = grid.place_tile(Vector2i(0, 0), BiomeType.Value.MEADOW)
+	house_tile.metadata["is_building_complete"] = true
+	house_tile.metadata["structure_discovery_id"] = "building_meadow_dwelling"
+	grid.place_tile(Vector2i(1, 0), BiomeType.Value.STONE)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var stone_spirit: SpiritInstance = SpiritInstance.create("spirit_granite_ram", Vector2i(1, 0), Rect2i())
+	stone_spirit.island_id = str(grid.get_island_id(Vector2i(1, 0)))
+	var spirit_key: String = "island_%s|spirit_spirit_granite_ram" % stone_spirit.island_id
+	svc._active_instances[spirit_key] = stone_spirit
+
+	var snapshot: Dictionary = svc.get_housing_snapshot()
+	assert_eq(int(snapshot.get("housed_count", -1)), 0)
+	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
+	assert_false(svc._house_binding_by_spirit.has(spirit_key))
+
+	svc.queue_free()
+
+func test_red_fox_requires_meadow_dwelling_not_wind_house() -> void:
+	var game_state: Node = _make_game_state()
+	var grid: RefCounted = game_state.get("grid")
+	var wind_house: GardenTile = grid.place_tile(Vector2i(0, 0), BiomeType.Value.CLOUD_RIDGE)
+	wind_house.metadata["is_building_complete"] = true
+	wind_house.metadata["structure_discovery_id"] = "building_wind_hollow"
+	grid.place_tile(Vector2i(1, 0), BiomeType.Value.MEADOW)
+
+	var svc: SpiritService = _make_service()
+	add_child(svc)
+	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 0), Rect2i())
+	fox.island_id = str(grid.get_island_id(Vector2i(1, 0)))
+	var fox_key: String = "island_%s|spirit_spirit_red_fox" % fox.island_id
+	svc._active_instances[fox_key] = fox
+
+	var snapshot: Dictionary = svc.get_housing_snapshot()
+	assert_eq(int(snapshot.get("housed_count", -1)), 0)
+	assert_eq(int(snapshot.get("unhoused_count", -1)), 1)
+	assert_false(svc._house_binding_by_spirit.has(fox_key))
 
 	svc.queue_free()
 

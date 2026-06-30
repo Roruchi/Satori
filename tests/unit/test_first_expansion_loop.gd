@@ -220,8 +220,8 @@ func test_first_session_housed_red_fox_survives_save_load() -> void:
 
 	var hollow_result: RitualAttemptResult = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
 	assert_true(hollow_result.is_success())
-	assert_eq(hollow_result.result_id, &"form_warm_hollow")
-	_place_form_on_tile(growth, &"form_warm_hollow", Vector2i(1, 0))
+	assert_eq(hollow_result.result_id, &"form_meadow_hollow")
+	_place_form_on_tile(growth, &"form_meadow_hollow", Vector2i(1, 0))
 	spirit_service._on_tile_placed(Vector2i(1, 1), game_state.grid.get_tile(Vector2i(1, 1)))
 	var island_id: String = str(game_state.grid.get_island_id(Vector2i(1, 0)))
 	assert_true(spirit_service.is_spirit_housed("spirit_red_fox", island_id))
@@ -242,7 +242,7 @@ func test_first_session_housed_red_fox_survives_save_load() -> void:
 	assert_not_null(restored_tile)
 	assert_eq(str(restored_tile.metadata.get("structure_discovery_id", "")), "building_meadow_dwelling")
 	assert_eq(alchemy.get_material_count(&"living_wood"), 0)
-	assert_eq(growth.get_pouch().find_building_index(&"form_warm_hollow"), -1)
+	assert_eq(growth.get_pouch().find_building_index(&"form_meadow_hollow"), -1)
 
 	var restored_service: SpiritService = SpiritService.new()
 	restored_service._catalog = SpiritCatalog.new()
@@ -284,14 +284,14 @@ func test_first_island_fun_loop_survives_save_load() -> void:
 		game_state.place_tile_from_seed(coord, BiomeType.Value.MEADOW)
 
 	var pouch: SeedPouch = growth.get_pouch()
-	assert_true(pouch.add_building(&"form_warm_hollow", 1))
+	assert_true(pouch.add_building(&"form_meadow_hollow", 1))
 	assert_true(pouch.add_building(&"form_fox_den", 1))
 	assert_true(pouch.add_building(&"form_dew_bowl", 1))
 	assert_true(pouch.add_building(&"form_wind_chime", 1))
-	for discovery_id: String in ["disc_warm_hollow", "disc_fox_den", "disc_dew_bowl", "disc_wind_chime"]:
+	for discovery_id: String in ["disc_meadow_hollow", "disc_fox_den", "disc_dew_bowl", "disc_wind_chime"]:
 		discovery.record_discovery(DiscoveryPayload.create(discovery_id, [], {"display_name": discovery_id}))
 
-	_place_form_on_tile(growth, &"form_warm_hollow", Vector2i(1, 0))
+	_place_form_on_tile(growth, &"form_meadow_hollow", Vector2i(1, 0))
 	var island_id: String = str(game_state.grid.get_island_id(Vector2i(1, 0)))
 	var fox: SpiritInstance = SpiritInstance.create("spirit_red_fox", Vector2i(1, 1), Rect2i())
 	fox.island_id = island_id
@@ -384,8 +384,8 @@ func test_first_expansion_loop_reaches_second_island_without_spirit_assistants()
 
 	var hollow_result: RitualAttemptResult = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
 	assert_true(hollow_result.is_success())
-	assert_eq(hollow_result.result_id, &"form_warm_hollow")
-	_place_form_on_tile(growth, &"form_warm_hollow", Vector2i(1, 0))
+	assert_eq(hollow_result.result_id, &"form_meadow_hollow")
+	_place_form_on_tile(growth, &"form_meadow_hollow", Vector2i(1, 0))
 	var dwelling_tile: GardenTile = game_state.grid.get_tile(Vector2i(1, 0))
 	assert_eq(str(dwelling_tile.metadata.get("structure_discovery_id", "")), "building_meadow_dwelling")
 

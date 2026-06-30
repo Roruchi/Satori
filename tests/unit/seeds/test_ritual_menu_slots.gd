@@ -158,7 +158,7 @@ func test_dual_essence_seed_ritual_still_consumes_charges() -> void:
 	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), before_wind - 1)
 	_cleanup_context(ctx)
 
-func test_living_wood_and_fire_shape_warm_hollow() -> void:
+func test_living_wood_and_fire_shape_meadow_hollow() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.add_material_for_testing(&"living_wood", 1)
@@ -167,8 +167,27 @@ func test_living_wood_and_fire_shape_warm_hollow() -> void:
 	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "essence:fire"])
 	assert_true(result.is_success())
 	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_meadow_hollow")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), before_fire - 1)
+	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood - 1)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_meadow_hollow") >= 0)
+	_cleanup_context(ctx)
+
+func test_living_wood_fire_and_wind_shape_warm_hollow() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"living_wood", 1)
+	var before_fire: int = alchemy.get_element_charge(GodaiElementScript.Value.KA)
+	var before_wind: int = alchemy.get_element_charge(GodaiElementScript.Value.FU)
+	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:living_wood", "essence:fire", "essence:wind"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
 	assert_eq(result.result_id, &"form_warm_hollow")
 	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), before_fire - 1)
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.FU), before_wind - 1)
 	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood - 1)
 	var pouch: SeedPouch = alchemy.get_pouch()
 	assert_not_null(pouch)
@@ -263,6 +282,46 @@ func test_spirit_stone_and_water_shape_stone_basin() -> void:
 	assert_true(pouch.find_building_index(&"form_stone_basin") >= 0)
 	_cleanup_context(ctx)
 
+func test_spirit_stone_living_wood_and_earth_shape_stone_hollow() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"spirit_stone", 1)
+	alchemy.add_material_for_testing(&"living_wood", 1)
+	var before_earth: int = alchemy.get_element_charge(GodaiElementScript.Value.CHI)
+	var before_stone: int = alchemy.get_material_count(&"spirit_stone")
+	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:spirit_stone", "material:living_wood", "essence:earth"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_stone_hollow")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.CHI), before_earth - 1)
+	assert_eq(alchemy.get_material_count(&"spirit_stone"), before_stone - 1)
+	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood - 1)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_stone_hollow") >= 0)
+	_cleanup_context(ctx)
+
+func test_ember_clay_living_wood_and_fire_shape_scorched_hollow() -> void:
+	var ctx: Dictionary = _setup_context()
+	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
+	alchemy.add_material_for_testing(&"ember_clay", 1)
+	alchemy.add_material_for_testing(&"living_wood", 1)
+	var before_fire: int = alchemy.get_element_charge(GodaiElementScript.Value.KA)
+	var before_clay: int = alchemy.get_material_count(&"ember_clay")
+	var before_wood: int = alchemy.get_material_count(&"living_wood")
+	var result: RitualAttemptResultScript = alchemy.attempt_ritual(["material:ember_clay", "material:living_wood", "essence:fire"])
+	assert_true(result.is_success())
+	assert_eq(result.result_kind, &"form")
+	assert_eq(result.result_id, &"form_scorched_hollow")
+	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), before_fire - 1)
+	assert_eq(alchemy.get_material_count(&"ember_clay"), before_clay - 1)
+	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood - 1)
+	var pouch: SeedPouch = alchemy.get_pouch()
+	assert_not_null(pouch)
+	assert_true(pouch.find_building_index(&"form_scorched_hollow") >= 0)
+	_cleanup_context(ctx)
+
 func test_ritual_without_essence_preserves_materials() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
@@ -273,7 +332,7 @@ func test_ritual_without_essence_preserves_materials() -> void:
 	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood)
 	_cleanup_context(ctx)
 
-func test_inventory_full_warm_hollow_attempt_is_non_destructive() -> void:
+func test_inventory_full_meadow_hollow_attempt_is_non_destructive() -> void:
 	var ctx: Dictionary = _setup_context()
 	var alchemy: SeedAlchemyServiceNode = ctx["alchemy"]
 	alchemy.add_material_for_testing(&"living_wood", 1)
@@ -289,5 +348,5 @@ func test_inventory_full_warm_hollow_attempt_is_non_destructive() -> void:
 	assert_eq(result.outcome, RitualAttemptResultScript.OUTCOME_INVENTORY_FULL)
 	assert_eq(alchemy.get_element_charge(GodaiElementScript.Value.KA), before_fire)
 	assert_eq(alchemy.get_material_count(&"living_wood"), before_wood)
-	assert_eq(pouch.find_building_index(&"form_warm_hollow"), -1)
+	assert_eq(pouch.find_building_index(&"form_meadow_hollow"), -1)
 	_cleanup_context(ctx)

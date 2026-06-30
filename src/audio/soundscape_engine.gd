@@ -33,6 +33,7 @@ const SPIRIT_LERP_RATE: float = 2.5
 
 ## Maximum simultaneous spirit rhythm layers (keeps mix calming).
 const MAX_SPIRIT_LAYERS: int = 5
+const MAX_BIOME_LAYERS: int = 4
 
 ## Stinger queue maximum depth.
 const MAX_STINGER_QUEUE: int = 5
@@ -41,7 +42,7 @@ const MAX_STINGER_QUEUE: int = 5
 const BUS_MASTER: String = "Master"
 
 ## Interval (seconds) between full viewport biome re-samples.
-const SAMPLE_INTERVAL: float = 0.1
+const SAMPLE_INTERVAL: float = 0.25
 
 ## Global BPM for all rhythmic spirit layers.  Slow and calming.
 const GLOBAL_BPM: float = 72.0
@@ -239,13 +240,24 @@ func _sample_viewport() -> void:
 	for biome: int in _BIOME_BED_PATHS.keys():
 		new_targets[biome] = 0.0
 
-	var biome_total_weight: float = 0.0
+	var biome_weights: Array[Dictionary] = []
 	if total > 0:
 		for biome: int in counts.keys():
 			var w: float = float(int(counts[biome])) / float(total)
 			if new_targets.has(biome):
-				new_targets[biome] = w
-			biome_total_weight += w
+				biome_weights.append({"biome": biome, "weight": w})
+
+	biome_weights.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("weight", 0.0)) > float(b.get("weight", 0.0))
+	)
+	var biome_total_weight: float = 0.0
+	var active_biome_count: int = mini(biome_weights.size(), MAX_BIOME_LAYERS)
+	for i: int in range(active_biome_count):
+		var entry: Dictionary = biome_weights[i]
+		var active_biome: int = int(entry.get("biome", -1))
+		var weight: float = float(entry.get("weight", 0.0))
+		new_targets[active_biome] = weight
+		biome_total_weight += weight
 
 	for biome: int in new_targets.keys():
 		_biome_target[biome] = float(new_targets[biome])

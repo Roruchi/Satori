@@ -69,7 +69,7 @@ const MIX_RATE: float = 44100.0
 const BUFFER_LENGTH: float = 0.4
 
 ## Maximum frames pushed per _process() call (guards against very long stalls).
-const MAX_FILL_FRAMES: int = 8192
+const MAX_FILL_FRAMES: int = 2048
 
 ## Volume threshold below which synthesis is skipped to save CPU.
 const SILENCE_THRESHOLD_DB: float = -74.0
@@ -87,6 +87,8 @@ var volume_db: float:
 		_volume_db = v
 		if _player != null:
 			_player.volume_db = v
+		if is_inside_tree():
+			set_process(_volume_db >= SILENCE_THRESHOLD_DB)
 	get:
 		return _volume_db
 
@@ -138,6 +140,7 @@ func _ready() -> void:
 	add_child(_player)
 	_player.play()
 	_playback = _player.get_stream_playback()
+	set_process(_volume_db >= SILENCE_THRESHOLD_DB)
 
 
 ## Configure synthesis mode and rhythm parameters.  Call after add_child().

@@ -40,7 +40,8 @@ func _ready() -> void:
 
 func _select(biome: int) -> void:
 	GameState.selected_biome = biome
-	_hex_selector.select(biome)
+	if biome != BiomeType.Value.NONE:
+		_hex_selector.select(biome)
 
 
 ## Apply a dark void-themed style to the discovery notification panel so it

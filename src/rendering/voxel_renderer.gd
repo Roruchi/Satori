@@ -5,7 +5,6 @@
 ##   TileMeshLibrary       — resolves (biome, canonical 0–12) → Mesh
 ##   TileChunkRenderer     — batches tiles into MultiMesh draw calls per chunk
 ##   MountainClusterTracker — detects Stone clusters ≥10 tiles
-##   MountainMeshBuilder   — builds unified Mountain mesh for merged clusters
 ##   BiomeTransitionLayer  — spawns edge decoration voxels
 ##   LodController         — manages chunk-level LOD switching
 ##
@@ -15,11 +14,9 @@ extends Node3D
 
 const _BitmaskAutotiler        = preload("res://src/rendering/bitmask_autotiler.gd")
 const _TileChunkRendererScript = preload("res://src/rendering/tile_chunk_renderer.gd")
-const _MountainMeshBuilder     = preload("res://src/rendering/mountain_mesh_builder.gd")
 
 ## Child node references (set up in VoxelGarden.tscn).
 @onready var _chunk_parent: Node3D          = $TileChunkParent
-@onready var _mountain_parent: Node3D      = $MountainMeshParent
 @onready var _decoration_layer: BiomeTransitionLayer = $DecorationParent
 @onready var _lod_controller: Node         = $LodController
 @onready var _cluster_tracker: Node        = $MountainClusterTracker
@@ -195,21 +192,14 @@ func _rebuild_mountain_mesh(cluster: MountainCluster) -> void:
 		cluster.mesh_node.queue_free()
 		cluster.mesh_node = null
 
-	# Hide individual tile meshes for all cluster members
+	# Mountain visuals are spritesheet-driven in GardenView. Keep the 3D tile
+	# layer from replacing placed tiles with generated mountain geometry.
 	for coord: Vector2i in cluster.members:
 		if not _render_states.has(coord):
 			continue
 		var state: TileRenderState = _render_states[coord]
-		state.in_mountain = true
+		state.in_mountain = false
 		_mark_chunk_dirty(state.chunk_id)
-
-	# Build and add new unified Mountain mesh
-	var mesh: ArrayMesh = _MountainMeshBuilder.build_mesh(cluster.members)
-	var mmi := MeshInstance3D.new()
-	mmi.mesh = mesh
-	mmi.name = "Mountain_%d" % cluster.id
-	_mountain_parent.add_child(mmi)
-	cluster.mesh_node = mmi
 
 
 # ---------------------------------------------------------------------------

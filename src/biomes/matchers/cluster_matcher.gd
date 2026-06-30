@@ -6,6 +6,10 @@ func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: Spati
 		return null
 
 	var required_biome: int = pattern.required_biomes[0]
+	var best_region: Array[Vector2i] = find_best_region_for_biome(required_biome, grid, spatial_query)
+	return discovery_for_region(pattern, best_region)
+
+func find_best_region_for_biome(required_biome: int, grid: RefCounted, spatial_query: SpatialQuery) -> Array[Vector2i]:
 	var visited: Dictionary = {}
 	var best_region: Array[Vector2i] = []
 
@@ -25,13 +29,17 @@ func evaluate(pattern: PatternDefinition, grid: RefCounted, spatial_query: Spati
 		for region_coord in region:
 			visited[region_coord] = true
 
-		if region.size() >= pattern.size_threshold:
-			if region.size() > best_region.size():
-				best_region = region
-			elif region.size() == best_region.size() and _is_region_lexicographically_smaller(region, best_region):
-				best_region = region
+		if region.size() > best_region.size():
+			best_region = region
+		elif region.size() == best_region.size() and _is_region_lexicographically_smaller(region, best_region):
+			best_region = region
 
+	return best_region
+
+func discovery_for_region(pattern: PatternDefinition, best_region: Array[Vector2i]) -> DiscoverySignal:
 	if best_region.is_empty():
+		return null
+	if best_region.size() < pattern.size_threshold:
 		return null
 
 	var sorted_coords := _sorted_coords(best_region)
