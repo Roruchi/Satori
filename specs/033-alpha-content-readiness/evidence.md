@@ -10,6 +10,38 @@ Phase 6 / Phase 7 content-readiness work has started. This run completed the rep
 
 The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation on a rebuilt Web package, and a Web fresh-save playthrough to Suijin.
 
+## 2026-07-01 Roadmap Worker Attempt
+
+The roadmap worker preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+The fresh worktree again needed a headless editor import before validation: the first parse failed on missing global classes and imported texture cache entries, including the title logo `.ctex` files. The import repair completed and repeated the existing corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`, outside the primary alpha path.
+
+Current validation after import repair:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed with missing global classes and imported texture cache entries.
+  - Repair: headless editor import with Godot 4.6.1 completed.
+  - Final result: passed.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 6/6 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed, including the unit endgame spine that invites Suijin and survives save/load.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: blocked because `web_nothreads_debug.zip` and `web_nothreads_release.zip` are missing under `.codex-godot-home/Roaming/Godot/export_templates/4.6.1.stable/`.
+
+T010, T011, T013, T014, and T017 remain open. In particular, T014 and T017 cannot be closed until valid Godot 4.6.1 Web export templates are installed, `build/web` is rebuilt from the current project, the title/release-shell assets are visually confirmed in that rebuilt export, and a Web fresh-save playthrough reaches Suijin with reload persistence.
+
 ## 2026-06-30 Import Metadata Follow-up
 
 This run rechecked the existing `build/web` export in the in-app browser through a local static server. The Web shell booted successfully at `http://127.0.0.1:8060/`: the Godot status element disappeared, the live canvas measured 1280x720 CSS pixels, and the title screen rendered. The title logo, however, rendered as a magenta/black missing-texture block in that existing export.
