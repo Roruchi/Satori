@@ -10,6 +10,11 @@ test-results/
 *.translation
 !assets/materials/material_icon_spritesheet.png.import
 !assets/ui/title/*.png.import
+!assets/structures/house/frames/**/*.png.import
+!assets/structures/fox_den/frames/**/*.png.import
+!assets/structures/dew_bowl/frames/**/*.png.import
+!assets/structures/wind_chime/frames/**/*.png.import
+!assets/structures/origin_shrine/frames/**/*.png.import
 
 # GUT test framework output
 /addons/gut/.gut_editor_run_bbcode.txt

@@ -7,7 +7,6 @@ const SeedStateScript = preload("res://src/seeds/SeedState.gd")
 const BuildingPlacementSessionScript = preload("res://src/grid/BuildingPlacementSession.gd")
 const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const _HOUSE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/house/frames/idle/down/frame_0000.png")
-const _ORIGIN_SHRINE_STRUCTURE_TEXTURE: Texture2D = preload("res://assets/structures/origin_shrine/frames/idle/down/frame_0000.png")
 const _MATERIAL_GROWTH_ATLAS: Texture2D = preload("res://assets/materials/material_growth_atlas.png")
 const _TERRAIN_TILESET_PATH: String = "res://assets/tiles/satori_terrain_tilesheet.png"
 const _EDGE_DECAL_PATH: String = "res://assets/tiles/satori_edge_decal.png"
@@ -911,7 +910,7 @@ func _draw_build_block_icon(coord: Vector2i, _biome: int, structure_id: String, 
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	if completed:
 		if is_origin_shrine:
-			_draw_structure_texture(center, _ORIGIN_SHRINE_STRUCTURE_TEXTURE, _ORIGIN_SHRINE_STRUCTURE_DRAW_SIZE)
+			_draw_origin_shrine_structure_icon(center)
 			return
 		var structure_texture: Texture2D = _structure_texture_for_id(structure_id)
 		if structure_texture == null and _should_draw_house_structure_sprite(structure_id):
@@ -975,6 +974,21 @@ func _draw_structure_texture(center: Vector2, texture: Texture2D, draw_size: flo
 	var size: Vector2 = Vector2(draw_size, draw_size)
 	var top_left: Vector2 = center - Vector2(size.x * 0.5, size.y * 0.68)
 	draw_texture_rect(texture, Rect2(top_left, size), false)
+
+func _draw_origin_shrine_structure_icon(center: Vector2) -> void:
+	var base_center: Vector2 = center + Vector2(0.0, -8.0)
+	var outer: Color = Color(0.30, 0.34, 0.35, 0.96)
+	var inner: Color = Color(0.14, 0.17, 0.20, 0.96)
+	var water: Color = Color(0.42, 0.74, 0.88, 0.82)
+	var gold: Color = Color(0.95, 0.76, 0.28, 0.96)
+	draw_circle(base_center, 13.0, outer)
+	draw_circle(base_center, 9.0, inner)
+	draw_line(base_center + Vector2(-11.0, 0.0), base_center + Vector2(11.0, 0.0), water, 3.0)
+	draw_line(base_center + Vector2(0.0, -11.0), base_center + Vector2(0.0, 11.0), water, 3.0)
+	draw_arc(base_center, 12.5, 0.0, TAU, 24, gold, 2.0)
+	draw_line(base_center + Vector2(-6.0, 0.0), base_center + Vector2(6.0, 0.0), gold, 2.2)
+	draw_line(base_center + Vector2(0.0, -6.0), base_center + Vector2(0.0, 6.0), gold, 2.2)
+	draw_circle(base_center, 3.2, gold)
 
 func _building_palette_for_biome(biome: int) -> Dictionary:
 	match biome:

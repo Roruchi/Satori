@@ -30,6 +30,7 @@ The broader spirit roster, advanced structures, additional kami, advanced compon
 - Discovery stingers are deferred for alpha and no longer map to absent placeholder files.
 - No primary-path placeholder asset remains intentionally exposed by the audited runtime files.
 - 2026-07-01 Web title recheck: the release shell now uses a visible `SATORI` text wordmark and no longer exposes the title logo texture picker in Web. The rebuilt Web package no longer contains the removed `LogoTexture`/`LogoOptions` nodes, so the prior magenta/black missing-texture title logo is not on the release shell. The title logo source PNGs remain available but are not tester-facing until their Web import path is proven separately.
+- 2026-07-02 Web first-gameplay recheck: Play entered the garden from the rebuilt Web title screen, but the Origin Shrine initially exposed a magenta/black missing-texture block. `GardenView` now draws the Origin Shrine primary-path icon procedurally so the first gameplay screen no longer depends on that fragile direct texture preload. The full primary-path placeholder audit remains open.
 
 ## Validation
 

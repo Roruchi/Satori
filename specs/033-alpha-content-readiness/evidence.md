@@ -10,6 +10,42 @@ Phase 6 / Phase 7 content-readiness work has started. This run completed the rep
 
 The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation across the full primary path, and a Web fresh-save playthrough to Suijin.
 
+## 2026-07-02 Web First-Gameplay Visual Follow-up
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+The fresh worktree again needed a headless editor import before validation because the redirected Godot home did not have global-class/import cache data. The import repair completed and repeated the known corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`, outside the primary alpha path.
+
+Current validation:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed with missing global classes and imported texture cache entries.
+  - Repair: headless editor import with Godot 4.6.1 completed.
+  - Final result: passed.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 6/6 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed, including the unit endgame spine that invites Suijin and survives save/load.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed after copying installed Web templates into the redirected Godot home.
+  - Note: Godot still logs the unrelated Android `build-tools` warning during export.
+- Browser smoke at `http://127.0.0.1:8062/`
+  - Result: title screen rendered with the `SATORI` text wordmark, Play entered the garden, and the browser console had no warnings/errors.
+  - Finding: the first gameplay frame initially exposed a magenta/black missing-texture block behind the Origin Shrine. This was fixed by drawing the Origin Shrine primary-path icon procedurally in `GardenView` instead of depending on the fragile direct texture preload. The fresh Web recheck showed the black missing-texture block was gone.
+
+T014 remains open until the full primary-path placeholder audit is completed beyond the title and first gameplay screen. T017 remains open until a fresh-save Web playthrough reaches Suijin and verifies reload persistence.
+
 ## 2026-07-01 Web Export Shell Follow-up
 
 This run installed the Godot 4.6.1 Web export templates into the redirected workspace-local Godot home, rebuilt `build/web`, and removed the broken title logo texture picker from the release shell. The Web title screen now uses the visible `SATORI` text wordmark instead of the exported logo textures that rendered as magenta/black missing-texture blocks in the existing Web package.
