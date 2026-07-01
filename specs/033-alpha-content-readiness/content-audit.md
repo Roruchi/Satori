@@ -29,7 +29,7 @@ The broader spirit roster, advanced structures, additional kami, advanced compon
 - Ambient biome audio and spirit rhythm identity are generated procedurally by `SoundscapeEngine`; authored `.ogg` files are optional.
 - Discovery stingers are deferred for alpha and no longer map to absent placeholder files.
 - No primary-path placeholder asset remains intentionally exposed by the audited runtime files.
-- 2026-06-30 Web title recheck: the title logo source PNGs are final-enough, but their Godot `.png.import` metadata was missing from version control and caused the existing Web export to render the title logo as a magenta/black missing-texture block. The import metadata is now tracked; the Web package still needs a rebuilt export before final placeholder confirmation.
+- 2026-07-01 Web title recheck: the release shell now uses a visible `SATORI` text wordmark and no longer exposes the title logo texture picker in Web. The rebuilt Web package no longer contains the removed `LogoTexture`/`LogoOptions` nodes, so the prior magenta/black missing-texture title logo is not on the release shell. The title logo source PNGs remain available but are not tester-facing until their Web import path is proven separately.
 
 ## Validation
 

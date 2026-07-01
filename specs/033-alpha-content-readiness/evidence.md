@@ -1,14 +1,41 @@
 # Evidence: Alpha Content and External Readiness
 
-Run date: 2026-06-29; updated 2026-06-30
+Run date: 2026-06-29; updated 2026-07-01
 
 ## Current Status
 
-Status: In progress; blocked on rebuilt Web export and Web fresh-save playthrough evidence.
+Status: In progress; blocked on Web fresh-save playthrough evidence.
 
 Phase 6 / Phase 7 content-readiness work has started. This run completed the repo-side content audit, deferred placeholder discovery stingers, added focused alpha content validation, and wrote the Web tester brief plus known issues.
 
-The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation on a rebuilt Web package, and a Web fresh-save playthrough to Suijin.
+The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation across the full primary path, and a Web fresh-save playthrough to Suijin.
+
+## 2026-07-01 Web Export Shell Follow-up
+
+This run installed the Godot 4.6.1 Web export templates into the redirected workspace-local Godot home, rebuilt `build/web`, and removed the broken title logo texture picker from the release shell. The Web title screen now uses the visible `SATORI` text wordmark instead of the exported logo textures that rendered as magenta/black missing-texture blocks in the existing Web package.
+
+Current validation:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Result: passed.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 6/6 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed after Web templates were installed.
+- `Select-String -Path build/web/index.pck -Pattern 'LogoTexture|LogoOptions|LogoA|LogoB|LogoC|LogoD' -SimpleMatch`
+  - Result: no matches; the rebuilt Web package no longer contains the removed title logo picker nodes.
+
+T014 still remains open until the full primary-path placeholder audit is completed. T017 remains open until a fresh-save Web playthrough reaches Suijin and verifies reload persistence.
 
 ## 2026-07-01 Roadmap Worker Attempt
 
@@ -151,5 +178,5 @@ All commands below were run with Godot `APPDATA` and `LOCALAPPDATA` redirected i
 - T010 polish review for first ritual, Red Fox, Meadow dwelling, Fox Den migration/bonus, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void, Chi+Ku calm-water island, and Suijin surfaces.
 - T011 manual playtest beyond first island.
 - T013 normal UI audit for broken-looking alpha gaps.
-- T014 final confirmation that no placeholder art, audio, icon, or UI assets remain on the primary alpha path or release shell; specifically re-export Web with templates installed and verify the title logo no longer renders as a missing texture.
+- T014 final confirmation that no placeholder art, audio, icon, or UI assets remain on the full primary alpha path or release shell.
 - T017 Web fresh-save playthrough to Suijin.

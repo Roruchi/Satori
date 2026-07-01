@@ -1,11 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://b4n7mfpqwvx2k"]
+[gd_scene load_steps=3 format=3 uid="uid://b4n7mfpqwvx2k"]
 
 [ext_resource type="Script" path="res://src/ui/TitleScreen.gd" id="1_title"]
 [ext_resource type="PackedScene" path="res://scenes/UI/SettingsMenu.tscn" id="2_settings"]
-[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-emblem.png" id="3_emblem"]
-[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-brush.png" id="4_brush"]
-[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-island.png" id="5_island"]
-[ext_resource type="Texture2D" path="res://assets/ui/title/satori-logo-hybrid.png" id="6_hybrid"]
 
 [node name="TitleScreen" type="Node2D"]
 script = ExtResource("1_title")
@@ -41,14 +37,6 @@ alignment = 1
 
 [node name="TopSpacer" type="Control" parent="UILayer/Root/Center/Content"]
 layout_mode = 2
-
-[node name="LogoTexture" type="TextureRect" parent="UILayer/Root/Center/Content"]
-custom_minimum_size = Vector2(640, 230)
-layout_mode = 2
-size_flags_horizontal = 4
-texture = ExtResource("6_hybrid")
-expand_mode = 3
-stretch_mode = 5
 
 [node name="Card" type="PanelContainer" parent="UILayer/Root/Center/Content"]
 layout_mode = 2
@@ -90,27 +78,6 @@ text = "Settings"
 [node name="QuitButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox"]
 layout_mode = 2
 text = "Quit"
-
-[node name="LogoOptions" type="HBoxContainer" parent="UILayer/Root/Center/Content/Card/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="HybridButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
-layout_mode = 2
-text = "Hybrid"
-
-[node name="EmblemButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
-layout_mode = 2
-text = "Emblem"
-
-[node name="BrushButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
-layout_mode = 2
-text = "Brush"
-
-[node name="IslandButton" type="Button" parent="UILayer/Root/Center/Content/Card/VBox/LogoOptions"]
-layout_mode = 2
-text = "Island"
 
 [node name="BottomSpacer" type="Control" parent="UILayer/Root/Center/Content"]
 layout_mode = 2

@@ -2,10 +2,6 @@ class_name TitleScreen
 extends Node2D
 
 const GARDEN_SCENE = preload("res://scenes/Garden.tscn")
-const LOGO_HYBRID = preload("res://assets/ui/title/satori-logo-hybrid.png")
-const LOGO_EMBLEM = preload("res://assets/ui/title/satori-logo-emblem.png")
-const LOGO_BRUSH = preload("res://assets/ui/title/satori-logo-brush.png")
-const LOGO_ISLAND = preload("res://assets/ui/title/satori-logo-island.png")
 
 const BG_TOP := Color(0.07, 0.11, 0.12, 1.0)
 const BG_BOTTOM := Color(0.14, 0.11, 0.07, 1.0)
@@ -22,22 +18,17 @@ const BTN_BORDER := Color(0.65, 0.52, 0.29, 0.92)
 const BTN_HOVER_BG := Color(0.92, 0.82, 0.55, 1.0)
 const BTN_TEXT := Color(0.91, 0.88, 0.76, 0.98)
 const BTN_HOVER_TEXT := Color(0.08, 0.13, 0.11, 1.0)
-const OPTION_BG := Color(0.08, 0.15, 0.14, 0.76)
-const OPTION_ACTIVE := Color(0.70, 0.55, 0.27, 0.95)
 
 const HEX_RADIUS: float = 52.0
 const HEX_COUNT: int = 34
-const LOGO_OPTIONS: Array[Texture2D] = [LOGO_HYBRID, LOGO_EMBLEM, LOGO_BRUSH, LOGO_ISLAND]
 
 var _anim_time: float = 0.0
 var _bg_hexes: Array[Vector2] = []
 var _bg_phases: Array[float] = []
-var _selected_logo_index: int = 0
 
 @onready var _settings_overlay: SettingsMenu = $SettingsOverlay
 @onready var _center: MarginContainer = $UILayer/Root/Center
 @onready var _content: VBoxContainer = $UILayer/Root/Center/Content
-@onready var _logo_texture: TextureRect = $UILayer/Root/Center/Content/LogoTexture
 @onready var _card: PanelContainer = $UILayer/Root/Center/Content/Card
 @onready var _vbox: VBoxContainer = $UILayer/Root/Center/Content/Card/VBox
 @onready var _title_lbl: Label = $UILayer/Root/Center/Content/Card/VBox/TitleLabel
@@ -46,10 +37,6 @@ var _selected_logo_index: int = 0
 @onready var _play_btn: Button = $UILayer/Root/Center/Content/Card/VBox/PlayButton
 @onready var _settings_btn: Button = $UILayer/Root/Center/Content/Card/VBox/SettingsButton
 @onready var _quit_btn: Button = $UILayer/Root/Center/Content/Card/VBox/QuitButton
-@onready var _hybrid_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/HybridButton
-@onready var _emblem_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/EmblemButton
-@onready var _brush_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/BrushButton
-@onready var _island_btn: Button = $UILayer/Root/Center/Content/Card/VBox/LogoOptions/IslandButton
 
 func _ready() -> void:
 	_init_bg_data()
@@ -57,12 +44,7 @@ func _ready() -> void:
 	_play_btn.pressed.connect(_on_play)
 	_settings_btn.pressed.connect(_on_settings)
 	_quit_btn.pressed.connect(_on_quit)
-	_hybrid_btn.pressed.connect(_set_logo.bind(0))
-	_emblem_btn.pressed.connect(_set_logo.bind(1))
-	_brush_btn.pressed.connect(_set_logo.bind(2))
-	_island_btn.pressed.connect(_set_logo.bind(3))
 	get_viewport().size_changed.connect(_layout_ui)
-	_set_logo(_selected_logo_index)
 	_layout_ui()
 
 func _init_bg_data() -> void:
@@ -151,8 +133,8 @@ func _style_ui() -> void:
 	card_style.shadow_size = 18
 	_card.add_theme_stylebox_override("panel", card_style)
 
-	_title_lbl.visible = false
-	_title_lbl.add_theme_font_size_override("font_size", 38)
+	_title_lbl.visible = true
+	_title_lbl.add_theme_font_size_override("font_size", 46)
 	_title_lbl.add_theme_color_override("font_color", TEXT_TITLE)
 
 	_subtitle_lbl.add_theme_font_size_override("font_size", 15)
@@ -165,10 +147,6 @@ func _style_ui() -> void:
 	for child: Node in _vbox.get_children():
 		if child is Button:
 			_style_button(child as Button)
-		if child is HBoxContainer:
-			for option_child: Node in child.get_children():
-				if option_child is Button:
-					_style_option_button(option_child as Button)
 
 func _style_button(btn: Button) -> void:
 	btn.custom_minimum_size = Vector2(0, 52)
@@ -197,52 +175,6 @@ func _style_button(btn: Button) -> void:
 	btn.add_theme_color_override("font_pressed_color", BTN_HOVER_TEXT)
 	btn.add_theme_color_override("font_focus_color", BTN_TEXT)
 
-func _style_option_button(btn: Button) -> void:
-	btn.custom_minimum_size = Vector2(82, 34)
-	btn.add_theme_font_size_override("font_size", 12)
-	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = OPTION_BG
-	normal_style.border_color = Color(0.48, 0.64, 0.55, 0.55)
-	normal_style.border_width_left = 1
-	normal_style.border_width_top = 1
-	normal_style.border_width_right = 1
-	normal_style.border_width_bottom = 1
-	normal_style.corner_radius_top_left = 7
-	normal_style.corner_radius_top_right = 7
-	normal_style.corner_radius_bottom_left = 7
-	normal_style.corner_radius_bottom_right = 7
-	btn.add_theme_stylebox_override("normal", normal_style)
-	var hover_style: StyleBoxFlat = normal_style.duplicate()
-	hover_style.bg_color = BTN_HOVER_BG
-	btn.add_theme_stylebox_override("hover", hover_style)
-	btn.add_theme_stylebox_override("focus", hover_style)
-	btn.add_theme_color_override("font_color", TEXT_SUBTITLE)
-	btn.add_theme_color_override("font_hover_color", BTN_HOVER_TEXT)
-	btn.add_theme_color_override("font_focus_color", BTN_HOVER_TEXT)
-
-func _set_logo(index: int) -> void:
-	_selected_logo_index = clampi(index, 0, LOGO_OPTIONS.size() - 1)
-	_logo_texture.texture = LOGO_OPTIONS[_selected_logo_index]
-	_update_logo_option_styles()
-
-func _update_logo_option_styles() -> void:
-	var buttons: Array[Button] = [_hybrid_btn, _emblem_btn, _brush_btn, _island_btn]
-	for i: int in buttons.size():
-		var btn: Button = buttons[i]
-		var style := StyleBoxFlat.new()
-		style.bg_color = OPTION_ACTIVE if i == _selected_logo_index else OPTION_BG
-		style.border_color = CARD_BORDER if i == _selected_logo_index else Color(0.48, 0.64, 0.55, 0.55)
-		style.border_width_left = 1
-		style.border_width_top = 1
-		style.border_width_right = 1
-		style.border_width_bottom = 1
-		style.corner_radius_top_left = 7
-		style.corner_radius_top_right = 7
-		style.corner_radius_bottom_left = 7
-		style.corner_radius_bottom_right = 7
-		btn.add_theme_stylebox_override("normal", style)
-		btn.add_theme_color_override("font_color", Color(0.08, 0.13, 0.11, 1.0) if i == _selected_logo_index else TEXT_SUBTITLE)
-
 func _layout_ui() -> void:
 	var vp: Vector2 = get_viewport_rect().size
 	var margin_x: int = int(clampf(vp.x * 0.055, 18.0, 56.0))
@@ -252,12 +184,6 @@ func _layout_ui() -> void:
 	_center.add_theme_constant_override("margin_top", margin_y)
 	_center.add_theme_constant_override("margin_bottom", margin_y)
 
-	var logo_width: float = clampf(vp.x * 0.62, 360.0, 760.0)
-	var logo_height: float = clampf(vp.y * 0.26, 150.0, 280.0)
-	if vp.x < 720.0:
-		logo_width = clampf(vp.x - float(margin_x * 2), 280.0, 520.0)
-		logo_height = 150.0
-	_logo_texture.custom_minimum_size = Vector2(logo_width, logo_height)
 	_card.custom_minimum_size = Vector2(clampf(vp.x * 0.35, 330.0, 470.0), 0.0)
 	_content.add_theme_constant_override("separation", int(clampf(vp.y * 0.018, 10.0, 18.0)))
 
