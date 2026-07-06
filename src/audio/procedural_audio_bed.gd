@@ -124,11 +124,17 @@ var _lp_state: float = 0.0
 ## Elapsed synthesiser time in seconds (drives slow modulations).
 var _time: float = 0.0
 
+static func runtime_audio_supported() -> bool:
+	return not OS.has_feature("web")
+
 # ---------------------------------------------------------------------------
 # Lifecycle
 # ---------------------------------------------------------------------------
 
 func _ready() -> void:
+	if not runtime_audio_supported():
+		set_process(false)
+		return
 	var gen: AudioStreamGenerator = AudioStreamGenerator.new()
 	gen.mix_rate = MIX_RATE
 	gen.buffer_length = BUFFER_LENGTH

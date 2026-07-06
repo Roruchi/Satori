@@ -1,6 +1,6 @@
 # Evidence: Alpha Content and External Readiness
 
-Run date: 2026-06-29; updated 2026-07-01
+Run date: 2026-06-29; updated 2026-07-06
 
 ## Current Status
 
@@ -9,6 +9,48 @@ Status: In progress; blocked on Web fresh-save playthrough evidence.
 Phase 6 / Phase 7 content-readiness work has started. This run completed the repo-side content audit, deferred placeholder discovery stingers, added focused alpha content validation, and wrote the Web tester brief plus known issues.
 
 The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation across the full primary path, and a Web fresh-save playthrough to Suijin.
+
+## 2026-07-06 Web First-Play Placeholder and Console Follow-up
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+Current validation:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Result: passed after using the redirected workspace-local Godot home.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 6/6 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed, including the unit endgame spine that invites Suijin and survives save/load.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_soundscape_engine.gd`
+  - Result: 24/24 passed.
+  - Note: expected stinger queue-full warning, unfreed-child warning, and ObjectDB shutdown leak warning remain.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed.
+  - Note: Godot still logs the unrelated Android `build-tools` warning during export.
+- Browser smoke at `http://127.0.0.1:8064/`
+  - Result: title screen rendered, Play entered the garden, and the browser console had no warnings/errors.
+  - Result: first gameplay frame rendered without the prior top HUD / bottom mode-tab magenta atlas blocks and without the prior Origin Shrine magenta/black missing-texture block.
+
+Changes made in this run:
+
+- HUD and Seed Alchemy ritual icons now use standalone `ImageTexture` regions instead of exported `AtlasTexture` subregions on the Web-facing UI path.
+- The Web UI smoke contract now guards against returning `AtlasTexture` mode-tab markers.
+- The Origin Shrine primary-path icon is drawn procedurally and covers the stale texture backing so the first gameplay frame no longer exposes missing-texture magenta.
+- Procedural ambient audio beds are disabled only on Web exports because the Web runtime reported `AudioStreamGenerator` playback as unsampleable console errors.
+
+T014 remains open until the full primary-path placeholder audit is completed beyond the title and first gameplay screen. T017 remains open until a fresh-save Web playthrough reaches Suijin and verifies reload persistence.
 
 ## 2026-07-02 Web First-Gameplay Visual Follow-up
 

@@ -909,7 +909,7 @@ func _draw_build_progress_overlays() -> void:
 func _draw_build_block_icon(coord: Vector2i, _biome: int, structure_id: String, under_construction: bool, completed: bool, is_origin_shrine: bool = false, _is_water_dropoff: bool = false, _is_wayfarer_torii: bool = false) -> void:
 	var center: Vector2 = _HexUtils.axial_to_pixel(coord, TILE_RADIUS)
 	if completed:
-		if is_origin_shrine:
+		if is_origin_shrine or structure_id == "disc_origin_shrine":
 			_draw_origin_shrine_structure_icon(center)
 			return
 		var structure_texture: Texture2D = _structure_texture_for_id(structure_id)
@@ -977,6 +977,21 @@ func _draw_structure_texture(center: Vector2, texture: Texture2D, draw_size: flo
 
 func _draw_origin_shrine_structure_icon(center: Vector2) -> void:
 	var base_center: Vector2 = center + Vector2(0.0, -8.0)
+	draw_circle(base_center, 50.0, Color(0.02, 0.025, 0.045, 0.96))
+	var plinth: PackedVector2Array = PackedVector2Array([
+		base_center + Vector2(0.0, -35.0),
+		base_center + Vector2(24.0, -24.0),
+		base_center + Vector2(35.0, 0.0),
+		base_center + Vector2(24.0, 24.0),
+		base_center + Vector2(0.0, 35.0),
+		base_center + Vector2(-24.0, 24.0),
+		base_center + Vector2(-35.0, 0.0),
+		base_center + Vector2(-24.0, -24.0),
+	])
+	draw_colored_polygon(plinth, Color(0.05, 0.055, 0.085, 1.0))
+	var plinth_border: PackedVector2Array = PackedVector2Array(plinth)
+	plinth_border.append(plinth[0])
+	draw_polyline(plinth_border, Color(0.58, 0.48, 0.24, 0.78), 1.8)
 	var outer: Color = Color(0.30, 0.34, 0.35, 0.96)
 	var inner: Color = Color(0.14, 0.17, 0.20, 0.96)
 	var water: Color = Color(0.42, 0.74, 0.88, 0.82)

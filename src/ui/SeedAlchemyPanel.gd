@@ -805,15 +805,20 @@ func _ritual_icon_texture(input_key: String) -> Texture2D:
 	if _RITUAL_ICON_TEXTURE == null or not _RITUAL_ICON_INDEX.has(input_key):
 		return null
 	var icon_index: int = int(_RITUAL_ICON_INDEX.get(input_key, 0))
+	var image: Image = _RITUAL_ICON_TEXTURE.get_image()
+	if image == null:
+		return null
 	var column: int = icon_index % 3
 	var row: int = floori(float(icon_index) / 3.0)
-	var atlas_texture: AtlasTexture = AtlasTexture.new()
-	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
-	atlas_texture.region = Rect2(
-		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
-		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
+	var cell_size: int = int(RITUAL_ICON_CELL_SIZE)
+	var region: Rect2i = Rect2i(
+		Vector2i(column * cell_size, row * cell_size),
+		Vector2i(cell_size, cell_size)
 	)
-	return atlas_texture
+	if region.position.x < 0 or region.position.y < 0 or region.end.x > image.get_width() or region.end.y > image.get_height():
+		return null
+	var icon_image: Image = image.get_region(region)
+	return ImageTexture.create_from_image(icon_image)
 
 func _slot_contains_key_elsewhere(input_key: String, current_slot: int) -> bool:
 	for i: int in range(_slot_keys.size()):

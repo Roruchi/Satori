@@ -598,15 +598,7 @@ func _material_icon_texture(material_id: StringName) -> Texture2D:
 	if _RITUAL_ICON_TEXTURE == null or not _MATERIAL_ICON_INDEX.has(material_id):
 		return null
 	var icon_index: int = int(_MATERIAL_ICON_INDEX.get(material_id, 0))
-	var column: int = icon_index % 3
-	var row: int = floori(float(icon_index) / 3.0)
-	var atlas_texture: AtlasTexture = AtlasTexture.new()
-	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
-	atlas_texture.region = Rect2(
-		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
-		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
-	)
-	return atlas_texture
+	return _ritual_icon_region_texture(icon_index)
 
 func _material_short_label(material_id: StringName) -> String:
 	return str(_MATERIAL_SHORT_LABELS.get(material_id, str(material_id).substr(0, 2).to_upper()))
@@ -903,15 +895,25 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 func _ritual_icon_texture_by_index(icon_index: int) -> Texture2D:
 	if _RITUAL_ICON_TEXTURE == null:
 		return null
+	return _ritual_icon_region_texture(icon_index)
+
+func _ritual_icon_region_texture(icon_index: int) -> Texture2D:
+	if _RITUAL_ICON_TEXTURE == null:
+		return null
+	var image: Image = _RITUAL_ICON_TEXTURE.get_image()
+	if image == null:
+		return null
 	var column: int = icon_index % 3
 	var row: int = floori(float(icon_index) / 3.0)
-	var atlas_texture: AtlasTexture = AtlasTexture.new()
-	atlas_texture.atlas = _RITUAL_ICON_TEXTURE
-	atlas_texture.region = Rect2(
-		Vector2(float(column) * RITUAL_ICON_CELL_SIZE, float(row) * RITUAL_ICON_CELL_SIZE),
-		Vector2(RITUAL_ICON_CELL_SIZE, RITUAL_ICON_CELL_SIZE)
+	var cell_size: int = int(RITUAL_ICON_CELL_SIZE)
+	var region: Rect2i = Rect2i(
+		Vector2i(column * cell_size, row * cell_size),
+		Vector2i(cell_size, cell_size)
 	)
-	return atlas_texture
+	if region.position.x < 0 or region.position.y < 0 or region.end.x > image.get_width() or region.end.y > image.get_height():
+		return null
+	var icon_image: Image = image.get_region(region)
+	return ImageTexture.create_from_image(icon_image)
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)
