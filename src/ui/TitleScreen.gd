@@ -2,6 +2,7 @@ class_name TitleScreen
 extends Node2D
 
 const GARDEN_SCENE = preload("res://scenes/Garden.tscn")
+const AlphaWebPlaytestProbeScript = preload("res://src/testing/alpha_web_playtest_probe.gd")
 
 const BG_TOP := Color(0.07, 0.11, 0.12, 1.0)
 const BG_BOTTOM := Color(0.14, 0.11, 0.07, 1.0)
@@ -46,6 +47,7 @@ func _ready() -> void:
 	_quit_btn.pressed.connect(_on_quit)
 	get_viewport().size_changed.connect(_layout_ui)
 	_layout_ui()
+	_maybe_start_alpha_web_playtest_probe()
 
 func _init_bg_data() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -196,3 +198,14 @@ func _show_save_status(save_service: Node) -> void:
 			message = service_message
 	_status_lbl.text = message
 	_status_lbl.visible = true
+
+func _maybe_start_alpha_web_playtest_probe() -> void:
+	if not OS.has_feature("web") or not Engine.has_singleton("JavaScriptBridge"):
+		return
+	var bridge: Object = Engine.get_singleton("JavaScriptBridge")
+	var requested_variant: Variant = bridge.call("eval", "Boolean(window.__SATORI_ALPHA_WEB_PLAYTEST__)", true)
+	if not bool(requested_variant):
+		return
+	var probe: Node = AlphaWebPlaytestProbeScript.new()
+	add_child(probe)
+	probe.call_deferred("run")

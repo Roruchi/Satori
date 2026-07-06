@@ -57,6 +57,40 @@ test("web export boots the Godot runtime in browser", async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
+test("web export can complete the alpha route to Suijin and reload it", async ({ page }) => {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    window.__SATORI_ALPHA_WEB_PLAYTEST__ = true;
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const result = await page.waitForFunction(() => {
+    return window.__SATORI_ALPHA_WEB_PLAYTEST_RESULT__ || null;
+  }, null, { timeout: 45_000 });
+  const payload = await result.jsonValue();
+
+  expect(payload).toMatchObject({
+    ok: true,
+    stage: "complete",
+    route: {
+      ok: true,
+      stage: "route_complete",
+      suijin_invited: true,
+      fox_den_owner: "spirit_red_fox"
+    },
+    reload: {
+      suijin_persisted: true,
+      ku_unlocked: true,
+      sacred_stone_coord: [12, 0],
+      satori: 1000
+    }
+  });
+  expect(payload.route.second_island_id).not.toBe(payload.route.first_island_id);
+  expect(payload.reload.save_path).toBe("user://alpha_web_playtest/autosave.json");
+  expect(pageErrors).toEqual([]);
+});
+
 test("web export packages seed recipe data and generated icon pngs", async ({ request }) => {
   for (const iconPath of ["/index.icon.png", "/index.apple-touch-icon.png"]) {
     const response = await request.get(iconPath);
@@ -80,6 +114,7 @@ test("web export packages seed recipe data and generated icon pngs", async ({ re
   expectBufferToContain(pckBuffer, "materials.csv.txt");
   expectBufferToContain(pckBuffer, "rituals.csv.txt");
   expectBufferToContain(pckBuffer, "0.1.0-alpha+20260627.1");
+  expectBufferToContain(pckBuffer, "alpha_web_playtest");
 });
 
 test("web export excludes development-only release folders", async ({ request }) => {

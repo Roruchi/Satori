@@ -23,6 +23,7 @@ var _last_failure_kind: String = ""
 var _last_failure_reason: String = ""
 var _last_failure_path: String = ""
 var _last_status_message: String = ""
+var _is_loading: bool = false
 
 func start_session() -> bool:
 	if _session_started:
@@ -94,20 +95,28 @@ func load_game() -> bool:
 	if game_state == null or not game_state.has_method("restore_game_state"):
 		_emit_load_failed(loaded_path, "missing_game_state_node")
 		return false
+	_is_loading = true
 	var restored: bool = bool(game_state.restore_game_state(game_state_data as Dictionary))
 	if not restored:
+		_is_loading = false
 		_emit_load_failed(loaded_path, "restore_failed")
 		return false
 	if not _restore_optional_service(payload, "seed_growth", "SeedGrowthService", "restore_seed_growth_state", loaded_path):
+		_is_loading = false
 		return false
 	if not _restore_optional_service(payload, "seed_alchemy", "SeedAlchemyService", "restore_seed_alchemy_state", loaded_path):
+		_is_loading = false
 		return false
 	if not _restore_optional_service(payload, "discovery_persistence", "DiscoveryPersistence", "restore_discovery_persistence_state", loaded_path):
+		_is_loading = false
 		return false
 	if not _restore_optional_service(payload, "spirit_persistence", "SpiritPersistence", "restore_spirit_persistence_state", loaded_path):
+		_is_loading = false
 		return false
 	if not _restore_optional_service(payload, "satori", "SatoriService", "restore_satori_state", loaded_path):
+		_is_loading = false
 		return false
+	_is_loading = false
 	_clear_failure_state()
 	load_completed.emit(loaded_path)
 	return true
@@ -162,14 +171,14 @@ func save_now(reason: String = "autosave") -> bool:
 	return true
 
 func _on_tile_placed(_coord: Vector2i, _tile: GardenTile) -> void:
-	save_now("tile_placed")
+	_save_from_autosave("tile_placed")
 
 func _notification(what: int) -> void:
 	if not _session_started:
 		return
 	match what:
 		NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT:
-			save_now("app_background")
+			_save_from_autosave("app_background")
 
 func _connect_autosave_triggers() -> void:
 	var game_state: Node = get_node_or_null("/root/GameState")
@@ -240,18 +249,23 @@ func _connect_signal_4(node: Node, signal_name: String, reason: String) -> void:
 		node.connect(signal_name, callable)
 
 func _on_autosave_0(reason: String) -> void:
-	save_now(reason)
+	_save_from_autosave(reason)
 
 func _on_autosave_1(_a: Variant, reason: String) -> void:
-	save_now(reason)
+	_save_from_autosave(reason)
 
 func _on_autosave_2(_a: Variant, _b: Variant, reason: String) -> void:
-	save_now(reason)
+	_save_from_autosave(reason)
 
 func _on_autosave_3(_a: Variant, _b: Variant, _c: Variant, reason: String) -> void:
-	save_now(reason)
+	_save_from_autosave(reason)
 
 func _on_autosave_4(_a: Variant, _b: Variant, _c: Variant, _d: Variant, reason: String) -> void:
+	_save_from_autosave(reason)
+
+func _save_from_autosave(reason: String) -> void:
+	if _is_loading:
+		return
 	save_now(reason)
 
 func _ensure_save_dir() -> bool:

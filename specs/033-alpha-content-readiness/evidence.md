@@ -291,10 +291,32 @@ All commands below were run with Godot `APPDATA` and `LOCALAPPDATA` redirected i
   - Result: 24/24 passed.
   - Note: existing expected queue-full warning, unfreed-child warning, and ObjectDB shutdown leak warning remain.
 
+## 2026-07-06 Suijin Web Reload Proof
+
+This run fixed the Web fresh-save playthrough proof that reached Suijin but failed reload persistence. The hidden Web playtest probe now uses explicit save/load calls instead of starting the normal autosave session, and `SaveGameService` suppresses autosave callbacks while a save file is being restored so load-time signals cannot overwrite the file being loaded.
+
+### Validation
+
+- `.\tools\godot.ps1 -Command parse`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_save_game_service.gd"`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed and rebuilt `build/web`.
+  - Note: existing Android build-tools warning remains.
+- `npx playwright test tests/playwright/satori-web-smoke.spec.js -g "Suijin" --reporter=line`
+  - Result: 1/1 passed.
+- `npx playwright test tests/playwright/satori-web-smoke.spec.js --reporter=line`
+  - Result: 5/5 passed.
+
 ## Remaining Tasks
 
 - T010 polish review for first ritual, Red Fox, Meadow dwelling, Fox Den migration/bonus, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void, Chi+Ku calm-water island, and Suijin surfaces.
 - T011 manual playtest beyond first island.
 - T013 normal UI audit for broken-looking alpha gaps.
 - T014 final confirmation that no placeholder art, audio, icon, or UI assets remain on the full primary alpha path or release shell.
-- T017 Web fresh-save playthrough to Suijin.

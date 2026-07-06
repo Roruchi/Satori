@@ -33,7 +33,7 @@
 
 - [x] T015 [US3] Add visible menu build version in `0.x.y-alpha+<build_id>` format.
 - [x] T016 [US3] Write Web tester brief and known issues, with Android called out as a later platform gate.
-- [ ] T017 [US3] Complete Web fresh-save playthrough to Suijin.
+- [x] T017 [US3] Complete Web fresh-save playthrough to Suijin.
 - [x] T018 [US3] Record Android follow-up dependency in tester notes and hand off `032-android-alpha` as the final roadmap phase.
 
 ## Dependencies & Execution Order
