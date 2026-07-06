@@ -10,6 +10,46 @@ Phase 6 / Phase 7 content-readiness work has started. This run completed the rep
 
 The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation across the full primary path, and a Web fresh-save playthrough to Suijin.
 
+## 2026-07-06 Roadmap Worker Validation Rerun
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+Current validation:
+
+- Headless editor import repair
+  - Result: completed after the first parse hit the expected fresh-worktree missing global-class/import-cache errors.
+  - Note: repeated the existing corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`; these remain outside the primary alpha path.
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed before import repair with missing global classes/imported texture cache.
+  - Final result: passed after import repair using the redirected workspace-local Godot home.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 6/6 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_web_ui_smoke_contract.gd`
+  - Result: 2/2 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed, including the unit endgame spine that invites Suijin and survives save/load.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Initial result: failed because the redirected workspace-local Godot home did not contain `web_nothreads_debug.zip` or `web_nothreads_release.zip`.
+  - Repair: copied those two existing Godot 4.6.1 Web template zips from `C:\Users\roelv\AppData\Roaming\Godot\export_templates\4.6.1.stable\` into `.codex-godot-home\Roaming\Godot\export_templates\4.6.1.stable\`.
+  - Final result: passed.
+  - Note: Godot still logs the unrelated Android `build-tools` warning during Web export.
+- `npm ci`
+  - Result: passed; 4 packages installed, 0 vulnerabilities.
+- `npm run test:web -- --reporter=line` with `PLAYWRIGHT_BASE_URL=http://127.0.0.1:8065`
+  - Result: 4/4 Playwright Web smoke tests passed against the rebuilt export served by a temporary local Node static server.
+  - Coverage: Godot shell/core assets, runtime boot in Chromium, packaged seed/icon data, and release exclusion checks.
+
+This is stronger Web smoke/package evidence than the previous blocked runs, but it still does not close `T017`: the Playwright suite does not perform a fresh-save playthrough to Suijin and does not verify reload persistence after that playthrough. `T010`, `T011`, `T013`, `T014`, and `T017` remain open, and the roadmap row must remain `Not Started` until the remaining manual/Web proof tasks are completed.
+
 ## 2026-07-06 Web First-Play Placeholder and Console Follow-up
 
 This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
