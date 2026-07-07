@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"biome_ku"
 category = 1
-hint_text = "Void made tangible; silence with form."
+hint_text = "Void separates islands so the next path can stay calm and water-focused."
 full_name = "Kū"
-full_description = "The fifth element — aether, void, and spirit. A place where ordinary matter gives way to the unseen."
+full_description = "The fifth element - aether, void, and spirit. A Kū tile acts as Void, separating islands so Suijin's calm-water invitation can be prepared away from the first island."
 always_hidden = false

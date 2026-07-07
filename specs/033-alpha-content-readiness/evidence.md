@@ -4,11 +4,55 @@ Run date: 2026-06-29; updated 2026-07-06
 
 ## Current Status
 
-Status: In progress; blocked on Web fresh-save playthrough evidence.
+Status: In progress; remaining work is manual/playtest audit coverage for T011, T013, and T014.
 
 Phase 6 / Phase 7 content-readiness work has started. This run completed the repo-side content audit, deferred placeholder discovery stingers, added focused alpha content validation, and wrote the Web tester brief plus known issues.
 
-The spec is not ready for roadmap `Verified` status yet. Remaining open work includes primary-surface polish review, manual playtest beyond the first island, normal UI gap audit, final placeholder confirmation across the full primary path, and a Web fresh-save playthrough to Suijin.
+The spec is not ready for roadmap `Verified` status yet. Remaining open work includes manual playtest beyond the first island, normal UI gap audit, and final placeholder confirmation across the full primary path.
+
+## 2026-07-07 Alpha Route Surface Polish
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+Completed T010 by tightening practical player-facing route guidance across the primary alpha path surfaces:
+
+- Codex entries for Meadow Seed, Kū Seed, Sacred Stone Seed, Kū/Void, Sacred Stone, and Rain Kami Suijin now state the concrete next action and why it matters.
+- Runtime ritual and tile CSV text stays aligned with those route-surface hints.
+- Structure catalog copy now distinguishes Meadow Hollow as the first Red Fox dwelling from Warm Hollow as a wind dwelling, and makes Fox Den migration plus Red-Fox-only double Satori generation explicit.
+- `tests/unit/test_alpha_content_readiness.gd` now asserts that primary route guidance includes the practical terms testers need for Meadow/Living Wood/Red Fox, Mist Stag/Kū/Void, calm-water Sacred Stone, and Suijin.
+- `tests/unit/test_codex_service.gd` now guards both Meadow Hollow and Warm Hollow Codex registration so the first Red Fox shelter and later wind shelter do not drift together again.
+
+Validation:
+
+- Headless editor import repair
+  - Result: completed after the first parse hit the expected fresh-worktree missing global-class/import-cache errors.
+  - Note: repeated the existing corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`; these remain outside the primary alpha path.
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed before import repair with missing global classes/imported texture cache.
+  - Final result: passed after import repair using the redirected workspace-local Godot home.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_alpha_content_readiness.gd`
+  - Result: 7/7 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_codex_service.gd`
+  - Result: 3/3 passed.
+  - Note: existing unfreed-child and ObjectDB shutdown leak warnings remain.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_structure_catalog_data.gd`
+  - Result: 5/5 passed.
+  - Note: existing unfreed-child and ObjectDB shutdown leak warnings remain.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/seeds/test_ritual_recipe_catalog.gd`
+  - Result: 4/4 passed.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_first_expansion_loop.gd`
+  - Result: 4/4 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test res://tests/unit/test_save_game_service.gd`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+
+Roadmap status was not updated because T011, T013, and T014 remain open.
 
 ## 2026-07-06 Roadmap Worker Validation Rerun
 
@@ -316,7 +360,6 @@ This run fixed the Web fresh-save playthrough proof that reached Suijin but fail
 
 ## Remaining Tasks
 
-- T010 polish review for first ritual, Red Fox, Meadow dwelling, Fox Den migration/bonus, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void, Chi+Ku calm-water island, and Suijin surfaces.
 - T011 manual playtest beyond first island.
 - T013 normal UI audit for broken-looking alpha gaps.
 - T014 final confirmation that no placeholder art, audio, icon, or UI assets remain on the full primary alpha path or release shell.

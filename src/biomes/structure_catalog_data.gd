@@ -66,17 +66,17 @@ const _BUILDING_EFFECTS: Dictionary = {
 
 const _BUILDING_DESCRIPTIONS: Dictionary = {
 	"building_house": "A basic one-spirit dwelling matched to the biome it was built on.",
-	"building_meadow_dwelling": "Meadow house. Settles meadow spirits such as Red Fox, Meadow Lark, Hare, and Mist Stag.",
+	"building_meadow_dwelling": "Meadow dwelling. Place Meadow Hollow on Meadow to house Red Fox and other meadow spirits.",
 	"building_scorched_hollow": "Fire house. Settles fire-aspect spirits from Ember Field, Badlands, Ashfall, or Ember Shrine.",
 	"building_stone_hollow": "Stone house. Settles stone spirits from Stone, Sacred Stone, Whistling Canyons, or other stone-aspect terrain.",
 	"building_wind_hollow": "Wind house. Warm Hollow settles wind spirits from Cloud Ridge and other wind-aspect terrain.",
 	"building_reed_nest": "Water house. Settles water spirits from River, Wetlands, Moonlit Pool, or other water-aspect terrain.",
-	"building_fox_den": "Red Fox house. An upgraded meadow dwelling reserved for Red Fox and worth extra Satori.",
+	"building_fox_den": "Red Fox house. An upgraded meadow dwelling that migrates Red Fox and doubles Red Fox Satori generation.",
 }
 
 const _BUILDING_BUILD_HINTS: Dictionary = {
 	"building_house": "Build by placing a normal house on a matching biome.",
-	"building_meadow_dwelling": "Build: shape Meadow Hollow with Living Wood + Fire Essence, then place it on Meadow.",
+	"building_meadow_dwelling": "Build: shape Meadow Hollow with Living Wood + Fire Essence, then place it on Meadow for Red Fox.",
 	"building_scorched_hollow": "Build: shape Scorched Hollow with Ember Clay + Fire Essence + Living Wood, then place it on Ember Field, Ember Shrine, or Ashfall.",
 	"building_stone_hollow": "Build: shape Stone Hollow with Spirit Stone + Earth Essence + Living Wood, then place it on Stone or Sacred Stone.",
 	"building_wind_hollow": "Build: shape Warm Hollow with Living Wood + Fire Essence + Wind Essence, then place it on Cloud Ridge.",
@@ -115,7 +115,7 @@ const _EFFECT_DESCRIPTIONS: Dictionary = {
 	"material_spawn_speed": "Effect: speeds nearby material growth.",
 	"production_cycle": "Effect: supports fire production cycles.",
 	"recovery": "Effect: supports steam recovery paths.",
-	"satori_rate_bonus": "Effect: adds bonus Satori while occupied.",
+	"satori_rate_bonus": "Effect: doubles Red Fox Satori generation while Red Fox lives here.",
 	"shelter_form": "Effect: becomes a biome-specific dwelling when placed.",
 	"soft_connection": "Effect: extends soft adjacency for patterns.",
 	"spirit_dwelling_upgrade": "Effect: upgrades a specific spirit's home.",

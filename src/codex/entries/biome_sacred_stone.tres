@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"biome_sacred_stone"
 category = 1
-hint_text = "Where stone holds something older."
+hint_text = "Sacred Stone completes the calm water island invitation for Suijin."
 full_name = "Sacred Stone"
-full_description = "Ancient formations humming with forgotten reverence."
+full_description = "Ancient formations humming with forgotten reverence. On a calm water island with ten water tiles, no fire, and Satori 1000, Sacred Stone invites Rain Kami Suijin."
 always_hidden = false

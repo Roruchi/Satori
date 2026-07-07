@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"recipe_fu"
 category = 0
-hint_text = "Grass that bends but does not break."
+hint_text = "Shape Fū into Meadow Seed, then plant Meadow to grow Living Wood."
 full_name = "Meadow Seed"
-full_description = "A single Fū seed that blooms into meadow."
+full_description = "A single Fū seed that blooms into Meadow, the first island tile that can grow Living Wood and invite Red Fox."
 always_hidden = false

@@ -47,6 +47,7 @@ func test_primary_alpha_structure_chain_has_rituals_assets_and_effects() -> void
 	var fox_den: Dictionary = structure_catalog.get_entry("building_fox_den")
 	assert_true(_has_effect(fox_den, "dwelling"), "Fox Den should remain a dwelling")
 	assert_true(_has_effect(fox_den, "satori_rate_bonus"), "Fox Den should keep Red Fox Satori bonus wiring")
+	assert_true(str(fox_den.get("description", "")).contains("doubles Red Fox Satori generation"))
 
 
 func test_primary_alpha_spirits_are_cataloged_and_have_assets() -> void:
@@ -79,6 +80,31 @@ func test_codex_registers_primary_alpha_content_entries() -> void:
 
 	for entry_id: StringName in [&"spirit_red_fox", &"spirit_mist_stag", &"spirit_suijin", &"disc_warm_hollow", &"disc_fox_den", &"disc_dew_bowl", &"disc_wind_chime"]:
 		assert_true(codex.is_entry_hinted(entry_id), "%s should be hinted in Codex before discovery" % str(entry_id))
+
+	codex.queue_free()
+
+
+func test_primary_alpha_route_guidance_is_practical() -> void:
+	var codex: CodexServiceNode = CodexServiceNode.new()
+	add_child(codex)
+	codex._ready()
+
+	var expected_terms: Dictionary = {
+		&"recipe_fu": ["Meadow", "Living Wood", "Red Fox"],
+		&"ku_unlock_guidance": ["Mist Stag", "Kū Seed", "Void"],
+		&"recipe_ku": ["Void", "split islands", "calm-water"],
+		&"recipe_chi_ku": ["Sacred Stone", "calm water island", "Suijin"],
+		&"spirit_suijin": ["ten water tiles", "no fire", "Satori 1000"],
+		&"biome_ku": ["Void", "separating islands", "calm-water"],
+		&"biome_sacred_stone": ["Sacred Stone", "ten water tiles", "Suijin"],
+	}
+	for entry_id: StringName in expected_terms.keys():
+		var entry: CodexEntry = _find_codex_entry(codex, entry_id)
+		assert_not_null(entry, "%s should be registered in Codex" % str(entry_id))
+		var combined_text: String = "%s %s" % [entry.hint_text, entry.full_description]
+		for term_variant: Variant in expected_terms[entry_id]:
+			var term: String = str(term_variant)
+			assert_true(combined_text.contains(term), "%s should mention '%s'" % [str(entry_id), term])
 
 	codex.queue_free()
 
@@ -121,3 +147,11 @@ func _has_effect(entry: Dictionary, effect_type: String) -> bool:
 		if str(effect.get("type", "")) == effect_type:
 			return true
 	return false
+
+
+func _find_codex_entry(codex: CodexServiceNode, entry_id: StringName) -> CodexEntry:
+	for category: int in [CodexEntry.Category.SEED, CodexEntry.Category.BIOME, CodexEntry.Category.SPIRIT, CodexEntry.Category.STRUCTURE]:
+		for entry: CodexEntry in codex.get_entries_by_category(category):
+			if entry.entry_id == entry_id:
+				return entry
+	return null

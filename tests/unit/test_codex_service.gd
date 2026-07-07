@@ -38,9 +38,14 @@ func test_form_rituals_are_registered_in_codex() -> void:
 	for entry: CodexEntry in entries:
 		by_id[entry.entry_id] = entry
 
+	assert_true(by_id.has(&"disc_meadow_hollow"), "Codex missing Meadow Hollow form entry")
+	var meadow_hollow: CodexEntry = by_id[&"disc_meadow_hollow"] as CodexEntry
+	assert_eq(meadow_hollow.full_name, "Meadow Hollow")
+	assert_true(meadow_hollow.hint_text.contains("Living wood"))
+	assert_true(meadow_hollow.full_description.contains("Red Fox"))
+
 	assert_true(by_id.has(&"disc_warm_hollow"), "Codex missing Warm Hollow form entry")
 	var warm_hollow: CodexEntry = by_id[&"disc_warm_hollow"] as CodexEntry
 	assert_eq(warm_hollow.full_name, "Warm Hollow")
-	assert_true(warm_hollow.hint_text.contains("Living wood"))
 	assert_true(warm_hollow.full_description.contains("Warm Hollow"))
 	codex.queue_free()

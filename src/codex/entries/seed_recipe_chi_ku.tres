@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"recipe_chi_ku"
 category = 0
-hint_text = "Stone touched by Kū."
+hint_text = "Pair Chi and Kū after Mist Stag, then plant Sacred Stone on a calm water island."
 full_name = "Sacred Stone Seed"
-full_description = "Chi and Kū combine into a seed that blooms as Sacred Stone."
+full_description = "Chi and Kū combine into Sacred Stone Seed. Plant it on an island with ten calm water tiles, no fire-based tiles, and Satori 1000 to invite Suijin."
 always_hidden = false

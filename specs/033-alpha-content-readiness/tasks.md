@@ -20,7 +20,7 @@
 
 - [x] T008 [US1] Select smallest useful housing/helper structure chain: upgraded Fox Den, Dew Bowl, and Wind Chime.
 - [x] T009 [US1] Wire selected content through Codex, save/load, and tests.
-- [ ] T010 [US1] Polish first ritual, Red Fox, Meadow dwelling, upgraded Fox Den migration/Red-Fox-only double Satori generation, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void separation, Chi+Ku calm-water island, and Suijin invitation surfaces.
+- [x] T010 [US1] Polish first ritual, Red Fox, Meadow dwelling, upgraded Fox Den migration/Red-Fox-only double Satori generation, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void separation, Chi+Ku calm-water island, and Suijin invitation surfaces.
 - [ ] T011 [US1] Manual playtest beyond first island.
 
 ## Phase 4: User Story 2 - Avoid Broken-Looking Gaps (Priority: P1)

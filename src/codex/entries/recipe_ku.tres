@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"recipe_ku"
 category = 0
-hint_text = "Void made tangible; silence with form."
+hint_text = "Plant Kū Seed as Void to split islands and open a new calm-water route."
 full_name = "Kū Seed"
-full_description = "Void made tangible; silence with form."
+full_description = "Void made tangible. Plant Kū Seed between land paths to separate islands before preparing a calm water island for Sacred Stone and Suijin."
 always_hidden = false

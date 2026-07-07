@@ -6,7 +6,7 @@
 script = ExtResource("1")
 entry_id = &"spirit_suijin"
 category = 2
-hint_text = "Where ten calm waters hold no flame, place Sacred Stone and let Satori reach the rain."
+hint_text = "Invite Suijin by placing Sacred Stone on an island with ten water tiles, no fire, and Satori 1000."
 full_name = "Rain Kami Suijin"
-full_description = "A water kami invited when Sacred Stone is placed on an island with ten water tiles, no fire-based tiles, and Satori 1000."
+full_description = "A water kami invited when Sacred Stone is placed on an island with ten water tiles, no fire-based tiles, and Satori 1000. Suijin belongs to that qualifying island and should persist after save/load."
 always_hidden = false
