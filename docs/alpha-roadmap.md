@@ -130,7 +130,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 | 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Verified | First-session, first-island, and endgame/kami states round-trip with schema/version safety. Evidence: `specs/030-alpha-save-safety/evidence.md`. |
 | 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Blocked | Local Web build exports, runs, saves across reload, and packages correctly, but a content-complete restricted itch.io page, uploaded HTML build, and smoke on the actual itch.io page are still required. Evidence: `specs/031-itch-web-alpha/evidence.md`. |
 | 7 | Phase 6 - Alpha Content Pass | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Verified | Primary alpha path content is wired, polished, save/load covered, and not exposing broken-looking gaps. Evidence: `specs/033-alpha-content-readiness/evidence.md`. |
-| 8 | Phase 7 - External Alpha Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Tester brief, known issues, versioning, and Web fresh-save playthrough to Suijin are ready. |
+| 8 | Phase 7 - External Alpha Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Verified | Tester brief, known issues, versioning, and Web fresh-save playthrough to Suijin are ready. Evidence: `specs/033-alpha-content-readiness/evidence.md`. |
 | 9 | Phase 8 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state after the game is alpha-polished. |
 
 Status rules:
@@ -396,7 +396,7 @@ Exit gates:
 ## Phase 7 - External Alpha Readiness
 
 Spec: [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md)  
-Alpha status: Not Started
+Alpha status: Verified
 
 Goal: prepare a small closed alpha on itch.io with enough polish and guidance for useful tester feedback before Android is attempted.
 

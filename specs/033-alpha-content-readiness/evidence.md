@@ -4,9 +4,50 @@ Run date: 2026-06-29; updated 2026-07-07
 
 ## Current Status
 
-Status: All `033-alpha-content-readiness` tasks are complete with current validation evidence. This run verifies the selected Phase 6 content-pass roadmap row. The Phase 7 roadmap row is intentionally left unchanged here because the roadmap worker updates only the selected actionable row per run.
+Status: All `033-alpha-content-readiness` tasks are complete with current validation evidence. Phase 6 / Alpha Content Pass and Phase 7 / External Alpha Readiness are verified. Phase 5 / `031-itch-web-alpha` remains blocked on the external itch.io page/upload/actual-URL smoke gate.
 
 Phase 6 / Phase 7 content-readiness work now has repo-side content audit coverage, deferred placeholder discovery stingers, focused alpha content validation, Web tester brief, known issues, Web Suijin playthrough/reload proof, and final normal-UI/placeholder audit coverage.
+
+## 2026-07-07 External Alpha Readiness Verification
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 7 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+Phase 7 exit-gate evidence:
+
+- Tester brief is present at `specs/033-alpha-content-readiness/tester-brief.md` and covers what to try, expected Web behavior, out-of-scope content, feedback focus, reporting fields, and Android as the later platform gate.
+- Known issues are present at `specs/033-alpha-content-readiness/known-issues.md` and explicitly call out deferred discovery stinger audio, Android follow-up, and the still-blocked Phase 5 itch.io actual-page dependency.
+- Build version remains visible in the menu in `0.x.y-alpha+<build_id>` format.
+- Rebuilt Web export passes the fresh-save route to Suijin and reload-persistence smoke.
+
+Validation:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed with the expected fresh-worktree missing global-class/import-cache errors.
+  - Repair: headless editor import completed.
+  - Note: repeated the existing corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`; these remain outside the primary alpha path.
+  - Final result: passed.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_alpha_content_readiness.gd"`
+  - Result: 9/9 passed.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_web_ui_smoke_contract.gd"`
+  - Result: 2/2 passed.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_first_expansion_loop.gd"`
+  - Result: 4/4 passed, including the alpha endgame spine that invites Suijin and survives save/load.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_save_game_service.gd"`
+  - Result: 10/10 passed.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed and rebuilt `build/web`.
+  - Note: Godot still logs the unrelated Android `build-tools` warning during Web export.
+- `npm ci`
+  - Result: passed; 4 packages installed, 0 vulnerabilities.
+- `npm run test:web -- --reporter=line`
+  - Result: 5/5 Playwright Web smoke tests passed against the rebuilt export.
+  - Coverage: Godot shell/core assets, runtime boot in Chromium, fresh-save alpha route to Suijin with reload persistence, packaged seed/icon data, and release exclusion checks.
+  - Note: npm logs an `Unknown cli config "--reporter"` warning, but Playwright receives the reporter argument and the suite passes.
+
+Roadmap update: Phase 7 / External Alpha Readiness is now `Verified` because all 033 tasks are complete and the selected row's external-readiness gate has current evidence. Phase 8 / Android Alpha remains the next actionable row; Phase 5 / itch.io Web Alpha remains blocked on external itch.io page/upload/actual-URL smoke.
 
 ## 2026-07-07 Content Readiness Final Audit
 
