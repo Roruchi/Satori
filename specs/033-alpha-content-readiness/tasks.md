@@ -21,13 +21,13 @@
 - [x] T008 [US1] Select smallest useful housing/helper structure chain: upgraded Fox Den, Dew Bowl, and Wind Chime.
 - [x] T009 [US1] Wire selected content through Codex, save/load, and tests.
 - [x] T010 [US1] Polish first ritual, Red Fox, Meadow dwelling, upgraded Fox Den migration/Red-Fox-only double Satori generation, Dew Bowl, Wind Chime, Mist Stag, Ku Seed, Void separation, Chi+Ku calm-water island, and Suijin invitation surfaces.
-- [ ] T011 [US1] Manual playtest beyond first island.
+- [x] T011 [US1] Manual playtest beyond first island.
 
 ## Phase 4: User Story 2 - Avoid Broken-Looking Gaps (Priority: P1)
 
 - [x] T012 [US2] Hide, gate, or clearly defer unavailable content.
-- [ ] T013 [US2] Audit normal UI for broken-looking alpha gaps.
-- [ ] T014 [US2] Confirm no placeholder art, audio, icon, or UI assets remain on the primary alpha path or release shell.
+- [x] T013 [US2] Audit normal UI for broken-looking alpha gaps.
+- [x] T014 [US2] Confirm no placeholder art, audio, icon, or UI assets remain on the primary alpha path or release shell.
 
 ## Phase 5: User Story 3 - Prepare Web Alpha Testers (Priority: P1)
 

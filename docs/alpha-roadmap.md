@@ -129,7 +129,7 @@ Speckit package status tracks whether the specification artifacts exist. Alpha s
 | 4 | Phase 3 - Full Alpha Endgame Spine | [029-alpha-endgame-kami-spine](../specs/029-alpha-endgame-kami-spine/spec.md) | Drafted | Verified | Fresh save unlocks Ku, uses Void to separate islands, places Chi+Ku biome on a calm Satori 1000 water island, invites Suijin, and persists the result. Evidence: `specs/029-alpha-endgame-kami-spine/evidence.md`. |
 | 5 | Phase 4 - Save Safety and Testable Builds | [030-alpha-save-safety](../specs/030-alpha-save-safety/spec.md) | Drafted | Verified | First-session, first-island, and endgame/kami states round-trip with schema/version safety. Evidence: `specs/030-alpha-save-safety/evidence.md`. |
 | 6 | Phase 5 - itch.io Web Alpha | [031-itch-web-alpha](../specs/031-itch-web-alpha/spec.md) | Drafted | Blocked | Local Web build exports, runs, saves across reload, and packages correctly, but a content-complete restricted itch.io page, uploaded HTML build, and smoke on the actual itch.io page are still required. Evidence: `specs/031-itch-web-alpha/evidence.md`. |
-| 7 | Phase 6 - Alpha Content Pass | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Primary alpha path content is wired, polished, save/load covered, and not exposing broken-looking gaps. |
+| 7 | Phase 6 - Alpha Content Pass | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Verified | Primary alpha path content is wired, polished, save/load covered, and not exposing broken-looking gaps. Evidence: `specs/033-alpha-content-readiness/evidence.md`. |
 | 8 | Phase 7 - External Alpha Readiness | [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md) | Drafted | Not Started | Tester brief, known issues, versioning, and Web fresh-save playthrough to Suijin are ready. |
 | 9 | Phase 8 - Android Alpha | [032-android-alpha](../specs/032-android-alpha/spec.md) | Drafted | Not Started | Android build installs, touch flow is playable, and background/resume preserves save state after the game is alpha-polished. |
 
@@ -360,7 +360,7 @@ Exit gates:
 ## Phase 6 - Alpha Content Pass
 
 Spec: [033-alpha-content-readiness](../specs/033-alpha-content-readiness/spec.md)  
-Alpha status: Not Started
+Alpha status: Verified
 
 Goal: add enough variety to make testers want to keep playing after the spine works.
 

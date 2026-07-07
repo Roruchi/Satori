@@ -1,14 +1,67 @@
 # Evidence: Alpha Content and External Readiness
 
-Run date: 2026-06-29; updated 2026-07-06
+Run date: 2026-06-29; updated 2026-07-07
 
 ## Current Status
 
-Status: In progress; remaining work is manual/playtest audit coverage for T011, T013, and T014.
+Status: All `033-alpha-content-readiness` tasks are complete with current validation evidence. This run verifies the selected Phase 6 content-pass roadmap row. The Phase 7 roadmap row is intentionally left unchanged here because the roadmap worker updates only the selected actionable row per run.
 
-Phase 6 / Phase 7 content-readiness work has started. This run completed the repo-side content audit, deferred placeholder discovery stingers, added focused alpha content validation, and wrote the Web tester brief plus known issues.
+Phase 6 / Phase 7 content-readiness work now has repo-side content audit coverage, deferred placeholder discovery stingers, focused alpha content validation, Web tester brief, known issues, Web Suijin playthrough/reload proof, and final normal-UI/placeholder audit coverage.
 
-The spec is not ready for roadmap `Verified` status yet. Remaining open work includes manual playtest beyond the first island, normal UI gap audit, and final placeholder confirmation across the full primary path.
+## 2026-07-07 Content Readiness Final Audit
+
+This roadmap-worker run preserved Phase 5 / `031-itch-web-alpha` as `Blocked` on the external itch.io page/upload/actual-URL smoke gate and selected Phase 6 / `033-alpha-content-readiness` as the first actionable non-Verified, non-Blocked row.
+
+Completed T011, T013, and T014:
+
+- T011: validated play beyond the first island with `test_first_expansion_loop.gd` and the rebuilt Web Playwright alpha route, which reaches Suijin from a fresh save and verifies reload persistence.
+- T013: audited normal title/HUD/settings/ritual UI surfaces for broken-looking alpha gaps and added focused GUT coverage to reject placeholder, TODO, coming-soon, not-implemented, WIP, missing-texture, or unknown-helper copy on primary release UI files.
+- T014: confirmed primary-path structure/spirit assets resolve to real non-empty files without placeholder/stub paths, kept discovery stingers deferred rather than mapped to absent files, rebuilt the Web export, and reran the full Web package smoke.
+
+Validation:
+
+- `.\tools\godot.ps1 -Command parse`
+  - Initial result: failed with the expected fresh-worktree missing global-class/import-cache errors.
+  - Repair: headless editor import completed with redirected workspace-local Godot home.
+  - Note: repeated the existing corrupt/non-PNG viewer screenshot warnings under `data/discovery_editor/viewer/screenshots/`; these remain outside the primary alpha path.
+  - Final result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command boot`
+  - Result: passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_alpha_content_readiness.gd"`
+  - Result: 9/9 passed.
+  - Coverage added this run: normal UI gap copy audit and primary asset non-placeholder file checks.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_web_ui_smoke_contract.gd"`
+  - Result: 2/2 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_first_expansion_loop.gd"`
+  - Result: 4/4 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_save_game_service.gd"`
+  - Result: 10/10 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_codex_service.gd"`
+  - Result: 3/3 passed.
+  - Note: existing unfreed-child and ObjectDB shutdown leak warnings remain.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/test_structure_catalog_data.gd"`
+  - Result: 5/5 passed.
+  - Note: existing unfreed-child and ObjectDB shutdown leak warnings remain.
+- `.\tools\godot.ps1 -Command test -Test "res://tests/unit/seeds/test_ritual_recipe_catalog.gd"`
+  - Result: 4/4 passed.
+  - Note: existing ObjectDB shutdown leak warning remains.
+- `.\tools\godot.ps1 -Command export-web`
+  - Result: passed after confirming Web export templates in the redirected Godot home.
+  - Note: Godot still logs the unrelated Android `build-tools` warning during Web export.
+- `npm ci`
+  - Result: passed; 4 packages installed, 0 vulnerabilities.
+- `npm run test:web -- --reporter=line`
+  - Result: 5/5 Playwright Web smoke tests passed against the rebuilt export.
+  - Coverage: Godot shell/core assets, runtime boot in Chromium, fresh-save alpha route to Suijin with reload persistence, packaged seed/icon data, and release exclusion checks.
+  - Note: npm logs an `Unknown cli config "--reporter"` warning, but Playwright receives the reporter argument and the suite passes.
+
+Roadmap update: Phase 6 / Alpha Content Pass is now ready for `Verified` because all spec tasks are complete and the selected row's content-readiness exit gate has current evidence. Phase 7 / External Alpha Readiness is not updated in this run due to the one-selected-row roadmap update rule.
 
 ## 2026-07-07 Alpha Route Surface Polish
 

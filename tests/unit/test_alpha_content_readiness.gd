@@ -25,6 +25,26 @@ const PRIMARY_SEED_RESULT_IDS: Array[StringName] = [
 	&"recipe_ku",
 	&"recipe_chi_ku",
 ]
+const PRIMARY_RELEASE_UI_FILES: Array[String] = [
+	"res://scenes/TitleScreen.tscn",
+	"res://scenes/UI/HUD.tscn",
+	"res://scenes/UI/SettingsMenu.tscn",
+	"res://src/ui/HUDController.gd",
+	"res://src/ui/SeedAlchemyPanel.gd",
+	"res://src/seeds/RitualAttemptResult.gd",
+]
+const BROKEN_LOOKING_COPY: Array[String] = [
+	"placeholder",
+	"todo",
+	"fixme",
+	"coming soon",
+	"not implemented",
+	"tbd",
+	"wip",
+	"lorem",
+	"missing texture",
+	"unknown helper",
+]
 
 
 func test_primary_alpha_structure_chain_has_rituals_assets_and_effects() -> void:
@@ -131,6 +151,36 @@ func test_discovery_stingers_are_deferred_until_final_assets_exist() -> void:
 	assert_true(DiscoveryAudioPlayer.AUDIO_MAP.is_empty(), "Discovery stingers should be deferred, not mapped to absent placeholder files")
 
 
+func test_normal_ui_copy_does_not_expose_broken_alpha_gaps() -> void:
+	for file_path: String in PRIMARY_RELEASE_UI_FILES:
+		var text: String = FileAccess.get_file_as_string(file_path)
+		assert_false(text.is_empty(), "%s should be readable" % file_path)
+		var lower_text: String = text.to_lower()
+		for broken_copy: String in BROKEN_LOOKING_COPY:
+			assert_false(lower_text.contains(broken_copy), "%s should not expose '%s' on normal alpha UI" % [file_path, broken_copy])
+
+	var seed_panel_text: String = FileAccess.get_file_as_string("res://src/ui/SeedAlchemyPanel.gd")
+	var ritual_result_text: String = FileAccess.get_file_as_string("res://src/seeds/RitualAttemptResult.gd")
+	assert_true(seed_panel_text.contains("is not available yet."), "Locked ritual inputs should explain gated content clearly")
+	assert_true(ritual_result_text.contains("do not yet shape a known form"), "Unknown ritual mixes should read as undiscovered, not broken")
+
+
+func test_primary_alpha_assets_are_real_files_not_placeholder_paths() -> void:
+	var structure_catalog: StructureCatalogData = StructureCatalogDataScript.new()
+	for building_id: String in PRIMARY_BUILDING_IDS:
+		var structure_entry: Dictionary = structure_catalog.get_entry(building_id)
+		var asset_path: String = str(structure_entry.get("asset_path", ""))
+		assert_false(asset_path.to_lower().contains("placeholder"), "%s should not use a placeholder asset path" % building_id)
+		assert_false(asset_path.to_lower().contains("stub"), "%s should not use a stub asset path" % building_id)
+		_assert_asset_file_is_final_enough(asset_path, "%s structure asset" % building_id)
+
+	for spirit_id: String in PRIMARY_SPIRIT_IDS:
+		var frame_path: String = "res://assets/spirits/%s/frames/idle/down/frame_0000.png" % spirit_id
+		var sprite_frames_path: String = "res://assets/spirits/%s/sprite_frames.tres" % spirit_id
+		_assert_asset_file_is_final_enough(frame_path, "%s idle frame" % spirit_id)
+		_assert_asset_file_is_final_enough(sprite_frames_path, "%s sprite frames" % spirit_id)
+
+
 func _effects_are_present(entry: Dictionary) -> bool:
 	var effects_variant: Variant = entry.get("effects", [])
 	return effects_variant is Array and not (effects_variant as Array).is_empty()
@@ -155,3 +205,14 @@ func _find_codex_entry(codex: CodexServiceNode, entry_id: StringName) -> CodexEn
 			if entry.entry_id == entry_id:
 				return entry
 	return null
+
+
+func _assert_asset_file_is_final_enough(file_path: String, context: String) -> void:
+	assert_false(file_path.is_empty(), "%s should have an asset path" % context)
+	assert_true(FileAccess.file_exists(file_path), "%s should exist at %s" % [context, file_path])
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
+	assert_not_null(file, "%s should be readable" % context)
+	if file == null:
+		return
+	assert_gt(file.get_length(), 100, "%s should not be an empty placeholder file" % context)
+	file.close()
