@@ -88,4 +88,4 @@ The Codex poller and repository agents may modify only Satori's local issue, bra
 
 - `AGENTS.md`: repository and validation policy.
 - `.agents/skills/execute-ready-work-item/SKILL.md`: Codex polling and execution instructions.
-- `.github/ISSUE_TEMPLATE/agent-work-item.md`: work-item template.
+- `.github/ISSUE_TEMPLATE/agent-work.md`: work-item template.
