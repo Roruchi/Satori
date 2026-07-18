@@ -1,8 +1,10 @@
 ---
 name: Agent work item
 description: Create a bounded work item for the Satori Codex poller
-title: "[agent-ready] "
-labels: []
+title: ""
+labels:
+  - agent:ready
+  - executor:codex
 assignees: []
 ---
 
@@ -39,4 +41,6 @@ assignees: []
 
 ## Stop conditions
 
-Stop and mark the issue `[agent-blocked]` when a product decision, missing credential, sensitive external context, cross-project change, or scope expansion is required.
+Apply `agent:blocked` and report the exact missing decision when a product decision, missing credential, sensitive external context, cross-project change, or scope expansion is required.
+
+See `docs/agent-delegation.md` for the lifecycle, status labels, and authority boundaries.
