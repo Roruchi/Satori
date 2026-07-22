@@ -6,11 +6,10 @@ const BiomeTypeScript = preload("res://src/biomes/BiomeType.gd")
 const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
 const KushoPoolScript = preload("res://src/autoloads/kusho_pool.gd")
 const RitualAttemptResultScript = preload("res://src/seeds/RitualAttemptResult.gd")
-const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
+const RitualIconCatalogScript = preload("res://src/ui/ritual_icon_catalog.gd")
 
 const SLOT_COUNT: int = 3
 const EMPTY_KEY: String = ""
-const RITUAL_ICON_CELL_SIZE: float = 32.0
 const INPUT_BUTTON_FULL_SIZE: Vector2 = Vector2(138.0, 68.0)
 const INPUT_BUTTON_COMPACT_SIZE: Vector2 = Vector2(104.0, 56.0)
 const INPUT_BUTTON_NARROW_SIZE: Vector2 = Vector2(86.0, 54.0)
@@ -802,23 +801,10 @@ func _icon_texture_for_key(input_key: String) -> Texture2D:
 	return texture
 
 func _ritual_icon_texture(input_key: String) -> Texture2D:
-	if _RITUAL_ICON_TEXTURE == null or not _RITUAL_ICON_INDEX.has(input_key):
+	if not _RITUAL_ICON_INDEX.has(input_key):
 		return null
 	var icon_index: int = int(_RITUAL_ICON_INDEX.get(input_key, 0))
-	var image: Image = _RITUAL_ICON_TEXTURE.get_image()
-	if image == null:
-		return null
-	var column: int = icon_index % 3
-	var row: int = floori(float(icon_index) / 3.0)
-	var cell_size: int = int(RITUAL_ICON_CELL_SIZE)
-	var region: Rect2i = Rect2i(
-		Vector2i(column * cell_size, row * cell_size),
-		Vector2i(cell_size, cell_size)
-	)
-	if region.position.x < 0 or region.position.y < 0 or region.end.x > image.get_width() or region.end.y > image.get_height():
-		return null
-	var icon_image: Image = image.get_region(region)
-	return ImageTexture.create_from_image(icon_image)
+	return RitualIconCatalogScript.texture_at(icon_index)
 
 func _slot_contains_key_elsewhere(input_key: String, current_slot: int) -> bool:
 	for i: int in range(_slot_keys.size()):

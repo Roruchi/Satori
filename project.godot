@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Satori"
-config/version="0.1.0-alpha+20260627.1"
+config/version="0.1.0-alpha+20260722.1"
 run/main_scene="res://scenes/TitleScreen.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://assets/ui/title/satori-logo-emblem.png"

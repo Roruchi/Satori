@@ -3,7 +3,7 @@ extends CanvasLayer
 
 const GodaiElementScript = preload("res://src/seeds/GodaiElement.gd")
 const StructureCatalogDataScript = preload("res://src/biomes/structure_catalog_data.gd")
-const _RITUAL_ICON_TEXTURE: Texture2D = preload("res://assets/ritual/ritual_input_icon_spritesheet.png")
+const RitualIconCatalogScript = preload("res://src/ui/ritual_icon_catalog.gd")
 const MIX_PANEL_GAP: float = 16.0
 const MIX_PANEL_MIN_WIDTH: float = 440.0
 const MIX_PANEL_MAX_WIDTH: float = 480.0
@@ -13,7 +13,6 @@ const MIX_PANEL_TOP_GAP: float = 12.0
 const CODEX_PANEL_MARGIN_X: float = 28.0
 const CODEX_PANEL_TOP_MARGIN: float = 72.0
 const CODEX_PANEL_BOTTOM_GAP: float = 18.0
-const RITUAL_ICON_CELL_SIZE: float = 32.0
 const MATERIAL_SLOT_ICON_SIZE: float = 16.0
 const MATERIAL_SLOT_MIN_SIZE: Vector2 = Vector2(56.0, 24.0)
 const PLACE_SLOT_ICON_SIZE: float = 22.0
@@ -595,7 +594,7 @@ func _create_material_slot(material_id: StringName) -> PanelContainer:
 	return slot
 
 func _material_icon_texture(material_id: StringName) -> Texture2D:
-	if _RITUAL_ICON_TEXTURE == null or not _MATERIAL_ICON_INDEX.has(material_id):
+	if not _MATERIAL_ICON_INDEX.has(material_id):
 		return null
 	var icon_index: int = int(_MATERIAL_ICON_INDEX.get(material_id, 0))
 	return _ritual_icon_region_texture(icon_index)
@@ -893,27 +892,10 @@ func _apply_mode_tab_state(button: Button, is_active: bool, index: int) -> void:
 	button.add_theme_color_override("icon_pressed_color", MODE_TAB_TINTS[index])
 
 func _ritual_icon_texture_by_index(icon_index: int) -> Texture2D:
-	if _RITUAL_ICON_TEXTURE == null:
-		return null
 	return _ritual_icon_region_texture(icon_index)
 
 func _ritual_icon_region_texture(icon_index: int) -> Texture2D:
-	if _RITUAL_ICON_TEXTURE == null:
-		return null
-	var image: Image = _RITUAL_ICON_TEXTURE.get_image()
-	if image == null:
-		return null
-	var column: int = icon_index % 3
-	var row: int = floori(float(icon_index) / 3.0)
-	var cell_size: int = int(RITUAL_ICON_CELL_SIZE)
-	var region: Rect2i = Rect2i(
-		Vector2i(column * cell_size, row * cell_size),
-		Vector2i(cell_size, cell_size)
-	)
-	if region.position.x < 0 or region.position.y < 0 or region.end.x > image.get_width() or region.end.y > image.get_height():
-		return null
-	var icon_image: Image = image.get_region(region)
-	return ImageTexture.create_from_image(icon_image)
+	return RitualIconCatalogScript.texture_at(icon_index)
 
 func _refresh_mode_tab_motion(animated: bool) -> void:
 	_layout_mode_tab_indicator(animated)

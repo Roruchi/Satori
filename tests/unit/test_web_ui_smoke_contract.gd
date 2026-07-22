@@ -1,5 +1,6 @@
 extends GutTest
 
+const RitualIconCatalogScript = preload("res://src/ui/ritual_icon_catalog.gd")
 const UNSUPPORTED_DECORATIVE_GLYPHS: Array[String] = ["⬢", "✦", "✋", "☷", "⚙", "▶", "✕", "✓", "✗", "⚡", "⬡"]
 const TEXT_FILES: Array[String] = [
 	"res://scenes/UI/HUD.tscn",
@@ -40,3 +41,13 @@ func test_mode_tab_markers_are_ascii_safe() -> void:
 
 	remove_child(hud)
 	hud.free()
+
+func test_ritual_icons_are_direct_imported_textures() -> void:
+	assert_eq(RitualIconCatalogScript.ICON_TEXTURES.size(), 9)
+	for icon_index: int in RitualIconCatalogScript.ICON_TEXTURES.size():
+		var texture: Texture2D = RitualIconCatalogScript.texture_at(icon_index)
+		assert_not_null(texture, "icon %d should load" % icon_index)
+		assert_false(texture is AtlasTexture, "icon %d should not need atlas sampling" % icon_index)
+		assert_false(texture is ImageTexture, "icon %d should not need runtime pixel readback" % icon_index)
+	assert_null(RitualIconCatalogScript.texture_at(-1))
+	assert_null(RitualIconCatalogScript.texture_at(9))

@@ -109,15 +109,18 @@ test("web export packages seed recipe data and generated icon pngs", async ({ re
   expectBufferToContain(pckBuffer, "Stone Seed");
   expectBufferToContain(pckBuffer, "Meadow Seed");
   expectBufferToContain(pckBuffer, "material_icon_spritesheet.png");
+  expectBufferToContain(pckBuffer, "assets/ritual/icons/00_earth.png.import");
+  expectBufferToContain(pckBuffer, "res://.godot/imported/");
+  expectBufferToContain(pckBuffer, ".ctex");
   expectBufferToContain(pckBuffer, "assets/structures/house/frames/idle/down/frame_0000.png.import");
   expectBufferToContain(pckBuffer, "assets/structures/fox_den/frames/idle/down/frame_0000.png.import");
   expectBufferToContain(pckBuffer, "materials.csv.txt");
   expectBufferToContain(pckBuffer, "rituals.csv.txt");
-  expectBufferToContain(pckBuffer, "0.1.0-alpha+20260627.1");
+  expectBufferToContain(pckBuffer, "0.1.0-alpha+20260722.1");
   expectBufferToContain(pckBuffer, "alpha_web_playtest");
 });
 
-test("web export excludes development-only release folders", async ({ request }) => {
+test("web export retains texture payloads and excludes development-only release folders", async ({ request }) => {
   const pckResponse = await request.get("/index.pck");
   expect(pckResponse.ok()).toBe(true);
   const pckBuffer = await pckResponse.body();
@@ -129,7 +132,6 @@ test("web export excludes development-only release folders", async ({ request })
     "res://tests/playwright/satori-web-smoke.spec.js",
     "res://specs/031-itch-web-alpha/spec.md",
     "res://tools/godot.ps1",
-    "res://.godot/imported/",
     "playwright.config.js"
   ]) {
     expectBufferNotToContain(pckBuffer, excludedPath);
